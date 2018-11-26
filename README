@@ -1,0 +1,45 @@
+N1
+==
+
+The N1 is a stack machine, inspired by the J1 (http://www.excamera.com/files/j1.pdf) 
+
+Please refer to the manual for further information:
+https://github.com/hotwolf/N1/blob/master/doc/N1_manual.pdf
+
+Directories:
+============
+|
++-rtl           
+|  |
+|  +-verilog            - Verilog source code
+|
++-bench           
+|  |
+|  +-verilog            - Testbenches and verification IP
+|
++-tools                 - Tool configuration and support files
+|  |
+|  +-gtkwave            - GTKWave setup
+|  |  |
+|  |  +-src             - Scripts to generate .stems and .gtkw files
+|  |
+|  +-SymbiYosis         - SymbiYosis setup
+|     |
+|     +-src             - .sby files
+|     |
+|     +-run             - Temporary run directories
+|
++-doc                   - User manual 
+   |
+   +-src                - LaTex source files
+   |
+   +-run                - Build directory
+
+The N1 soft IP is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with the WbXbc soft IP. If not, see
+<http://www.gnu.org/licenses/>.
