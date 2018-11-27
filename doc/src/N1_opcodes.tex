@@ -22,15 +22,18 @@
 %#      - Initial release                                                      #
 %###############################################################################
 
+
 \section{Instruction Set}
 \label{opcodes}
 
-All N1 CPU uses the following instruction encoding:
+The intent of the N1's instruction set is to map most of the essential Forth words
+to single cycle instructions. \figref{opcodes:encoding} illustrates the basic structure
+of the instructuion encoding.
 
 \begin{figure}[!h]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.8} {
+    \scalebox{0.75} {
       \begin{tikzpicture}
       
         %Instruction
@@ -57,40 +60,39 @@ All N1 CPU uses the following instruction encoding:
         };
 
         %Return bit
-        \draw [thick, fill=gray!15] (0.8,2.8) rectangle (2,24.7);
-        \node [above] at (1.4,24.7) {
+        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,22.2);
+        \node [above] at (1.4,22.2) {
           \begin{minipage}[c]{10em}
             \begin{center}
-              Last \\
-              instruction \\
-              in call
+              End of\\
+              Word
             \end{center}
           \end{minipage}};
       
         %Jump
-        \node at (1,23) {\usebox{\instruction}};
-        \node         at (1.5,23.5)   {\huge{\texttt{1}}};
-        \draw [thick] (2,23) rectangle (3,24);
-        \node         at (2.5,23.5)   {\huge{\texttt{1}}};
-        \node         at (10,23.45)   {\LARGE{14-bit absolute word address}};
-        \node [right] at (17.2,23.5)  {\large{Jump}};
+        \node at (1,20.5) {\usebox{\instruction}};
+        \node         at (1.5,21)     {\huge{\texttt{1}}};
+        \draw [thick] (2,20.5) rectangle (3,21.5);
+        \node         at (2.5,21)     {\huge{\texttt{1}}};
+        \node         at (10,20.95)   {\LARGE{14-bit absolute word address}};
+        \node [right] at (17.2,21)    {\large{Jump}};
      
         %Call
-        \node at (1,21) {\usebox{\instruction}};
-        \node         at (1.5,21.5)   {\huge{\texttt{0}}};
-        \draw [thick] (2,21) rectangle (3,22);
-        \node         at (2.5,21.5)   {\huge{\texttt{1}}};
-        \node         at (10,21.45)   {\LARGE{14-bit absolute word address}};
-        \node [right] at (17.2,21.5)  {\large{Call}};
+        \node at (1,18.5) {\usebox{\instruction}};
+        \node         at (1.5,19)     {\huge{\texttt{0}}};
+        \draw [thick] (2,18.5) rectangle (3,19.5);
+        \node         at (2.5,19)     {\huge{\texttt{1}}};
+        \node         at (10,18.95)   {\LARGE{14-bit absolute word address}};
+        \node [right] at (17.2,19)    {\large{Call}};
        
         %Conditional Branch
-        \node at (1,19) {\usebox{\instruction}};
-        \node         at (1.5,19.5)   {\huge{\texttt{;}}};
-        \draw [thick] (2,19) rectangle (4,20); 
-        \node         at (2.5,19.5)   {\huge{\texttt{0}}};
-        \node         at (3.5,19.5)   {\huge{\texttt{1}}};
-        \node         at (10.5,19.45) {\LARGE{13-bit relative word address}};
-        \node [right] at (17.2,19.5)  {
+        \node at (1,16.5) {\usebox{\instruction}};
+        \node         at (1.5,17)     {\huge{\texttt{;}}};
+        \draw [thick] (2,16.5) rectangle (4,17.5); 
+        \node         at (2.5,17)     {\huge{\texttt{0}}};
+        \node         at (3.5,17)     {\huge{\texttt{1}}};
+        \node         at (10.5,16.95) {\LARGE{13-bit relative word address}};
+        \node [right] at (17.2,17) {
           \begin{minipage}[l]{10em}
             \large{
               Conditional \\
@@ -99,39 +101,39 @@ All N1 CPU uses the following instruction encoding:
         \end{minipage}};
         
         %Literal 
-        \node at (1,17) {\usebox{\instruction}};
-        \node         at (1.5,17.5)   {\huge{\texttt{;}}};
-        \draw [thick] (2,17) rectangle (5,18); 
-        \node         at (2.5,17.5)   {\huge{\texttt{0}}};
-        \node         at (3.5,17.5)   {\huge{\texttt{0}}};
-        \node         at (4.5,17.5)   {\huge{\texttt{1}}};
-        \node         at (11,17.45)   {\LARGE{12-bit signed integer}};
-        \node [right] at (17.2,17.5)  {\large{Literal}};
+        \node at (1,14.5) {\usebox{\instruction}};
+        \node         at (1.5,15)     {\huge{\texttt{;}}};
+        \draw [thick] (2,14.5) rectangle (5,15.5); 
+        \node         at (2.5,15)     {\huge{\texttt{0}}};
+        \node         at (3.5,15)     {\huge{\texttt{0}}};
+        \node         at (4.5,15)     {\huge{\texttt{1}}};
+        \node         at (11,14.95)   {\LARGE{12-bit signed integer}};
+        \node [right] at (17.2,15)    {\large{Literal}};
 
-        %Stack operation 
-        \node at (1,15) {\usebox{\instruction}};
-        \node         at (1.5,15.5)   {\huge{\texttt{;}}};
-        \draw [thick] (2,15) rectangle (6,16); 
-        \node         at (2.5,15.5)   {\huge{\texttt{0}}};
-        \node         at (3.5,15.5)   {\huge{\texttt{0}}};
-        \node         at (4.5,15.5)   {\huge{\texttt{0}}};
-        \node         at (5.5,15.5)   {\huge{\texttt{1}}};   
-        \node         at (11.5,15.45) {\LARGE{Stack transition pattern}};
-        \node [right] at (17.2,15.5)  {\large{Stack operation}};
-        
         %Register access
-        \node at (1,13) {\usebox{\instruction}};
-        \node         at (1.5,13.5)   {\huge{\texttt{;}}};
-        \draw [thick] (2,13) rectangle (7,14); 
-        \draw [thick] (7,13) rectangle (8,14); 
-        \node         at (2.5,13.5)   {\huge{\texttt{0}}};
-        \node         at (3.5,13.5)   {\huge{\texttt{0}}};
-        \node         at (4.5,13.5)   {\huge{\texttt{0}}};
-        \node         at (5.5,13.5)   {\huge{\texttt{0}}};   
-        \node         at (6.5,13.5)   {\huge{\texttt{1}}};   
-        \node         at (7.5,13.45)  {\small{R/\textoverline{W}}};   
-        \node         at (12.5,13.45) {\LARGE{9-bit register address}};
-        \node [right] at (17.2,13.5)  {\large{Register access}};
+        \node at (1,12.5) {\usebox{\instruction}};
+        \node         at (1.5,13)     {\huge{\texttt{;}}};
+        \draw [thick] (2,12.5) rectangle (6,13.5); 
+        \draw [thick] (6,12.5) rectangle (7,13.5); 
+        \node         at (2.5,13)     {\huge{\texttt{0}}};
+        \node         at (3.5,13)     {\huge{\texttt{0}}};
+        \node         at (4.5,13)     {\huge{\texttt{0}}};
+        \node         at (5.5,13)     {\huge{\texttt{1}}};   
+        \node         at (6.5,12.95)  {\small{R/\textoverline{W}}};   
+        \node         at (12,12.95)   {\LARGE{10-bit register address}};
+        \node [right] at (17.2,13)    {\large{Stack operation}};
+        
+        %Stack operation 
+        \node at (1,10.5) {\usebox{\instruction}};
+        \node         at (1.5,11)     {\huge{\texttt{;}}};
+        \draw [thick] (2,10.5) rectangle (7,11.5); 
+        \node         at (2.5,11)     {\huge{\texttt{0}}};
+        \node         at (3.5,11)     {\huge{\texttt{0}}};
+        \node         at (4.5,11)     {\huge{\texttt{0}}};
+        \node         at (5.5,11)     {\huge{\texttt{0}}};   
+        \node         at (6.5,11)     {\huge{\texttt{1}}};   
+        \node         at (12,10.95)   {\LARGE{Stack transition pattern}};
+        \node [right] at (17.2,11)    {\large{Register access}};
 
         %Control Instructions
         \node at (1,8.5) {\usebox{\instruction}};
@@ -143,13 +145,13 @@ All N1 CPU uses the following instruction encoding:
         \node         at (5.5,9)       {\huge{\texttt{0}}};   
         \node         at (6.5,9)       {\huge{\texttt{0}}};   
         \node         at (7.5,9)       {\huge{\texttt{1}}};   
-        \node         at (12.5,8.95)  {\LARGE{Instruction}};
+        \node         at (12.5,8.95)   {\LARGE{Instruction}};
         \node [right] at (17.2,9) {
           \begin{minipage}[l]{10em}
             \large{
-              Instructions \\
-              without stack \\
-              interaction
+              I/O and \\
+              control \\
+              instructions
             }
         \end{minipage}};
             
@@ -249,23 +251,78 @@ All N1 CPU uses the following instruction encoding:
   %\end{center}
 \end{figure}
 
-%\subsection{Address Region Descriptors}
-%
-%\begin{description}[style=nextline]
-%  
-%\item[\texttt{region\_adr\_i}] Target region descriptors (base addresses). \\
-%  
-%  The address range of each bus target is determined by a base address and an address mask.
-%  An address \texttt{itr\_adr\_i} is within the range of the $n$-th bus target if 
-%  \begin{center}
-%    \texttt{itr\_adr\_i[ADR\_WIDTH-1:0] |
-%      region\_msk\_i[(ADR\_WIDTH*($n$+1))-1:ADR\_WIDTH*$n$]} \\
-%    $\equiv$ \\
-%    \texttt{region\_adr\_i[(ADR\_WIDTH*($n$+1))-1:ADR\_WIDTH*$n$] |
-%      region\_msk\_i[(ADR\_WIDTH*($n$+1))-1:ADR\_WIDTH*$n$]} \\
-%  \end{center}
-%
-%\item[\texttt{region\_msk\_i}]  Target region descriptors (address masks). \\
-%  See \texttt{region\_adr\_i}. 
-%   
-%\end{description}
+\subsection{Jump Instructions}
+\label{opcodes:jump}
+
+\Gls{jump} instructions transfer the program flow to any \gls{word}
+location within the supported 32KB program space. \Gls{jump} instructions
+use absoluteaddresses. 
+
+\subsection{Call Instructions}
+\label{opcodes:call}
+
+\Gls{call} instructions temporarily transfer the program flow to any \gls{word}
+location within the
+supported 32KB program space, while pushing a return address onto
+the return stack \gls{call} instructions use absolute addresses. 
+
+\subsection{Return from a Call (\texttt{;})}
+\label{opcodes:rtc}
+
+Rather than  providing a dedicated instruction to end the execution of 
+word in Forth and to return the program flow to its caller, the N1 allows
+to perform this operation in parallel to the execution of any of its
+instructions. Each \gls{opcode} contains a bit (bit 15) to indicate, that the
+current instruction in the last operation in the current word. If this bit
+is set, the program flow will resume at the calling word as soon as the
+operationis performed.
+
+As shown in \figref{opcodes:encoding}, bit 15 is also used to distinguish jump
+and call. Considering that the last call in a word definition can be optimized
+to a jump to the first instruction of the called word, bit 15 can ber regarded
+as termination bit for these instructions as well.
+
+For a Forth compiler, this means that the semi-colon (\texttt{\gls{semicolon}})
+always translates to setting bit 15 of the last instruction.
+
+\subsection{Conditional Branches}
+\label{opcodes:branch}
+
+Conditional \glspl{branch} invoke a change of program flow if the top of the
+\gls{ps} is not zero. Branches are relative to the location of the
+following instruction and range from 4095 \gls{word}
+locations forward to 4096 \gls{word}
+locations backward. A relative \gls{branch}
+address of zero points to the subsequent instruction of the current one.
+
+Conditional branches use relative addressing to simplify code reallocation in support
+of inlining.
+
+\subsection{Literals}
+\label{opcodes:literal}
+
+Signed integer \glspl{literal} of 12-bit length can be pushed onto the \gls{ps} within
+a single instruction. For larger integers a supplemental TBD \gls{call} is required.
+
+\subsection{Register Accesses}
+\label{opcodes:regacc}
+
+
+\subsection{Stack Operation}
+\label{opcodes:stack}
+
+The N1's stack instruction aims at efficiently implementing the essential stack operations
+in \Gls{forth} only using the data pathes which needed for the stack's push and pull
+operations.
+
+The opcode of the stack instruction contains a 10-bit wide field to specify a transition pattern of the upper elements of the \gls{ps} and the \gls{rs}.
+
+
+
+
+\subsection{I/O and Control Instructions}
+\label{opcodes:ioctrl}
+\Gls{byte}
+
+\subsection{ALU operations}
+\label{opcodes:ioctrl}

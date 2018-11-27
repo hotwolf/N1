@@ -1,0 +1,134 @@
+%###############################################################################
+%# N1 - Manual - Glossary                                                      #
+%###############################################################################
+%#    Copyright 2018 Dirk Heisswolf                                            #
+%#    This file is part of the N1 project.                                     #
+%#                                                                             #
+%#    N1 is free software: you can redistribute it and/or modify               #
+%#    it under the terms of the GNU General Public License as published by     #
+%#    the Free Software Foundation, either version 3 of the License, or        #
+%#    (at your option) any later version.                                      #
+%#                                                                             #
+%#    N1 is distributed in the hope that it will be useful,                    #
+%#    but WITHOUT ANY WARRANTY; without even the implied warranty of           #
+%#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
+%#    GNU General Public License for more details.                             #
+%#                                                                             #
+%#    You should have received a copy of the GNU General Public License        #
+%#    along with N1.  If not, see <http:%www.gnu.org/licenses/>.               #
+%###############################################################################
+%# Version History:                                                            #
+%#   Novemmber 27, 2018                                                        #
+%#      - Initial release                                                      #
+%###############################################################################
+
+\newglossaryentry{forth} {
+    name={Forth},
+    description={
+      Forth is a extensible stack-based programming language.
+      \nopostdesc
+    }
+}
+ 
+\newglossaryentry{byte} {
+    name={byte},
+    description={
+      An 8-bit data entity.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{word} {
+    name={word},
+    description={
+      The term word is used in two different contexts throughout
+      this document. It refers to either a 16-bit data entity or
+      a callable code sequence in \Gls{forth} terminology.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{jump} {
+    name={jump},
+    description={
+      A change of the program flow without return option.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{branch} {
+    name={branch},
+    description={
+      A change of the program flow without return option, where the
+      destination is given as offset from the start point.
+      \nopostdesc
+    },
+    plural={Branches}
+}
+
+\newglossaryentry{call} {
+    name={call},
+    description={
+      A change of the program flow, where a return address is kept
+      on the \gls{rs}.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{literal} {
+    name={literal},
+    description={
+      A fixed numerical value within the program code.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{semicolon} {
+    name={;},
+    description={
+      End of a \gls{word} definition in \Gls{forth}.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{rs} {
+    name={return stack},
+    description={
+      A \gls{lifo} storage mainly for maintaining return addresses
+      of \glspl{call}.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{ps} {
+    name={parameter stack},
+    description={
+      A \gls{lifo} storage mainly for keeping call parameters and
+      return values.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{lifo} {
+    name={LIFO},
+    description={
+      A memory which is accessible in last in - first out order.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{opcode} {
+    name={opcode},
+    description={
+      Encoding of a machine instruction. Short for ``operation code''.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{alu} {
+    name={ALU},
+    description={
+      Arithmetic Logic Unit.
+      \nopostdesc
+    }
+}

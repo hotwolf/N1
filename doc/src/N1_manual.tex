@@ -47,6 +47,7 @@
             pdftitle={N1 Manual},
             pdfauthor={Dirk Heisswolf},
             pdfdisplaydoctitle=true]{hyperref}
+\usepackage[automake, numberedsection, nonumberlist]{glossaries}
 
 %Tables
 \makeatletter
@@ -73,6 +74,10 @@
 \makeatother
 
 \pagestyle{fancy}
+
+%Glossary
+\makeglossaries
+\include{N1_glossary}
 
 \begin{document}
 
@@ -121,6 +126,13 @@
 \listoftables
 
 %--------------------
+% Glossary
+%--------------------
+\clearpage
+\setglossarystyle{altlist}
+\printglossaries
+
+%--------------------
 % Overview
 %--------------------
 \include{N1_overview}
@@ -129,6 +141,11 @@
 % Instruction set
 %--------------------
 \include{N1_opcodes}
+
+%--------------------
+% Stacks
+%--------------------
+\include{N1_stacks}
 
 %--------------------
 % N1 integration parameters
