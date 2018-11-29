@@ -22,6 +22,9 @@
 %#      - Initial release                                                      #
 %###############################################################################
 
+
+
+%Glossary 
 \newglossaryentry{forth} {
     name={Forth},
     description={
@@ -91,6 +94,30 @@
     }
 }
 
+\newglossaryentry{stack} {
+    name={stack},
+    description={
+      A \gls{lifo} storage.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{cell} {
+    name={cell},
+    description={
+      A data entity within a \gls{stack}.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{tos} {
+    name={TOS},
+    description={
+      The top \gls{cell} of a \gls{stack}.
+      \nopostdesc
+    }
+}
+
 \newglossaryentry{rs} {
     name={return stack},
     description={
@@ -129,6 +156,56 @@
     name={ALU},
     description={
       Arithmetic Logic Unit.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{ust} {
+    name={UST},
+    description={
+      A bit field in the stack instruction which contols data movement
+      between two neighboring \glspl{cell} in the upper \gls{ps} or \gls{rs}.
+      The mnemonic stands for ``\textbf{U}pper \textbf{S}tack \textbf{T}ransition''.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{ist} {
+    name={IST},
+    description={
+      A bit field in the stack instruction which contols data movement
+      on the intermediate \gls{ps} or \gls{rs}.
+      The mnemonic stands for
+      ``\textbf{I}intermediate \textbf{S}tack \textbf{T}ransition''.
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{ls} {
+    name={lower stack},
+    description={
+      The section of the stack which stored in RAM.
+      See \secref{stacks}. 
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{is} {
+    name={intermediate stack},
+    description={
+      The section of the stack, which serves as a buffer between the
+      \gls{ls} and the \gls{us}.
+      See \secref{stacks}. 
+      \nopostdesc
+    }
+}
+
+\newglossaryentry{us} {
+    name={upper stack},
+    description={
+      The section of the stack, which contains the \gls{tos}. It supports
+      reordering of its storage \gls{cell}.
+      See \secref{stacks}. 
       \nopostdesc
     }
 }
