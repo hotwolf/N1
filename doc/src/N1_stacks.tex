@@ -24,3 +24,49 @@
 
 \section{Stacks}
 \label{stacks}
+
+The N1 operates with two stacks: the \gls{ps} to perform data transactions and the
+\gls{rs} to manage the program flow. As illustrated in \figref{stacks:fg}, each of
+these stacks consists of three hardware components: the \gls{us}, the \gls{is},
+and the \gls{ls}.
+
+\begin{figure}[!h]
+  %\begin{center}
+  \makebox[\textwidth][c]{
+    \scalebox{1} {
+      \begin{tikzpicture}
+      
+        \node at (1,1) {\Huge{TBD}};
+
+      \end{tikzpicture}
+    }
+  }
+  \caption{Instruction encoding}
+  \label{stacks:fig}
+  %\end{center}
+\end{figure}
+
+\subsection{Parameter Stack}
+\label{stacks:ps}
+
+The \gls{us} of the \gls{ps} contains is four \glspl{cell} deep and contains the
+most recent data entries. It's purpose is to perform stack and ALU operations
+(see \secref{opcodes:stack} and \secref{opcodes:alu}).
+When the capacity of the \gls{us} is exceeded, older data entries are transferred
+to the \gls{is}.
+
+The \gls{is} serves as a buffer between the \gls{us} and the \gls{ls} which resides
+in \gls{ram}. The purpose of the \gls{is} is to minimize \gls{ram} traffic to and
+from the \gls{ls}.
+Push operation to the \gls{is} are only propagated to the \gls{ls}, when the buffer
+capacity is exceeded. Pull operations are onle propagated, when the \gls{is} is empty.
+\Gls{stack} fluctuations within the buffer capacity are not visible to the \gls{ls}.
+
+The \gls{ls} is a region of the \gls{ram}, which is managed by the memory controller
+of the \gls{is}.
+
+\subsection{Return Stack Stack}
+\label{stacks:ps}
+
+The \gls{us} of the \gls{ps} has the capacity of one \gls{cell}. The \gls{is} and
+\gls{ls} are similar to the ones of the \gls{ps}.
