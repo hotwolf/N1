@@ -772,6 +772,78 @@ Two options are selectable:
       \texttt{0x0460}
     }} \\ \hline
 
+    %RDROP
+    \texttt{RDROP} &
+    ( R: x -- ) &
+    \multicolumn{1}{m{21.35em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);%
+        %\draw [line width=1ex, --] (1,0.5) -- (2,0.5);              %
+        \draw [thick, fill=gray!3]  (2,0) rectangle (4,1);           %PS+3
+        %\draw [line width=1ex, --] (4,0.5) -- (5,0.5);              %
+        \draw [thick, fill=gray!3]  (5,0) rectangle (7,1);           %PS+2
+        %\draw [line width=1ex, --] (7,0.5) -- (8,0.5);              %
+        \draw [thick, fill=gray!3]  (8,0) rectangle (10,1);          %PS+1
+        %\draw [line width=1ex, --] (10,0.5) -- (11,0.5);            %
+        \draw [thick, fill=gray!3]  (11,0) rectangle (13,1);         %PS TOS
+        \node at (12,0.45)          {\Large{\textbf{TOS}}};          %
+        %\draw [line width=1ex, --] (13,0.5)  -- (14.5,0.5);         %
+        \draw [dotted]              (13.75,0) -- (13.75,1.2);        %
+        \draw [thick, fill=gray!24] (14.5,0) rectangle (16.5,1);     %RS TOS
+        \node at (15.5,0.45)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (16.5,0.5) -- (17.5,0.5);        % 
+        \draw [thick, fill=gray!24] (18.5,0) -- (17.5,0) -- (17.5,1) -- (18.5,1);
+       \end{tikzpicture}
+    }} &
+    \texttt{0x0001} \\ \hline     
+
+    %RDUP
+    \texttt{RDUP} &
+    ( R: x -- x x ) &
+    \multicolumn{1}{m{21.35em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);%
+        %\draw [line width=1ex, --] (1,2)   -- (2,2);                %
+        \draw [thick, fill=gray!3]  (2,1.5) rectangle (4,2.5);       %PS+3
+        %\draw [line width=1ex, --] (4,2)   -- (5,2);                %
+        \draw [thick, fill=gray!3]  (5,1.5) rectangle (7,2.5);       %PS+2
+        %\draw [line width=1ex, --] (7,2)   -- (8,2);                %
+        \draw [thick, fill=gray!3]  (8,1.5) rectangle (10,2.5);      %PS+1
+        %\draw [line width=1ex, --] (10,2) -- (11,2);                %
+        \draw [thick, fill=gray!3]  (11,1.5) rectangle (13,2.5);     %PS TOS
+        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <->] (13,2)  -- (14.5,2);             %
+        \draw [dotted]              (13.75,1.5) -- (13.75,2.7);      %
+        \draw [thick, fill=gray!24] (14.5,1.5) rectangle (16.5,2.5); %RS TOS
+        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (16.5,2) -- (17.5,2);            % 
+        \draw [thick, fill=gray!24] (18.5,1.5) -- (17.5,1.5) -- (17.5,2.5) -- (18.5,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);%
+        %\draw [line width=1ex, --] (1,0.5) -- (2,0.5);              %
+        \draw [thick, fill=gray!3]  (2,0) rectangle (4,1);           %PS+3
+        %\draw [line width=1ex, --] (4,0.5) -- (5,0.5);              %
+        \draw [thick, fill=gray!3]  (5,0) rectangle (7,1);           %PS+2
+        %\draw [line width=1ex, --] (7,0.5) -- (8,0.5);              %
+        \draw [thick, fill=gray!3]  (8,0) rectangle (10,1);          %PS+1
+        %\draw [line width=1ex, --] (10,0.5) -- (11,0.5);            %
+        \draw [thick, fill=gray!3]  (11,0) rectangle (13,1);         %PS TOS
+        \node at (12,0.45)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <->] (13,0.5)  -- (14.5,0.5);         %
+        \draw [dotted]              (13.75,0) -- (13.75,1.2);        %
+        \draw [thick, fill=gray!24] (14.5,0) rectangle (16.5,1);     %RS TOS
+        \node at (15.5,0.45)        {\Large{\textbf{TOS}}};          %
+        %\draw [line width=1ex, --] (16.5,0.5) -- (17.5,0.5);        % 
+      \end{tikzpicture}
+    }} &
+    \multicolumn{1}{m{4.25em}|}{
+    \makecell[c]{ 
+      \texttt{0x0007} \\ 
+      \texttt{0x0006}
+    }} \\ \hline
+
     %>R
     \texttt{>R} &
     \multicolumn{1}{m{18.3em}|}{
@@ -971,11 +1043,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
         %\draw [line width=1ex, --] (10,3.5)  -- (11,3.5);           %
         \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,3.5)  -- (14.5,3.5);         %
         \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
         \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,3.5) -- (17.5,3.5);        % 
         \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
 
@@ -1036,11 +1108,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,4.5) rectangle (10,5.5);      %PS+1
         %\draw [line width=1ex, --] (10,5)  -- (11,5);               %
         \draw [thick, fill=gray!3]  (11,4.5) rectangle (13,5.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,4.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,5)  -- (14.5,5);             %
         \draw [dotted]              (13.75,4.5) -- (13.75,5.7);      %
         \draw [thick, fill=gray!24] (14.5,4.5) rectangle (16.5,5.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,4.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,5) -- (17.5,5);            % 
         \draw [thick, fill=gray!24] (18.5,4.5) -- (17.5,4.5) -- (17.5,5.5) -- (18.5,5.5);
 
@@ -1053,11 +1125,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
         %\draw [line width=1ex, --] (10,3.5)  -- (11,3.5);           %
         \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,3.5)  -- (14.5,3.5);         %
         \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
         \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,3.5) -- (17.5,3.5);        % 
         \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
 
@@ -1098,10 +1170,10 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x0780} \\ 
+      \texttt{0x0460} \\ 
+      \texttt{0x0798} \\ 
+      \texttt{0x0460}
     }} \\ \hline
 
     %2NIP
@@ -1147,8 +1219,8 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x06A0} \\ 
+      \texttt{0x06A0}
     }} \\ \hline
 
     %2TUCK
@@ -1166,11 +1238,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,7.5) rectangle (10,8.5);      %PS+1
         \draw [line width=1ex, ->]  (10,8)  -- (11,8);               %
         \draw [thick, fill=gray!3]  (11,7.5) rectangle (13,8.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,7.95)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (13,8)  -- (14.5,8);             %
         \draw [dotted]              (13.75,7.5) -- (13.75,8.7);      %
         \draw [thick, fill=gray!24] (14.5,7.5) rectangle (16.5,8.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,7.95)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,8) -- (17.5,8);            % 
         \draw [thick, fill=gray!24] (18.5,7.5) -- (17.5,7.5) -- (17.5,8.5) -- (18.5,8.5);
 
@@ -1183,11 +1255,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,6) rectangle (10,7);          %PS+1
         %\draw [line width=1ex, --] (10,6.5)  -- (11,6.5);           %
         \draw [thick, fill=gray!3]  (11,6) rectangle (13,7);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,6.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <->] (13,6.5)  -- (14.5,6.5);         %
         \draw [dotted]              (13.75,6) -- (13.75,7.2);        %
         \draw [thick, fill=gray!24] (14.5,6) rectangle (16.5,7);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,6.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,6.5) -- (17.5,6.5);         % 
         \draw [thick, fill=gray!24] (18.5,6)   -- (17.5,6) -- (17.5,7) -- (18.5,7);
 
@@ -1200,11 +1272,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,4.5) rectangle (10,5.5);      %PS+1
         \draw [line width=1ex, <->] (10,5)  -- (11,5);               %
         \draw [thick, fill=gray!3]  (11,4.5) rectangle (13,5.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,4.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,5)  -- (14.5,5);             %
         \draw [dotted]              (13.75,4.5) -- (13.75,5.7);      %
         \draw [thick, fill=gray!24] (14.5,4.5) rectangle (16.5,5.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,4.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,5) -- (17.5,5);            % 
         \draw [thick, fill=gray!24] (18.5,4.5) -- (17.5,4.5) -- (17.5,5.5) -- (18.5,5.5);
 
@@ -1217,11 +1289,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
         %\draw [line width=1ex, --] (10,3.5)  -- (11,3.5);           %
         \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,3.5)  -- (14.5,3.5);         %
         \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
         \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,3.5) -- (17.5,3.5);        % 
         \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
 
@@ -1262,12 +1334,12 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x046B} \\ 
+      \texttt{0x0487} \\ 
+      \texttt{0x0418} \\ 
+      \texttt{0x0460} \\ 
+      \texttt{0x0755} \\ 
+      \texttt{0x0755}
     }} \\ \hline
 
     %2ROT
@@ -1285,11 +1357,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,12) rectangle (10,13);        %PS+1
         \draw [line width=1ex, ->]  (10,12.5)  -- (11,12.5);         %
         \draw [thick, fill=gray!3]  (11,12) rectangle (13,13);       %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,12.45)         {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (13,12.5)  -- (14.5,12.5);       %
         \draw [dotted]              (13.75,12) -- (13.75,13.2);      %
         \draw [thick, fill=gray!24] (14.5,12) rectangle (16.5,13);   %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,12.45)       {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,12.5) -- (17.5,12.5);      % 
         \draw [thick, fill=gray!24] (18.5,12)   -- (17.5,12) -- (17.5,13) -- (18.5,13);
 
@@ -1302,11 +1374,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,10.5) rectangle (10,11.5);    %PS+1
         %\draw [line width=1ex, --] (10,11)  -- (11,11);             %
         \draw [thick, fill=gray!3]  (11,10.5) rectangle (13,11.5);   %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,10.95)         {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,11)  -- (14.5,11);           %
         \draw [dotted]              (13.75,10.5) -- (13.75,11.7);    %
         \draw [thick, fill=gray!24] (14.5,10.5) rectangle (16.5,11.5);%RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,10.95)       {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,11) -- (17.5,11);          % 
         \draw [thick, fill=gray!24] (18.5,10.5) -- (17.5,10.5) -- (17.5,11.5) -- (18.5,11.5);
 
@@ -1319,11 +1391,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,9) rectangle (10,10);         %PS+1
         \draw [line width=1ex, ->]  (10,9.5)  -- (11,9.5);           %
         \draw [thick, fill=gray!3]  (11,9) rectangle (13,10);        %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,9.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (13,9.5)  -- (14.5,9.5);         %
         \draw [dotted]              (13.75,9) -- (13.75,10.2);       %
         \draw [thick, fill=gray!24] (14.5,9) rectangle (16.5,10);    %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,9.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,9.5) -- (17.5,9.5);        % 
         \draw [thick, fill=gray!24] (18.5,9)   -- (17.5,9) -- (17.5,10) -- (18.5,10);
 
@@ -1336,28 +1408,28 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,7.5) rectangle (10,8.5);      %PS+1
         \draw [line width=1ex, <->] (10,8)  -- (11,8);               %
         \draw [thick, fill=gray!3]  (11,7.5) rectangle (13,8.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,7.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,8)  -- (14.5,8);             %
         \draw [dotted]              (13.75,7.5) -- (13.75,8.7);      %
         \draw [thick, fill=gray!24] (14.5,7.5) rectangle (16.5,8.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,7.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,8) -- (17.5,8);            % 
         \draw [thick, fill=gray!24] (18.5,7.5) -- (17.5,7.5) -- (17.5,8.5) -- (18.5,8.5);
 
         \draw [thick, fill=gray!3]  (0,6) -- (1,6) -- (1,7) -- (0,7);%
-        \draw [line width=1ex, <-] (1,6.5)   -- (2,6.5);             %
+        \draw [line width=1ex, <-]  (1,6.5)   -- (2,6.5);            %
         \draw [thick, fill=gray!3]  (2,6) rectangle (4,7);           %PS+3
-        \draw [line width=1ex, <-] (4,6.5)   -- (5,6.5);             %
+        \draw [line width=1ex, <-]  (4,6.5)   -- (5,6.5);            %
         \draw [thick, fill=gray!3]  (5,6) rectangle (7,7);           %PS+2
-        \draw [line width=1ex, <-] (7,6.5)   -- (8,6.5);             %
+        \draw [line width=1ex, <-]  (7,6.5)   -- (8,6.5);            %
         \draw [thick, fill=gray!3]  (8,6) rectangle (10,7);          %PS+1
-        \draw [line width=1ex, <-] (10,6.5)  -- (11,6.5);            %
+        \draw [line width=1ex, <-]  (10,6.5)  -- (11,6.5);           %
         \draw [thick, fill=gray!3]  (11,6) rectangle (13,7);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
-        \draw [line width=1ex, <-] (13,6.5)  -- (14.5,6.5);          %
+        \node at (12,6.45)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (13,6.5)  -- (14.5,6.5);         %
         \draw [dotted]              (13.75,6) -- (13.75,7.2);        %
         \draw [thick, fill=gray!24] (14.5,6) rectangle (16.5,7);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,6.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <-]  (16.5,6.5) -- (17.5,6.5);        % 
         \draw [thick, fill=gray!24] (18.5,6)   -- (17.5,6) -- (17.5,7) -- (18.5,7);
 
@@ -1370,11 +1442,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,4.5) rectangle (10,5.5);      %PS+1
         \draw [line width=1ex, <->] (10,5)  -- (11,5);               %
         \draw [thick, fill=gray!3]  (11,4.5) rectangle (13,5.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,4.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,5)  -- (14.5,5);             %
         \draw [dotted]              (13.75,4.5) -- (13.75,5.7);      %
         \draw [thick, fill=gray!24] (14.5,4.5) rectangle (16.5,5.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,4.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,5) -- (17.5,5);            % 
         \draw [thick, fill=gray!24] (18.5,4.5) -- (17.5,4.5) -- (17.5,5.5) -- (18.5,5.5);
 
@@ -1387,11 +1459,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
         \draw [line width=1ex, <-]  (10,3.5)  -- (11,3.5);           %
         \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <-]  (13,3.5)  -- (14.5,3.5);         %
         \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
         \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <-]  (16.5,3.5) -- (17.5,3.5);        % 
         \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
 
@@ -1432,15 +1504,15 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x06AB} \\ 
+      \texttt{0x0580} \\ 
+      \texttt{0x06AB} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x0755} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x0755} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x0460}
     }} \\ \hline
 
     %-2ROT
@@ -1458,11 +1530,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,12) rectangle (10,13);        %PS+1
         %\draw [line width=1ex, --] (10,12.5)  -- (11,12.5);         %
         \draw [thick, fill=gray!3]  (11,12) rectangle (13,13);       %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,12.45)         {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,12.5)  -- (14.5,12.5);       %
         \draw [dotted]              (13.75,12) -- (13.75,13.2);      %
         \draw [thick, fill=gray!24] (14.5,12) rectangle (16.5,13);   %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,12.45)       {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,12.5) -- (17.5,12.5);      % 
         \draw [thick, fill=gray!24] (18.5,12)   -- (17.5,12) -- (17.5,13) -- (18.5,13);
 
@@ -1475,11 +1547,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,10.5) rectangle (10,11.5);    %PS+1
         \draw [line width=1ex, <->] (10,11)  -- (11,11);             %
         \draw [thick, fill=gray!3]  (11,10.5) rectangle (13,11.5);   %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,10.95)         {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,11)  -- (14.5,11);           %
         \draw [dotted]              (13.75,10.5) -- (13.75,11.7);    %
         \draw [thick, fill=gray!24] (14.5,10.5) rectangle (16.5,11.5);%RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,10.95)       {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,11) -- (17.5,11);          % 
         \draw [thick, fill=gray!24] (18.5,10.5) -- (17.5,10.5) -- (17.5,11.5) -- (18.5,11.5);
 
@@ -1492,11 +1564,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,9) rectangle (10,10);         %PS+1
         \draw [line width=1ex, ->]  (10,9.5)  -- (11,9.5);           %
         \draw [thick, fill=gray!3]  (11,9) rectangle (13,10);        %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,9.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (13,9.5)  -- (14.5,9.5);         %
         \draw [dotted]              (13.75,9) -- (13.75,10.2);       %
         \draw [thick, fill=gray!24] (14.5,9) rectangle (16.5,10);    %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,9.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,9.5) -- (17.5,9.5);        % 
         \draw [thick, fill=gray!24] (18.5,9)   -- (17.5,9) -- (17.5,10) -- (18.5,10);
 
@@ -1509,11 +1581,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,7.5) rectangle (10,8.5);      %PS+1
         \draw [line width=1ex, <->] (10,8)  -- (11,8);               %
         \draw [thick, fill=gray!3]  (11,7.5) rectangle (13,8.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,7.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,8)  -- (14.5,8);             %
         \draw [dotted]              (13.75,7.5) -- (13.75,8.7);      %
         \draw [thick, fill=gray!24] (14.5,7.5) rectangle (16.5,8.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,7.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,8) -- (17.5,8);            % 
         \draw [thick, fill=gray!24] (18.5,7.5) -- (17.5,7.5) -- (17.5,8.5) -- (18.5,8.5);
 
@@ -1526,11 +1598,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,6) rectangle (10,7);          %PS+1
         \draw [line width=1ex, ->] (10,6.5)  -- (11,6.5);            %
         \draw [thick, fill=gray!3]  (11,6) rectangle (13,7);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,6.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->] (13,6.5)  -- (14.5,6.5);          %
         \draw [dotted]              (13.75,6) -- (13.75,7.2);        %
         \draw [thick, fill=gray!24] (14.5,6) rectangle (16.5,7);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,6.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, ->]  (16.5,6.5) -- (17.5,6.5);        % 
         \draw [thick, fill=gray!24] (18.5,6)   -- (17.5,6) -- (17.5,7) -- (18.5,7);
 
@@ -1543,11 +1615,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,4.5) rectangle (10,5.5);      %PS+1
         \draw [line width=1ex, <->] (10,5)  -- (11,5);               %
         \draw [thick, fill=gray!3]  (11,4.5) rectangle (13,5.5);     %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,4.95)          {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (13,5)  -- (14.5,5);             %
         \draw [dotted]              (13.75,4.5) -- (13.75,5.7);      %
         \draw [thick, fill=gray!24] (14.5,4.5) rectangle (16.5,5.5); %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,4.95)        {\Large{\textbf{TOS}}};          %
         %\draw [line width=1ex, --] (16.5,5) -- (17.5,5);            % 
         \draw [thick, fill=gray!24] (18.5,4.5) -- (17.5,4.5) -- (17.5,5.5) -- (18.5,5.5);
 
@@ -1560,11 +1632,11 @@ Two options are selectable:
         \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
         \draw [line width=1ex, <-]  (10,3.5)  -- (11,3.5);           %
         \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
-        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <-]  (13,3.5)  -- (14.5,3.5);         %
         \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
         \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
-        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
         \draw [line width=1ex, <-]  (16.5,3.5) -- (17.5,3.5);        % 
         \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
 
@@ -1605,15 +1677,145 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x0460} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x06AB} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x06AB} \\ 
+      \texttt{0x0598} \\ 
+      \texttt{0x0755} \\ 
+      \texttt{0x0018} \\ 
+      \texttt{0x0755}
+    }} \\ \hline
+
+    %2RDROP
+    \texttt{2RDROP} &
+      ( R: x1 x2 -- ) &
+    \multicolumn{1}{m{21.35em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);%
+        %\draw [line width=1ex, --] (1,2)   -- (2,2);                %
+        \draw [thick, fill=gray!3]  (2,1.5) rectangle (4,2.5);       %PS+3
+        %\draw [line width=1ex, --] (4,2)   -- (5,2);                %
+        \draw [thick, fill=gray!3]  (5,1.5) rectangle (7,2.5);       %PS+2
+        %\draw [line width=1ex, --] (7,2)   -- (8,2);                %
+        \draw [thick, fill=gray!3]  (8,1.5) rectangle (10,2.5);      %PS+1
+        %\draw [line width=1ex, --] (10,2)  -- (11,2);               %
+        \draw [thick, fill=gray!3]  (11,1.5) rectangle (13,2.5);     %PS TOS
+        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        %\draw [line width=1ex, --] (13,2)  -- (14.5,2);             %
+        \draw [dotted]              (13.75,1.5) -- (13.75,2.7);      %
+        \draw [thick, fill=gray!24] (14.5,1.5) rectangle (16.5,2.5); %RS TOS
+        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (16.5,2) -- (17.5,2);            % 
+        \draw [thick, fill=gray!24] (18.5,1.5) -- (17.5,1.5) -- (17.5,2.5) -- (18.5,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);%
+        %\draw [line width=1ex, --] (1,0.5) -- (2,0.5);              %
+        \draw [thick, fill=gray!3]  (2,0) rectangle (4,1);           %PS+3
+        %\draw [line width=1ex, --] (4,0.5) -- (5,0.5);              %
+        \draw [thick, fill=gray!3]  (5,0) rectangle (7,1);           %PS+2
+        %\draw [line width=1ex, --] (7,0.5) -- (8,0.5);              %
+        \draw [thick, fill=gray!3]  (8,0) rectangle (10,1);          %PS+1
+        %\draw [line width=1ex, --] (10,0.5) -- (11,0.5);            %
+        \draw [thick, fill=gray!3]  (11,0) rectangle (13,1);         %PS TOS
+        \node at (12,0.45)          {\Large{\textbf{TOS}}};          %
+        %\draw [line width=1ex, --] (13,0.5)  -- (14.5,0.5);         %
+        \draw [dotted]              (13.75,0) -- (13.75,1.2);        %
+        \draw [thick, fill=gray!24] (14.5,0) rectangle (16.5,1);     %RS TOS
+        \node at (15.5,0.45)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (16.5,0.5) -- (17.5,0.5);        % 
+        \draw [thick, fill=gray!24] (18.5,0) -- (17.5,0) -- (17.5,1) -- (18.5,1);
+      \end{tikzpicture}
+    }} &
+    \multicolumn{1}{m{4.25em}|}{
+    \makecell[c]{ 
+      \texttt{0x0001} \\ 
+      \texttt{0x0001}
+    }} \\ \hline
+
+    %2RDUP
+    \texttt{2RDUP} &
+    ( R: x1 x2 -- x1 x1 x1 x2 ) &
+    \multicolumn{1}{m{21.35em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \draw [thick, fill=gray!3]  (0,4.5) -- (1,4.5) -- (1,5.5) -- (0,5.5);%
+        \draw [line width=1ex, <-]  (1,5)   -- (2,5);                %
+        \draw [thick, fill=gray!3]  (2,4.5) rectangle (4,5.5);       %PS+3
+        \draw [line width=1ex, <-]  (4,5)   -- (5,5);                %
+        \draw [thick, fill=gray!3]  (5,4.5) rectangle (7,5.5);       %PS+2
+        \draw [line width=1ex, <-]  (7,5)   -- (8,5);                %
+        \draw [thick, fill=gray!3]  (8,4.5) rectangle (10,5.5);      %PS+1
+        \draw [line width=1ex, <-]  (10,5)  -- (11,5);               %
+        \draw [thick, fill=gray!3]  (11,4.5) rectangle (13,5.5);     %PS TOS
+        \node at (12,4.95)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (13,5)  -- (14.5,5);             %
+        \draw [dotted]              (13.75,4.5) -- (13.75,5.7);      %
+        \draw [thick, fill=gray!24] (14.5,4.5) rectangle (16.5,5.5); %RS TOS
+        \node at (15.5,4.95)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <-]  (16.5,5) -- (17.5,5);            % 
+        \draw [thick, fill=gray!24] (18.5,4.5) -- (17.5,4.5) -- (17.5,5.5) -- (18.5,5.5);
+
+        \draw [thick, fill=gray!3]  (0,3) -- (1,3) -- (1,4) -- (0,4);%
+        \draw [line width=1ex, <-]  (1,3.5)   -- (2,3.5);            %
+        \draw [thick, fill=gray!3]  (2,3) rectangle (4,4);           %PS+3
+        \draw [line width=1ex, <-]  (4,3.5)   -- (5,3.5);            %
+        \draw [thick, fill=gray!3]  (5,3) rectangle (7,4);           %PS+2
+        \draw [line width=1ex, <-]  (7,3.5)   -- (8,3.5);            %
+        \draw [thick, fill=gray!3]  (8,3) rectangle (10,4);          %PS+1
+        \draw [line width=1ex, <-]  (10,3.5)  -- (11,3.5);           %
+        \draw [thick, fill=gray!3]  (11,3) rectangle (13,4);         %PS TOS
+        \node at (12,3.45)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, <->] (13,3.5)  -- (14.5,3.5);         %
+        \draw [dotted]              (13.75,3) -- (13.75,4.2);        %
+        \draw [thick, fill=gray!24] (14.5,3) rectangle (16.5,4);     %RS TOS
+        \node at (15.5,3.45)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (16.5,3.5) -- (17.5,3.5);        % 
+        \draw [thick, fill=gray!24] (18.5,3)   -- (17.5,3) -- (17.5,4) -- (18.5,4);
+
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);%
+        \draw [line width=1ex, ->]  (1,2)   -- (2,2);                %
+        \draw [thick, fill=gray!3]  (2,1.5) rectangle (4,2.5);       %PS+3
+        \draw [line width=1ex, ->]  (4,2)   -- (5,2);                %
+        \draw [thick, fill=gray!3]  (5,1.5) rectangle (7,2.5);       %PS+2
+        \draw [line width=1ex, ->]  (7,2)   -- (8,2);                %
+        \draw [thick, fill=gray!3]  (8,1.5) rectangle (10,2.5);      %PS+1
+        \draw [line width=1ex, ->]  (10,2)  -- (11,2);               %
+        \draw [thick, fill=gray!3]  (11,1.5) rectangle (13,2.5);     %PS TOS
+        \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (13,2)  -- (14.5,2);             %
+        \draw [dotted]              (13.75,1.5) -- (13.75,2.7);      %
+        \draw [thick, fill=gray!24] (14.5,1.5) rectangle (16.5,2.5); %RS TOS
+        \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (16.5,2) -- (17.5,2);            % 
+        \draw [thick, fill=gray!24] (18.5,1.5) -- (17.5,1.5) -- (17.5,2.5) -- (18.5,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);%
+        \draw [line width=1ex, ->]  (1,0.5) -- (2,0.5);              %
+        \draw [thick, fill=gray!3]  (2,0) rectangle (4,1);           %PS+3
+        \draw [line width=1ex, ->]  (4,0.5) -- (5,0.5);              %
+        \draw [thick, fill=gray!3]  (5,0) rectangle (7,1);           %PS+2
+        \draw [line width=1ex, ->]  (7,0.5) -- (8,0.5);              %
+        \draw [thick, fill=gray!3]  (8,0) rectangle (10,1);          %PS+1
+        \draw [line width=1ex, ->]  (10,0.5) -- (11,0.5);            %
+        \draw [thick, fill=gray!3]  (11,0) rectangle (13,1);         %PS TOS
+        \node at (12,0.45)          {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (13,0.5)  -- (14.5,0.5);         %
+        \draw [dotted]              (13.75,0) -- (13.75,1.2);        %
+        \draw [thick, fill=gray!24] (14.5,0) rectangle (16.5,1);     %RS TOS
+        \node at (15.5,0.45)        {\Large{\textbf{TOS}}};          %
+        \draw [line width=1ex, ->]  (16.5,0.5) -- (17.5,0.5);        % 
+        \draw [thick, fill=gray!24] (18.5,0) -- (17.5,0) -- (17.5,1) -- (18.5,1);
+      \end{tikzpicture}
+    }} &
+    \multicolumn{1}{m{4.25em}|}{
+    \makecell[c]{ 
+      \texttt{0x0755} \\ 
+      \texttt{0x0757} \\ 
+      \texttt{0x06AB} \\ 
+      \texttt{0x06AB}
     }} \\ \hline
 
     %2>R
@@ -1636,11 +1838,11 @@ Two options are selectable:
         \draw [line width=1ex, ->]  (10,2)  -- (11,2);               %
         \draw [thick, fill=gray!3]  (11,1.5) rectangle (13,2.5);     %PS TOS
         \node at (12,1.95)          {\Large{\textbf{TOS}}};          %
-        \draw [line width=1ex, ->] (13,2)  -- (14.5,2);             %
+        \draw [line width=1ex, ->]  (13,2)  -- (14.5,2);             %
         \draw [dotted]              (13.75,1.5) -- (13.75,2.7);      %
         \draw [thick, fill=gray!24] (14.5,1.5) rectangle (16.5,2.5); %RS TOS
         \node at (15.5,1.95)        {\Large{\textbf{TOS}}};          %
-        \draw [line width=1ex, ->] (16.5,2) -- (17.5,2);            % 
+        \draw [line width=1ex, ->]  (16.5,2) -- (17.5,2);            % 
         \draw [thick, fill=gray!24] (18.5,1.5) -- (17.5,1.5) -- (17.5,2.5) -- (18.5,2.5);
 
         \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);%
@@ -1653,11 +1855,11 @@ Two options are selectable:
         \draw [line width=1ex, ->]  (10,0.5) -- (11,0.5);            %
         \draw [thick, fill=gray!3]  (11,0) rectangle (13,1);         %PS TOS
         \node at (12,0.45)          {\Large{\textbf{TOS}}};          %
-        \draw [line width=1ex, ->] (13,0.5)  -- (14.5,0.5);         %
+        \draw [line width=1ex, ->]  (13,0.5)  -- (14.5,0.5);         %
         \draw [dotted]              (13.75,0) -- (13.75,1.2);        %
         \draw [thick, fill=gray!24] (14.5,0) rectangle (16.5,1);     %RS TOS
         \node at (15.5,0.45)        {\Large{\textbf{TOS}}};          %
-        \draw [line width=1ex, ->] (16.5,0.5) -- (17.5,0.5);        % 
+        \draw [line width=1ex, ->]  (16.5,0.5) -- (17.5,0.5);        % 
         \draw [thick, fill=gray!24] (18.5,0) -- (17.5,0) -- (17.5,1) -- (18.5,1);
       \end{tikzpicture}
     }} &
