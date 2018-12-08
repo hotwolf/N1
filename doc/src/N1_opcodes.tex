@@ -120,7 +120,7 @@ of the instructuion encoding.
         \node         at (5.5,13)     {\huge{\texttt{1}}};   
         \node         at (6.5,12.95)  {\small{R/\textoverline{W}}};   
         \node         at (12,12.95)   {\LARGE{10-bit register address}};
-        \node [right] at (17.2,13)    {\large{Register access}};
+        \node [right] at (17.2,13)    {\large{Immediate I/O}};
         
         %Stack operation 
         \node at (1,10.5) {\usebox{\instruction}};
@@ -154,11 +154,11 @@ of the instructuion encoding.
             }
         \end{minipage}};
             
-        %ALU operation (n -- n) 
+        %ALU operation ( x --  x ) 
         \node at (1,6.5) {\usebox{\instruction}};
         \node         at (1.5,7)      {\huge{\texttt{;}}};
-        \draw [thick] (2,6.5) rectangle (10,7.5); 
-        \draw [thick] (10,6.5) rectangle (13,7.5); 
+        \draw [thick] (2,6.5) rectangle (9,7.5); 
+        \draw [thick] (9,6.5) rectangle (13,7.5); 
         \node         at (2.5,7)      {\huge{\texttt{0}}};
         \node         at (3.5,7)      {\huge{\texttt{0}}};
         \node         at (4.5,7)      {\huge{\texttt{0}}};
@@ -166,21 +166,21 @@ of the instructuion encoding.
         \node         at (6.5,7)      {\huge{\texttt{0}}};   
         \node         at (7.5,7)      {\huge{\texttt{0}}};   
         \node         at (8.5,7)      {\huge{\texttt{1}}};   
-        \node         at (9.5,7)      {\huge{\texttt{1}}};   
-        \node         at (11.5,6.95)  {\LARGE{Operator}};
-        \node         at (15,6.95)    {\LARGE{Operand}};
+        \node         at (11,6.95)    {\LARGE{Operator}};
+        \node         at (15,6.95)    {\LARGE{Operand $\neq 0$}};
         \node [right] at (17.2,7) {
           \begin{minipage}[l]{10em}
             \large{
               ALU operation \\
-              (n -- n)
+              ( x --  x )
             }
         \end{minipage}};
                
-        %ALU operation (n n -- n) 
+        %ALU operation ( x x -- x ) 
         \node at (1,4.5) {\usebox{\instruction}};
         \node         at (1.5,5)      {\huge{\texttt{;}}};
-        \draw [thick] (2,4.5) rectangle (10,5.5); 
+        \draw [thick] (2,4.5)  rectangle (9,5.5); 
+        \draw [thick] (9,4.5) rectangle (13,5.5); 
         \node         at (2.5,5)      {\huge{\texttt{0}}};
         \node         at (3.5,5)      {\huge{\texttt{0}}};
         \node         at (4.5,5)      {\huge{\texttt{0}}};
@@ -188,21 +188,24 @@ of the instructuion encoding.
         \node         at (6.5,5)      {\huge{\texttt{0}}};   
         \node         at (7.5,5)      {\huge{\texttt{0}}};   
         \node         at (8.5,5)      {\huge{\texttt{1}}};   
-        \node         at (9.5,5)      {\huge{\texttt{0}}};   
-        \node         at (13.5,4.95)  {\LARGE{Operator}};
+        \node         at (11,4.95)    {\LARGE{Operator}};
+        \node         at (13.5,5)     {\huge{\texttt{0}}};   
+        \node         at (14.5,5)     {\huge{\texttt{0}}};   
+        \node         at (15.5,5)     {\huge{\texttt{0}}};   
+        \node         at (16.5,5)     {\huge{\texttt{0}}};   
         \node [right] at (17.2,5) {
           \begin{minipage}[l]{10em}
             \large{
               ALU operation \\
-              (n n - n)
+              ( x x - x )
             }
         \end{minipage}};
             
-        %ALU operation (n -- n n)
+        %ALU operation ( x -- x x )
         \node at (1,2.5) {\usebox{\instruction}};
         \node         at (1.5,3)      {\huge{\texttt{;}}};
-        \draw [thick] (2,2.5) rectangle (10,3.5); 
-        \draw [thick] (10,2.5) rectangle (13,3.5); 
+        \draw [thick] (2,2.5) rectangle (9,3.5); 
+        \draw [thick] (9,2.5) rectangle (13,3.5); 
         \node         at (2.5,3)      {\huge{\texttt{0}}};
         \node         at (3.5,3)      {\huge{\texttt{0}}};
         \node         at (4.5,3)      {\huge{\texttt{0}}};
@@ -210,21 +213,21 @@ of the instructuion encoding.
         \node         at (6.5,3)      {\huge{\texttt{0}}};   
         \node         at (7.5,3)      {\huge{\texttt{0}}};   
         \node         at (8.5,3)      {\huge{\texttt{0}}};   
-        \node         at (9.5,3)      {\huge{\texttt{1}}};   
-        \node         at (11.5,2.95)  {\LARGE{Operator}};
-        \node         at (15,2.95)    {\LARGE{Operand}};
-        \node [right] at (17.2,3)   {
+        \node         at (11,2.95)    {\LARGE{Operator}};
+        \node         at (15,2.95)    {\LARGE{Operand $\neq 0$}};
+        \node [right] at (17.2,3) {
           \begin{minipage}[l]{10em}
             \large{
               ALU operation \\
-              (n -- n n)
+              ( x -- x x )
             }
         \end{minipage}};
                
-        %ALU operation (n n -- n n)
+        %ALU operation ( x x -- x x )
         \node at (1,0.5) {\usebox{\instruction}};
         \node         at (1.5,1)      {\huge{\texttt{;}}};
-        \draw [thick] (2,0.5) rectangle (10,1.5); 
+        \draw [thick] (2,0.5) rectangle (9,1.5); 
+        \draw [thick] (9,0.5) rectangle (13,1.5); 
         \node         at (2.5,1)      {\huge{\texttt{0}}};
         \node         at (3.5,1)      {\huge{\texttt{0}}};
         \node         at (4.5,1)      {\huge{\texttt{0}}};
@@ -232,13 +235,16 @@ of the instructuion encoding.
         \node         at (6.5,1)      {\huge{\texttt{0}}};   
         \node         at (7.5,1)      {\huge{\texttt{0}}};   
         \node         at (8.5,1)      {\huge{\texttt{0}}};   
-        \node         at (9.5,1)      {\huge{\texttt{0}}};   
-        \node         at (13.5,0.95)  {\LARGE{Operator}};
+        \node         at (11,0.95)    {\LARGE{Operator}};
+        \node         at (13.5,1)     {\huge{\texttt{0}}};   
+        \node         at (14.5,1)     {\huge{\texttt{0}}};   
+        \node         at (15.5,1)     {\huge{\texttt{0}}};   
+        \node         at (16.5,1)     {\huge{\texttt{0}}};   
         \node [right] at (17.2,1) {
           \begin{minipage}[l]{10em}
             \large{
               ALU operation \\
-              (n n - n n)
+              ( x x - x x )
             }
         \end{minipage}};
 

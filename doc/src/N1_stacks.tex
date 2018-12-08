@@ -26,24 +26,78 @@
 \label{stacks}
 
 The N1 operates with two stacks: the \gls{ps} to perform data transactions and the
-\gls{rs} to manage the program flow. As illustrated in \figref{stacks:fg}, each of
+\gls{rs} to manage the program flow. As illustrated in \figref{stacks:fig}, each of
 these stacks consists of three hardware components: the \gls{us}, the \gls{is},
 and the \gls{ls}.
 
 \begin{figure}[!h]
-  %\begin{center}
+  \begin{center}
   \makebox[\textwidth][c]{
     \scalebox{1} {
       \begin{tikzpicture}
-      
-        \node at (1,1) {\Huge{TBD}};
 
-      \end{tikzpicture}
+        %Common  stack structure
+        \newsavebox{\comstastruc}
+        \savebox{\comstastruc}{
+          %RAM
+          \draw [thick, fill=gray!3] (2.5,0) rectangle (4.5,2);
+          \node at (3.5,1) {\huge{RAM}};
+          %RAM controller
+          \draw [thick, fill=gray!3] (2.5,2.5) rectangle (4.5,3.5);
+          \node at (3.5,3)   {
+            \begin{minipage}[c]{10em}
+              \begin{center}
+                \large{RAM}\\
+                \large{Controller}
+              \end{center}
+          \end{minipage}};
+          \draw [ultra thick, <->] (3.5,2.5) --  (3.5,2);
+          %Intermediate stack
+          \draw [thick, fill=gray!3, dotted](0,4)   rectangle (2,4.5);
+          \draw [thick, fill=gray!3]        (0,2.5) rectangle (2,3);
+          \draw [thick, fill=gray!3]        (0,3)   rectangle (2,3.5);
+          \draw [thick, fill=gray!3]        (0,3.5) rectangle (2,4);
+          \draw [thick, fill=gray!3]        (0,4.5) rectangle (2,5);
+          \draw [thick, fill=gray!3]        (0,5)   rectangle (2,5.5);
+          \draw [thick, fill=gray!3]        (0,5.5) rectangle (2,6);          
+          \draw [very thick, ->]            (2,2.75) --  (2.5,2.75);
+          \draw [very thick, <-]            (2,5.75) --  (3.5,5.75) -- (3.5,3.5);
+          %Upper stack
+          \draw [thick, fill=gray!3]        (0,6.5) rectangle (2,7);
+          \draw [ultra thick, <->] (1,6.5) -- (1,6);
+        }
+        %Lower stack
+        \draw [gray!12, fill=gray!12](0.5,0)   rectangle (12,2.7);
+        \node [rotate=90] at (0.25,1.35) {\large{Lower Stack}};
+
+        %Intermediate stack
+        \draw [gray!12, fill=gray!12](0.5,2.8) rectangle (12,6.7);
+        \node [rotate=90] at (0.25,4.75) {\large{Intermediate Stack}};
+
+        %Upper stack
+        \draw [gray!12, fill=gray!12](0.5,6.8) rectangle (12,9.2);
+        \node [rotate=90] at (0.25,8) {\large{Upper Stack}};
+
+        %Parameter stack
+        \node at (1,0.5) {\usebox{\comstastruc}};
+        \draw [thick, fill=gray!3]        (1,7.5) rectangle (3,8);
+        \draw [thick, fill=gray!3]        (1,8)   rectangle (3,8.5);
+        \draw [thick, fill=gray!3]        (1,8.5) rectangle (3,9);
+        \node at (2,8.75) {\large{TOS}};
+        \node at (3.25,9.5) {\large{Parameter Stack}};
+                
+        %Parameter stack
+        \node at (7,0.5) {\usebox{\comstastruc}};
+        \node at (8,7.25) {\large{TOS}};
+        \node at (9.25,9.5) {\large{Return Stack}};
+
+        
+       \end{tikzpicture}
     }
   }
-  \caption{Instruction encoding}
+  \caption{Stack Architecture}
   \label{stacks:fig}
-  %\end{center}
+  \end{center}
 \end{figure}
 
 \subsection{Parameter Stack}
