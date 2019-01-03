@@ -1,0 +1,85 @@
+%###############################################################################
+%# N1 - Manual - ANS Forth words                                               #
+%###############################################################################
+%#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
+%#    This file is part of the N1 project.                                     #
+%#                                                                             #
+%#    N1 is free software: you can redistribute it and/or modify               #
+%#    it under the terms of the GNU General Public License as published by     #
+%#    the Free Software Foundation, either version 3 of the License, or        #
+%#    (at your option) any later version.                                      #
+%#                                                                             #
+%#    N1 is distributed in the hope that it will be useful,                    #
+%#    but WITHOUT ANY WARRANTY; without even the implied warranty of           #
+%#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            #
+%#    GNU General Public License for more details.                             #
+%#                                                                             #
+%#    You should have received a copy of the GNU General Public License        #
+%#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
+%###############################################################################
+%# Version History:                                                            #
+%#   January 3, 2019                                                           #
+%#      - Initial release                                                      #
+%###############################################################################
+
+\section{ANS Forth Words}
+\label{N1_words}
+
+\tabref{words:list} provides a list of standard ANS Forth words (see \cite{dpans})
+which directly map to hardware instructions of the N1 processor.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{\Gls{alu} operations}
+    \label{words:list} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Word}}          &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Stack}}          &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}}  &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Opcode}} \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %!
+      !                                       &
+      ( x a-addr -- )                         &
+      Store cell                              &
+      \texttt{0000}                           \\ \hline
+                                              
+    %*                                        
+      *                                       &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
+      Multiply two cells                      &
+      \texttt{0000}                           \\ \hline
+                                              
+    %+                                        
+      +                                       &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
+      Add two cells                           &
+      \texttt{0000}                           \\ \hline
+                                              
+    %+                                        
+      -                                       &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
+      Subtract a cell from another.           &
+      \texttt{0000}                           \\ \hline
+                              
+    
+  \end{longtable}
+\end{center}  
+\endgroup
+

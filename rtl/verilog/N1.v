@@ -28,12 +28,10 @@
 `default_nettype none
 
 module N1
-  #(parameter  RST_ADR        = 'h0000,  //address of first instruction
-    parameter  CELL_WIDTH     = 16,      //width of a cell
-    localparam OPCODE_WIDTH   = 16,      //width of an opcode
-    parameter  PBUS_ADR_WIDTH = 14,      //address width of the program bus
-    parameter  DBUS_ADR_WIDTH = 16,      //address width of the data bus
-    parameter  SBUS_ADR_WIDTH =  8)      //address width of the stack bus
+  #(parameter   RST_ADR     = 'h0000,                        //address of first instruction
+    parameter   SP_WIDTH    =  8,                            //width of a stack pointer
+    localparam  CELL_WIDTH  = 16,                            //width of a cell
+    localparam  PC_WIDTH    = 14)                            //width of the program counter
 
    (//Clock and reset
     //---------------
@@ -45,12 +43,12 @@ module N1
     //-----------
     output wire                            pbus_cyc_o,       //bus cycle indicator       +-
     output wire                            pbus_stb_o,       //access request            | initiator to target
-    output wire [PBUS_ADR_WIDTH-1:0]       pbus_adr_o,       //address bus               +-
+    output wire [PC_WIDTH-1:0]             pbus_adr_o,       //address bus               +-
     input  wire                            pbus_ack_i,       //bus cycle acknowledge     +-
     input  wire                            pbus_err_i,       //error indicator           | target
     input  wire                            pbus_rty_i,       //retry request             | to
     input  wire                            pbus_stall_i,     //access delay              | initiator
-    input  wire [PBUS_DAT_WIDTH-1:0]       pbus_dat_i,       //read data bus             +-
+    input  wire [CELL_WIDTH-1:0]           pbus_dat_i,       //read data bus             +-
 
     //Data bus
     //--------
@@ -58,7 +56,7 @@ module N1
     output wire                            dbus_stb_o,       //access request            | initiator
     output wire                            dbus_we_o,        //write enable              | to	    
     output wire [(CELL_WIDTH/8)-1:0]       dbus_sel_o,       //write data selects        | target   
-    output wire [DBUS_ADR_WIDTH-1:0]       dbus_adr_o,       //address bus               |
+    output wire [CELL_WIDTH-1:0]           dbus_adr_o,       //address bus               |
     output wire [CELL_WIDTH-1:0]           dbus_dat_o,       //write data bus            +-
     input  wire                            dbus_ack_i,       //bus cycle acknowledge     +-
     input  wire                            dbus_err_i,       //error indicator           | target
@@ -71,7 +69,7 @@ module N1
     output wire                            sbus_cyc_o,       //bus cycle indicator       +-
     output wire                            sbus_stb_o,       //access request            | initiator
     output wire                            sbus_we_o,        //write enable              | to
-    output wire [SBUS_ADR_WIDTH-1:0]       sbus_adr_o,       //address bus               | target
+    output wire [SP_WIDTH-1:0]             sbus_adr_o,       //address bus               | target
     output wire [CELL_WIDTH-1:0]           sbus_dat_o,       //write data bus            +-
     input  wire                            sbus_ack_i,       //bus cycle acknowledge     +-
     input  wire                            sbus_err_i,       //error indicator           | target
@@ -82,26 +80,46 @@ module N1
     //Interrupt interface
     //-------------------
     output wire                            irq_ack_o,        //interrupt acknowledge           
-    input  wire [PBUS_ADR_WIDTH-1:0]       irq_vec_i,        //requested interrupt vector 
-
-    //Communication interface    
-    //-----------------------
-    output wire                            com_tx_req_o,     //TX request
-    output wire [COM_DAT_WIDTH-1:0]        com_tx_dat_o,     //TX data                      
-    input  wire                            com_rx_req_i,     //RX request
-    output wire [COM_DAT_WIDTH-1:0]        com_tx_dat_o,     //RX data                          
-    );
+    input  wire [PC_WIDTH-1:0]             irq_vec_i);       //requested interrupt vector 
 
 
    
-
-   //Main finite state machine
-   //-------------------------
+   //Internal Signals
+   //----------------
        
    
 
-   
 
+
+   //Flow control
+   //------------
+   N1_flowctrl 
+     #(.RST_ADR(RST_ADR)) 
+   N1_flowctrl
+   (//Clock and reset
+    //---------------
+    .clk_i		(clk_i),            //module clock
+    .async_rst_i	(async_rst_i),      //asynchronous reset
+    .sync_rst_i		(sync_rst_i),       //synchronous reset
+
+    //Program bus
+    //-----------
+    .pbus_cyc_o		(pbus_cyc_o),       //bus cycle indicator       +-
+    .pbus_stb_o		(pbus_stb_o),       //access request            | initiator to target
+    .pbus_adr_o		(pbus_adr_o),       //address bus               +-
+    .pbus_ack_i		(pbus_ack_i),       //bus cycle acknowledge     +-
+    .pbus_err_i		(pbus_err_i),       //error indicator           | target
+    .pbus_rty_i		(pbus_rty_i),       //retry request             | to
+    .pbus_stall_i	(pbus_stall_i),     //access delay              | initiator
+  //.pbus_dat_i		(pbus_dat_i),       //read data bus             +-
+   
+    //Interrupt interface
+    //-------------------
+    .irq_ack_o		(irq_ack_o),        //interrupt acknowledge           
+    .irq_vec_i		(irq_vec_i),       //requested interrupt vector 
+
+
+   
 
 
 endmodule // N1

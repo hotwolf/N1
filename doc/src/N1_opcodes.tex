@@ -1,7 +1,7 @@
 %###############################################################################
 %# N1 - Manual - Instruction set                                               #
 %###############################################################################
-%#    Copyright 2018 Dirk Heisswolf                                            #
+%#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 %#    This file is part of the N1 project.                                     #
 %#                                                                             #
 %#    N1 is free software: you can redistribute it and/or modify               #
@@ -29,10 +29,10 @@ The intent of the N1's instruction set is to map most of the essential Forth wor
 to single cycle instructions. \figref{opcodes:encoding} illustrates the basic structure
 of the instructuion encoding.
 
-\begin{figure}[!h]
+\begin{figure}[!htb]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.75} {
+    \scalebox{0.4375} {
       \begin{tikzpicture}
       
         %Instruction
@@ -59,195 +59,548 @@ of the instructuion encoding.
         };
 
         %Return bit
-        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,22.2);
-        \node [above] at (1.4,22.2) {
+        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,40.2);
+        \node [above] at (1.4,40.2) {
           \begin{minipage}[c]{10em}
             \begin{center}
               End of\\
               Word
             \end{center}
           \end{minipage}};
-      
+
+        %Change of flow instructions
+        \draw [thick] (21.5,39.5) -- (22.5,39.5) -- (22.5,28.5) -- (21.5,28.5);
+        \node [right] at (23,33.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Change \\
+              of Flow \\
+              Instructions
+            }
+           \end{minipage}};
+
         %Jump
-        \node at (1,20.5) {\usebox{\instruction}};
-        \node         at (1.5,21)     {\huge{\texttt{1}}};
-        \draw [thick] (2,20.5) rectangle (3,21.5);
-        \node         at (2.5,21)     {\huge{\texttt{1}}};
-        \node         at (10,20.95)   {\LARGE{14-bit absolute word address}};
-        \node [right] at (17.2,21)    {\large{Jump}};
-     
+        \begin{scope}[shift={(1,38.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{1}}};
+          \draw [thick] (1,0) rectangle  (2,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Jump \\
+                ( addr -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Jump
+        \begin{scope}[shift={(1,36.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{1}}};
+          \draw [thick] (1,0) rectangle  (2,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9,0.45)      {\LARGE{14-bit absolute word address $<$ 0x3FFF}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Jump \\
+                ( -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
         %Call
-        \node at (1,18.5) {\usebox{\instruction}};
-        \node         at (1.5,19)     {\huge{\texttt{0}}};
-        \draw [thick] (2,18.5) rectangle (3,19.5);
-        \node         at (2.5,19)     {\huge{\texttt{1}}};
-        \node         at (10,18.95)   {\LARGE{14-bit absolute word address}};
-        \node [right] at (17.2,19)    {\large{Call}};
-       
+        \begin{scope}[shift={(1,34.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{0}}};
+          \draw [thick] (1,0) rectangle  (2,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Call \\
+                ( addr0 -- ) (R: -- addr1 )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Call
+        \begin{scope}[shift={(1,32.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{0}}};
+          \draw [thick] (1,0) rectangle  (2,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9,0.45)      {\LARGE{14-bit absolute word address $<$ 0x3FFF}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Call \\
+                ( -- ) (R: -- addr )
+              }
+          \end{minipage}};
+        \end{scope}
+
         %Conditional Branch
-        \node at (1,16.5) {\usebox{\instruction}};
-        \node         at (1.5,17)     {\huge{\texttt{;}}};
-        \draw [thick] (2,16.5) rectangle (4,17.5); 
-        \node         at (2.5,17)     {\huge{\texttt{0}}};
-        \node         at (3.5,17)     {\huge{\texttt{1}}};
-        \node         at (10.5,16.95) {\LARGE{13-bit relative word address}};
-        \node [right] at (17.2,17) {
-          \begin{minipage}[l]{10em}
-            \large{
-              Conditional \\
-              branch
-            }
-        \end{minipage}};
+        \begin{scope}[shift={(1,30.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (3,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Conditional branch \\
+                ( flag addr -- )
+              }
+          \end{minipage}};
+        \end{scope}
         
+        %Conditional Branch
+        \begin{scope}[shift={(1,28.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (3,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.45)    {\LARGE{13-bit relative word address $<$ 0x1FFF}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Conditional branch \\
+               ( flag -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Literal instructions
+        \draw [thick] (21.5,26.5) -- (22.5,26.5) -- (22.5,27.5) -- (21.5,27.5);
+        \node [right] at (23,27) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Literals
+            }
+           \end{minipage}};
+
         %Literal 
-        \node at (1,14.5) {\usebox{\instruction}};
-        \node         at (1.5,15)     {\huge{\texttt{;}}};
-        \draw [thick] (2,14.5) rectangle (5,15.5); 
-        \node         at (2.5,15)     {\huge{\texttt{0}}};
-        \node         at (3.5,15)     {\huge{\texttt{0}}};
-        \node         at (4.5,15)     {\huge{\texttt{1}}};
-        \node         at (11,14.95)   {\LARGE{12-bit signed integer}};
-        \node [right] at (17.2,15)    {\large{Literal}};
+        \begin{scope}[shift={(1,26.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (4,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.45)    {\LARGE{12-bit signed integer}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Literals \\
+                ( -- n )
+              }
+          \end{minipage}};
+        \end{scope}
 
-        %Register access
-        \node at (1,12.5) {\usebox{\instruction}};
-        \node         at (1.5,13)     {\huge{\texttt{;}}};
-        \draw [thick] (2,12.5) rectangle (6,13.5); 
-        \draw [thick] (6,12.5) rectangle (7,13.5); 
-        \node         at (2.5,13)     {\huge{\texttt{0}}};
-        \node         at (3.5,13)     {\huge{\texttt{0}}};
-        \node         at (4.5,13)     {\huge{\texttt{0}}};
-        \node         at (5.5,13)     {\huge{\texttt{1}}};   
-        \node         at (6.5,12.95)  {\small{R/\textoverline{W}}};   
-        \node         at (12,12.95)   {\LARGE{10-bit register address}};
-        \node [right] at (17.2,13)    {\large{Immediate I/O}};
-        
-        %Stack operation 
-        \node at (1,10.5) {\usebox{\instruction}};
-        \node         at (1.5,11)     {\huge{\texttt{;}}};
-        \draw [thick] (2,10.5) rectangle (7,11.5); 
-        \node         at (2.5,11)     {\huge{\texttt{0}}};
-        \node         at (3.5,11)     {\huge{\texttt{0}}};
-        \node         at (4.5,11)     {\huge{\texttt{0}}};
-        \node         at (5.5,11)     {\huge{\texttt{0}}};   
-        \node         at (6.5,11)     {\huge{\texttt{1}}};   
-        \node         at (12,10.95)   {\LARGE{Stack transition pattern}};
-        \node [right] at (17.2,11)    {\large{Stack operation}};
+        %ALU instructions
+        \draw [thick] (21.5,25.5) -- (22.5,25.5) -- (22.5,18.5) -- (21.5,18.5);
+        \node [right] at (23,21.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              ALU \\
+              Instructions
+            }
+          \end{minipage}};
+  
+        %ALU operation ( x -- x )
+        \begin{scope}[shift={(1,24.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (6,1);
+          \draw [thick] (6,0) rectangle (11,1); 
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.45)    {\LARGE{Operator}};
+          \node         at (13.5,0.45)   {\LARGE{Operand $\neq 0$}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                ALU operation \\
+                ( x -- x )
+              }
+          \end{minipage}};
+        \end{scope}
 
-        %Control Instructions
-        \node at (1,8.5) {\usebox{\instruction}};
-        \node         at (1.5,9)       {\huge{\texttt{;}}};
-        \draw [thick] (2,8.5) rectangle (8,9.5); 
-        \node         at (2.5,9)       {\huge{\texttt{0}}};
-        \node         at (3.5,9)       {\huge{\texttt{0}}};
-        \node         at (4.5,9)       {\huge{\texttt{0}}};
-        \node         at (5.5,9)       {\huge{\texttt{0}}};   
-        \node         at (6.5,9)       {\huge{\texttt{0}}};   
-        \node         at (7.5,9)       {\huge{\texttt{1}}};   
-        \node         at (12.5,8.95)   {\LARGE{Instruction}};
-        \node [right] at (17.2,9) {
-          \begin{minipage}[l]{10em}
-            \large{
-              I/O and \\
-              control \\
-              instructions
-            }
-        \end{minipage}};
-            
-        %ALU operation ( x --  x ) 
-        \node at (1,6.5) {\usebox{\instruction}};
-        \node         at (1.5,7)      {\huge{\texttt{;}}};
-        \draw [thick] (2,6.5) rectangle (9,7.5); 
-        \draw [thick] (9,6.5) rectangle (13,7.5); 
-        \node         at (2.5,7)      {\huge{\texttt{0}}};
-        \node         at (3.5,7)      {\huge{\texttt{0}}};
-        \node         at (4.5,7)      {\huge{\texttt{0}}};
-        \node         at (5.5,7)      {\huge{\texttt{0}}};   
-        \node         at (6.5,7)      {\huge{\texttt{0}}};   
-        \node         at (7.5,7)      {\huge{\texttt{0}}};   
-        \node         at (8.5,7)      {\huge{\texttt{1}}};   
-        \node         at (11,6.95)    {\LARGE{Operator}};
-        \node         at (15,6.95)    {\LARGE{Operand $\neq 0$}};
-        \node [right] at (17.2,7) {
-          \begin{minipage}[l]{10em}
-            \large{
-              ALU operation \\
-              ( x --  x )
-            }
-        \end{minipage}};
+        %ALU operation ( x x -- x )
+        \begin{scope}[shift={(1,22.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (6,1);
+          \draw [thick] (6,0) rectangle (11,1); 
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.45)    {\LARGE{Operator}};
+          \node         at (11.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (12.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (13.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (14.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (15.5,0.5)    {\huge{\texttt{0}}};   
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                ALU operation \\
+                ( x x -- x )
+              }
+          \end{minipage}};
+        \end{scope}
                
-        %ALU operation ( x x -- x ) 
-        \node at (1,4.5) {\usebox{\instruction}};
-        \node         at (1.5,5)      {\huge{\texttt{;}}};
-        \draw [thick] (2,4.5)  rectangle (9,5.5); 
-        \draw [thick] (9,4.5) rectangle (13,5.5); 
-        \node         at (2.5,5)      {\huge{\texttt{0}}};
-        \node         at (3.5,5)      {\huge{\texttt{0}}};
-        \node         at (4.5,5)      {\huge{\texttt{0}}};
-        \node         at (5.5,5)      {\huge{\texttt{0}}};   
-        \node         at (6.5,5)      {\huge{\texttt{0}}};   
-        \node         at (7.5,5)      {\huge{\texttt{0}}};   
-        \node         at (8.5,5)      {\huge{\texttt{1}}};   
-        \node         at (11,4.95)    {\LARGE{Operator}};
-        \node         at (13.5,5)     {\huge{\texttt{0}}};   
-        \node         at (14.5,5)     {\huge{\texttt{0}}};   
-        \node         at (15.5,5)     {\huge{\texttt{0}}};   
-        \node         at (16.5,5)     {\huge{\texttt{0}}};   
-        \node [right] at (17.2,5) {
-          \begin{minipage}[l]{10em}
-            \large{
-              ALU operation \\
-              ( x x - x )
-            }
-        \end{minipage}};
-            
         %ALU operation ( x -- x x )
-        \node at (1,2.5) {\usebox{\instruction}};
-        \node         at (1.5,3)      {\huge{\texttt{;}}};
-        \draw [thick] (2,2.5) rectangle (9,3.5); 
-        \draw [thick] (9,2.5) rectangle (13,3.5); 
-        \node         at (2.5,3)      {\huge{\texttt{0}}};
-        \node         at (3.5,3)      {\huge{\texttt{0}}};
-        \node         at (4.5,3)      {\huge{\texttt{0}}};
-        \node         at (5.5,3)      {\huge{\texttt{0}}};   
-        \node         at (6.5,3)      {\huge{\texttt{0}}};   
-        \node         at (7.5,3)      {\huge{\texttt{0}}};   
-        \node         at (8.5,3)      {\huge{\texttt{0}}};   
-        \node         at (11,2.95)    {\LARGE{Operator}};
-        \node         at (15,2.95)    {\LARGE{Operand $\neq 0$}};
-        \node [right] at (17.2,3) {
-          \begin{minipage}[l]{10em}
-            \large{
-              ALU operation \\
-              ( x -- x x )
-            }
-        \end{minipage}};
-               
-        %ALU operation ( x x -- x x )
-        \node at (1,0.5) {\usebox{\instruction}};
-        \node         at (1.5,1)      {\huge{\texttt{;}}};
-        \draw [thick] (2,0.5) rectangle (9,1.5); 
-        \draw [thick] (9,0.5) rectangle (13,1.5); 
-        \node         at (2.5,1)      {\huge{\texttt{0}}};
-        \node         at (3.5,1)      {\huge{\texttt{0}}};
-        \node         at (4.5,1)      {\huge{\texttt{0}}};
-        \node         at (5.5,1)      {\huge{\texttt{0}}};   
-        \node         at (6.5,1)      {\huge{\texttt{0}}};   
-        \node         at (7.5,1)      {\huge{\texttt{0}}};   
-        \node         at (8.5,1)      {\huge{\texttt{0}}};   
-        \node         at (11,0.95)    {\LARGE{Operator}};
-        \node         at (13.5,1)     {\huge{\texttt{0}}};   
-        \node         at (14.5,1)     {\huge{\texttt{0}}};   
-        \node         at (15.5,1)     {\huge{\texttt{0}}};   
-        \node         at (16.5,1)     {\huge{\texttt{0}}};   
-        \node [right] at (17.2,1) {
-          \begin{minipage}[l]{10em}
-            \large{
-              ALU operation \\
-              ( x x - x x )
-            }
-        \end{minipage}};
+        \begin{scope}[shift={(1,20.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (6,1);
+          \draw [thick] (6,0) rectangle (11,1); 
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (8.5,0.45)    {\LARGE{Operator}};
+          \node         at (13.5,0.45)   {\LARGE{Operand $\neq 0$}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                ALU operation \\
+                ( x -- x x )
+              }
+          \end{minipage}};
+        \end{scope}
 
+        %ALU operation ( x x -- x x )
+        \begin{scope}[shift={(1,18.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (6,1);
+          \draw [thick] (6,0) rectangle (11,1); 
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (8.5,0.45)    {\LARGE{Operator}};
+          \node         at (11.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (12.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (13.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (14.5,0.5)    {\huge{\texttt{0}}};   
+          \node         at (15.5,0.5)    {\huge{\texttt{0}}};   
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                ALU operation \\
+                ( x x -- x x )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Stack instructions
+        \draw [thick] (21.5,16.5) -- (22.5,16.5) -- (22.5,17.5) -- (21.5,17.5);
+        \node [right] at (23,16.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Stack \\
+              Instructions
+            }
+           \end{minipage}};
+
+        %Stack operation 
+        \begin{scope}[shift={(1,16.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle (6,1); 
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};   
+          \node         at (5.5,0.5)     {\huge{\texttt{1}}};   
+          \node         at (11,0.45)     {\LARGE{Stack transition pattern}};
+          \node [right] at (16.2,0.5) {
+            \begin{minipage}[l]{14em}
+              \large{
+                Stack operation
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Memory access instructions
+        \draw [thick] (21.5,15.5) -- (22.5,15.5) -- (22.5,4.5) -- (21.5,4.5);
+        \node [right] at (23,9.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Memory \\
+              Access \\
+              Instructions
+            }
+           \end{minipage}};
+
+        %Memory read (byte access)
+        \begin{scope}[shift={(1,14.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Byte read \\
+                ( c-addr -- x )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Memory read (word access)
+        \begin{scope}[shift={(1,12.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{0}}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Word read \\
+                ( addr -- x )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Memory read (Word access)
+        \begin{scope}[shift={(1,10.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (12,0.45)    {\LARGE{8-bit word address $<$ 0xFE}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Word read \\
+                ( -- x )
+              }
+          \end{minipage}};
+        \end{scope}
+                 
+        %Memory write (byte access)
+        \begin{scope}[shift={(1,8.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Byte write \\
+                ( x c-addr -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Memory write (word access)
+        \begin{scope}[shift={(1,6.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{0}}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Word write \\
+                ( x addr -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Memory write (Word access)
+        \begin{scope}[shift={(1,4.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (12,0.45)     {\LARGE{8-bit word address $<$ 0xFE}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Word write \\
+                ( x -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Control instructions
+        \draw [thick] (21.5,3.5) -- (22.5,3.5) -- (22.5,2.5) -- (21.5,2.5);
+        \node [right] at (23,2.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Control \\
+              Instructions
+            }
+           \end{minipage}};
+       
+        %Control instruction
+        \begin{scope}[shift={(1,2.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (12,0.45)     {\LARGE{Instruction}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Comtrol instruction \\
+                ( -- )
+              }
+          \end{minipage}};
+        \end{scope}
+
+        %Reserved
+        \begin{scope}[shift={(1,0.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (12,0.45)    {\LARGE{Reserved}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Reserved
+              }
+          \end{minipage}};
+        \end{scope}
+        
       \end{tikzpicture}
     }
   }
@@ -255,21 +608,6 @@ of the instructuion encoding.
   \label{opcodes:encoding}
   %\end{center}
 \end{figure}
-
-\subsection{Jump Instructions}
-\label{opcodes:jump}
-
-\Gls{jump} instructions transfer the program flow to any \gls{word}
-location within the supported 32KB program space. \Gls{jump} instructions
-use absoluteaddresses. 
-
-\subsection{Call Instructions}
-\label{opcodes:call}
-
-\Gls{call} instructions temporarily transfer the program flow to any \gls{word}
-location within the
-supported 32KB program space, while pushing a return address onto
-the return stack \gls{call} instructions use absolute addresses. 
 
 \subsection{Return from a Call (\texttt{;})}
 \label{opcodes:rtc}
@@ -290,18 +628,30 @@ as termination bit for these instructions as well.
 For a Forth compiler, this means that the semi-colon (\texttt{\gls{semicolon}})
 always translates to setting bit 15 of the last instruction.
 
+\subsection{Jump Instructions}
+\label{opcodes:jump}
+
+\Gls{jump} instructions transfer the program flow to any \gls{word}
+location within the supported 64KB program space. \Gls{jump} instructions consume an absolute
+destination address, which can be either placed on the top of the \Gls{ps} or encoded
+into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
+
+\subsection{Call Instructions}
+\label{opcodes:call}
+
+\Gls{call} instructions temporarily transfer the program flow to any \gls{word}
+location within the supported 64KB program space, while pushing a return address onto
+the return stack. \Gls{call} instructions consume an absolute
+destination address, which can be either placed on the top of the \Gls{ps} or encoded
+into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
+
 \subsection{Conditional Branches}
 \label{opcodes:branch}
 
-Conditional \glspl{branch} invoke a change of program flow if the top of the
-\gls{ps} is not zero. Branches are relative to the location of the
-following instruction and range from 4095 \gls{word}
-locations forward to 4096 \gls{word}
-locations backward. A relative \gls{branch}
-address of zero points to the subsequent instruction of the current one.
-
-Conditional branches use relative addressing to simplify code reallocation in support
-of inlining.
+\Glspl{branch} invoke a change of program flow depending on an argument on the
+\gls{ps}. The branch destination cab be either an absolute address placed on the the top of  
+the \Gls{ps} or relative relative address, encoded into the opcode of the instruction
+(only for destination addresses $<$ 0x1FFF).
 
 \subsection{Literals}
 \label{opcodes:literal}
@@ -309,11 +659,161 @@ of inlining.
 Signed integer \glspl{literal} of 12-bit length can be pushed onto the \gls{ps} within
 a single instruction. For larger integers a supplemental TBD \gls{call} is required.
 
-\subsection{Register Accesses}
-\label{opcodes:regacc}
+\subsection{ALU Instructions}
+\label{opcodes:alu}
+\Gls{alu} instructions perform an operation on two \gls{cell} values, resulting in a new double 
+\gls{cell} value. The reult can be either placed entirely onto the \gls{ps}, or truncated, discarding
+the most significant \gls{cell}. The first operand is always taken from the \Gls{ps}. The second operand can be
+either taken from the \Gls{ps} or encoded into the opcode of the instruction. In the latter case,
+the interpretation of the embedded 5-bit value depends on the operation. It is either regarded as an unsigned
+($uimm$) or a sign extended value( $simm$). \tabref{opcodes:alu:operators} lists the supported \gls{alu} operations.
 
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{\Gls{alu} operations}
+    \label{opcodes:alu:operators} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Encoding}}     &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Operation}}     &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}( x1 -- d )}}   &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}( x1 x2 -- d }} \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
 
-\subsection{Stack Operation}
+    %Add
+      \texttt{00000}          &
+      Addition                &
+      x1 $+$ $uimm$           &
+      x1 $+$ x2               \\ \hline
+                              
+    %Subtract                 
+      \texttt{00001}          &
+      Subtraction             &
+      x1 $-$ $uimm$           &
+      x1 $-$ x2               \\ \hline
+
+    %Unsigned multiply
+      \texttt{00010}          &
+      Unsigned multiplication &
+      x1 $*$ $uimm$           &
+      x1 $*$ x2               \\ \hline
+
+    %Signed multiply
+      \texttt{00011}          &
+      Signed multiplication   &
+      x1 $*$ $simm$           &
+      x1 $*$ x2               \\ \hline
+
+    %AND
+      \texttt{00100}          &
+      Logical AND             &
+      x1 $\land$ $simm$       &
+      x1 $\land$ x2           \\ \hline
+
+    %OR
+      \texttt{00101}          &
+      Logical OR              &
+      x1 $\lor$ $uimm$        &
+      x1 $\lor$ x2            \\ \hline
+
+    %XOR
+      \texttt{00110}          &
+      Logical XOR             &
+      x1 $\oplus$ $uimm$     &
+      x1 $\oplus$ x2         \\ \hline
+    
+    %One's complement
+      \texttt{00111}          &
+      One's complement        &
+      $\lnot$ x1              &
+      $\lnot$ x2              \\ \hline
+
+    %Two's complement
+      \texttt{01000}          &
+      Two's complement        &
+      $-$ x1                  &
+      $-$ x2                 \\ \hline
+ 
+
+    %Right shift
+      \texttt{01001}          &
+      Logical right shift     &
+      x1 $\gg$ $uimm$         &
+      x2 $\gg$ x1             \\ \hline
+
+    %Left shift
+      \texttt{01010}          &
+      Logic left shift        &
+      x1 $\ll$ $uimm$         &
+      x2 $\ll$ x1             \\ \hline
+
+    %<
+      \texttt{01011}          &
+      Less than               &
+      x1 $<$ $simm$           &
+      x1 $<$ x2               \\ \hline
+            
+    %=
+      \texttt{01100}          &
+      Equals                  &
+      x1 $\equiv$ $simm$      &
+      x1 $\equiv$ x2          \\ \hline
+
+    %>
+      \texttt{01101}          &
+      Greater than            &
+      x1 $>$ $simm$           &
+      x1 $>$ x2               \\ \hline
+      
+    %0<
+      \texttt{01110}          &
+      Less than zero          &
+      x1 $<$ $0$              &
+      x2 $<$ $0$              \\ \hline
+
+    %0=
+      \texttt{01110}          &
+      Equals zero             &
+      x1 $\equiv$ $0$         &
+      x2 $\equiv$ $0$         \\ \hline
+      
+    %Immediate value
+      \texttt{10000}          &
+      Immediate value         &
+      $simm$:x1               &
+      x1:x2                   \\ \hline
+   
+    %PS status
+      \texttt{10000}          &
+      \Gls{ps} status         &
+      stack information       &
+      stack information       \\ \hline
+
+    %RS status
+      \texttt{10000}          &
+      \Gls{rs} status         &
+      stack information       &
+      stack information       \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
+
+\subsection{Stack Instructions}
 \label{opcodes:stack}
 
 The N1's stack instruction aims at efficiently implementing the essential stack operations
@@ -472,6 +972,7 @@ It is possible to put the \gls{ust} fields into a combination which would trigge
 source \glspl{cell} to a single desination \gls{cell}. In these cases, the resulting data in the desination
 \gls{cell} is undefined.
 
+\begin{samepage}
 The two remaining \gls{ist} fields in the stack instruction control the data movement of the \glspl{ls}.
 Two options are selectable:
 \begin{itemize}
@@ -479,6 +980,7 @@ Two options are selectable:
   \item Data shift throughout the entire \gls{is}. The direction is determined by the data movement of the lowest
         cell of the \gls{us}.
 \end{itemize}
+\end{samepage}
 
 \tabref{opcodes:stack:mapping} shows how \gls{stack} operations in \gls{forth} are mapped N1 instructions. 
 
@@ -1981,10 +2483,63 @@ Two options are selectable:
 \end{center}  
 \endgroup
 
-\subsection{I/O and Control Instructions}
-\label{opcodes:ioctrl}
-\Gls{byte}
+\subsection{Memory Access Instructions}
+\label{opcodes:memacc}
 
-\subsection{ALU operations}
-\label{opcodes:alu}
-\gls{alu}
+Memory access instruction perform read or write acesses to the system's 64-Kbyte address space.
+Data can be accessed in \gls{word} or \gls{byte} entities.
+Misaligned \gls{word} accesses are not supported.
+\Gls{word} accesses to a 510-Kbyte subset of the address space can be done through an immediate
+addressing. This will offer faster access to frequently used system variables.
+
+\subsection{Control Instructions}
+\label{opcodes:ctrl}
+
+The N1 implements of set of instrictions to controls some of its internal components. None of these
+instructions consume input arguments from the \gls{ps}, nor do they produce a return value.
+The encoding of these instructions is shown in \tabref{opcodes:ctrl:instr}. Multiple control
+instructions can be combined to one.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Control instructions}
+    \label{opcodes:ctrl:instr} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Encoding}}     &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Instruction}}\\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{2}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %Enable interrupts
+    \texttt{xxxxxx11}          &
+    Enable interrupts          \\ \hline
+
+    %Disable interrupts
+    \texttt{xxxxxx10}          &
+    Disable interrupts         \\ \hline
+
+    %Reset parameter stack
+    \texttt{xxxxx1xx}          &
+    Reset \gls{ps}             \\ \hline
+
+    %Reset return stack
+    \texttt{xxxx1xxx}          &
+    Reset \gls{rs}             \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
