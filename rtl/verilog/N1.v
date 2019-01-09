@@ -28,78 +28,81 @@
 `default_nettype none
 
 module N1
-  #(parameter   RST_ADR     = 'h0000,                        //address of first instruction
-    parameter   SP_WIDTH    =  8,                            //width of a stack pointer
-    localparam  CELL_WIDTH  = 16,                            //width of a cell
-    localparam  PC_WIDTH    = 14,                            //width of the program counter
-    localparam  PSUP_DEPTH  = 5,                             //depth of the upper parameter stack 
-    localparam  PSIM_DEPTH  = 8,                             //depth of the immediate parameter stack
-    localparam  PSUP_DEPTH  = 1,                             //depth of the upper return stack 
-    localparam  PSIM_DEPTH  = 8)                             //depth of the immediate return stack
+  #(parameter   RST_ADR    = 'h0000,                           //address of first instruction
+    parameter   SP_WIDTH   =  8,                               //width of a stack pointer
+    localparam  CELL_WIDTH = 16,                               //width of a cell
+    localparam  PC_WIDTH   = 14,                               //width of the program counter
+    localparam  UPS_DEPTH  = 5,                                //depth of the upper parameter stack 
+    localparam  IPS_DEPTH  = 8,                                //depth of the immediate parameter stack
+    localparam  URS_DEPTH  = 1,                                //depth of the upper return stack 
+    localparam  IRS_DEPTH  = 8)                                //depth of the immediate return stack
 
    (//Clock and reset
-    input  wire                            clk_i,            //module clock
-    input  wire                            async_rst_i,      //asynchronous reset
-    input  wire                            sync_rst_i,       //synchronous reset
-
-    //Program bus
-    output wire                            pbus_cyc_o,       //bus cycle indicator       +-
-    output wire                            pbus_stb_o,       //access request            | initiator to target
-    output wire [PC_WIDTH-1:0]             pbus_adr_o,       //address bus               |
-    output wire                            pbus_tga_imadr_o, //immediate (short) address +-	    
-    input  wire                            pbus_ack_i,       //bus cycle acknowledge     +-
-    input  wire                            pbus_err_i,       //error indicator           | target
-    input  wire                            pbus_rty_i,       //retry request             | to
-    input  wire                            pbus_stall_i,     //access delay              | initiator
-    input  wire [CELL_WIDTH-1:0]           pbus_dat_i,       //read data bus             +-
-
-    //Data bus
-    output wire                            dbus_cyc_o,       //bus cycle indicator       +-
-    output wire                            dbus_stb_o,       //access request            | 
-    output wire                            dbus_we_o,        //write enable              | initiator
-    output wire [(CELL_WIDTH/8)-1:0]       dbus_sel_o,       //write data selects        | to	    
-    output wire [CELL_WIDTH-1:0]           dbus_adr_o,       //address bus               | target   
-    output wire [CELL_WIDTH-1:0]           dbus_dat_o,       //write data bus            |
-    output wire                            dbus_tga_imadr_o, //immediate (short) address +-	    
-    input  wire                            dbus_ack_i,       //bus cycle acknowledge     +-
-    input  wire                            dbus_err_i,       //error indicator           | target
-    input  wire                            dbus_rty_i,       //retry request             | to
-    input  wire                            dbus_stall_i,     //access delay              | initiator
-    input  wire [CELL_WIDTH-1:0]           dbus_dat_i,       //read data bus             +-
-
-    //Stack bus
-    output wire                            sbus_cyc_o,       //bus cycle indicator       +-
-    output wire                            sbus_stb_o,       //access request            | 
-    output wire                            sbus_we_o,        //write enable              | initiator
-    output wire [SP_WIDTH-1:0]             sbus_adr_o,       //address bus               | to	    
-    output wire [CELL_WIDTH-1:0]           sbus_dat_o,       //write data bus            | target   
-    output wire                            sbus_tga_ps_o,    //parameter stack access    |
-    output wire                            sbus_tga_rs_o,    //return stack access       +-
-    input  wire                            sbus_ack_i,       //bus cycle acknowledge     +-
-    input  wire                            sbus_err_i,       //error indicator           | target
-    input  wire                            sbus_rty_i,       //retry request             | to
-    input  wire                            sbus_stall_i,     //access delay              | initiator
-    input  wire [CELL_WIDTH-1:0]           sbus_dat_i,       //read data bus             +-
-
-    //Interrupt interface
-    output wire                            irq_ack_o,        //interrupt acknowledge           
-    input  wire [PC_WIDTH-1:0]             irq_vec_i,        //requested interrupt vector 
-
-    //Probe signals
-    //Program counter   
-    output wire [PC_WIDTH-1:0]             prb_pc_o,         //program counter
-    //Instruction register  
-    output wire [CELL_WIDTH-1:0]           prb_ir_o,         //instruction register
+    input  wire                              clk_i,            //module clock
+    input  wire                              async_rst_i,      //asynchronous reset
+    input  wire                              sync_rst_i,       //synchronous reset
+					     
+    //Program bus			     
+    output wire                              pbus_cyc_o,       //bus cycle indicator       +-
+    output wire                              pbus_stb_o,       //access request            | initiator to target
+    output wire [PC_WIDTH-1:0]               pbus_adr_o,       //address bus               |
+    output wire                              pbus_tga_imadr_o, //immediate (short) address +-	    
+    input  wire                              pbus_ack_i,       //bus cycle acknowledge     +-
+    input  wire                              pbus_err_i,       //error indicator           | target
+    input  wire                              pbus_rty_i,       //retry request             | to
+    input  wire                              pbus_stall_i,     //access delay              | initiator
+    input  wire [CELL_WIDTH-1:0]             pbus_dat_i,       //read data bus             +-
+					     
+    //Data bus				     
+    output wire                              dbus_cyc_o,       //bus cycle indicator       +-
+    output wire                              dbus_stb_o,       //access request            | 
+    output wire                              dbus_we_o,        //write enable              | initiator
+    output wire [(CELL_WIDTH/8)-1:0]         dbus_sel_o,       //write data selects        | to	    
+    output wire [CELL_WIDTH-1:0]             dbus_adr_o,       //address bus               | target   
+    output wire [CELL_WIDTH-1:0]             dbus_dat_o,       //write data bus            |
+    output wire                              dbus_tga_imadr_o, //immediate (short) address +-	    
+    input  wire                              dbus_ack_i,       //bus cycle acknowledge     +-
+    input  wire                              dbus_err_i,       //error indicator           | target
+    input  wire                              dbus_rty_i,       //retry request             | to
+    input  wire                              dbus_stall_i,     //access delay              | initiator
+    input  wire [CELL_WIDTH-1:0]             dbus_dat_i,       //read data bus             +-
+					     
+    //Stack bus				     
+    output wire                              sbus_cyc_o,       //bus cycle indicator       +-
+    output wire                              sbus_stb_o,       //access request            | 
+    output wire                              sbus_we_o,        //write enable              | initiator
+    output wire [SP_WIDTH-1:0]               sbus_adr_o,       //address bus               | to	    
+    output wire [CELL_WIDTH-1:0]             sbus_dat_o,       //write data bus            | target   
+    output wire                              sbus_tga_ps_o,    //parameter stack access    |
+    output wire                              sbus_tga_rs_o,    //return stack access       +-
+    input  wire                              sbus_ack_i,       //bus cycle acknowledge     +-
+    input  wire                              sbus_err_i,       //error indicator           | target
+    input  wire                              sbus_rty_i,       //retry request             | to
+    input  wire                              sbus_stall_i,     //access delay              | initiator
+    input  wire [CELL_WIDTH-1:0]             sbus_dat_i,       //read data bus             +-
+					     
+    //Interrupt interface		     
+    output wire                              irq_ack_o,        //interrupt acknowledge           
+    input  wire [PC_WIDTH-1:0]               irq_vec_i,        //requested interrupt vector 
+					     
+    //Probe signals			     
+    //Program counter   		     
+    output wire [PC_WIDTH-1:0]               prb_pc_o,         //program counter
+    //Instruction register  		     
+    output wire [CELL_WIDTH-1:0]             prb_ir_o,         //instruction register
     //Parameter stack
-    output wire [PSUP_DEPTH-1:0]           prb_ups_stat_o,   //upper parameter stack status
-    output wire [PSIM_DEPTH-1:0]           prb_ips_stat_o,   //intermediate parameter stack status
-    output wire [SP_WIDTH-1:0]             prblps_sp_o,      //lower parameter stack pointer
+    output wire [(UPS_DEPTH*CELL_WIDTH)-1:0] prb_ups_o,        //upper parameter stack content          
+    output wire [UPS_DEPTH-1:0]              prb_ups_stat_o,   //upper parameter stack status
+    output wire [(IPS_DEPTH*CELL_WIDTH)-1:0] prb_ips_o,        //intermediate parameter stack content          
+    output wire [IPS_DEPTH-1:0]              prb_ips_stat_o,   //intermediate parameter stack status
+    output wire [SP_WIDTH-1:0]               prb_lps_sp_o,     //lower parameter stack pointer
     //Return stack
-    output wire [RSUP_DEPTH-1:0]           prb_urs_stat_o,   //upper return stack status
-    output wire [RSIM_DEPTH-1:0]           prb_irs_stat_o,   //intermediate return stack status
-    output wire [SP_AWIDTH-1:0]            prb_lrs_sp_o);    //lower return stack pointer
-    
-   
+    output wire [(URS_DEPTH*CELL_WIDTH)-1:0] prb_urs_o,        //upper parameter stack content          
+    output wire [URS_DEPTH-1:0]              prb_urs_stat_o,   //upper parameter stack status
+    output wire [(IRS_DEPTH*CELL_WIDTH)-1:0] prb_irs_o,        //intermediate parameter stack content          
+    output wire [IRS_DEPTH-1:0]              prb_irs_stat_o,   //intermediate parameter stack status
+    output wire [SP_WIDTH-1:0]               prb_lrs_sp_o);    //lower parameter stack pointer
+
    //Internal Signals
    //----------------
 
@@ -160,14 +163,16 @@ module N1
 
 
 
+   
+
 
    //Intermediate parameter stack
    //----------------------------
    N1_is
      #(.SP_WIDTH   (SP_WIDTH),                               //width of a stack pointer
-    .CELL_WIDTH   = 16,                                      //cell width
-    .IS_DEPTH     =  8,                                      //depth of the intermediate stack
-    .LS_DIR       =  0)                                      //grow lower stack towards lower addresses
+    .CELL_WIDTH      = 16,                                   //cell width
+    .IS_DEPTH        =  8,                                   //depth of the intermediate stack
+    .LS_GROW_UPWARDS =  0)                                   //grow lower stack towards lower addresses
    N1_ips				                     
      (//Clock and reset			                     
       .clk_i		(clk_i),                             //module clock
@@ -199,32 +204,23 @@ module N1
       .excpt_lsbus_o    (excpt_lpsbus),                      //bus error
   
       //External address in-/decrementer
-      .agu_sp_o         (lps_agu_sp),                        //current address
-      .agu_inc_o        (lps_agu_inc),                       //increment address
-      .agu_dec_o        (lps_agu_dec),                       //decrement address
-      .agu_res_i        (lps_agu_res),                       //result
+      .sagu_sp_o         (lps_agu_sp),                        //current address
+      .sagu_inc_o        (lps_agu_inc),                       //increment address
+      .sagu_dec_o        (lps_agu_dec),                       //decrement address
+      .sagu_res_i        (lps_agu_res),                       //result
 
       //Probe signals
+      .prb_is_o         (prb_ips_o),                         //intermediate stack content
       .prb_is_stat_o    (prb_ips_stat_o),                    //intermediate stack status
       .prb_ls_sp_o      (prb_lps_sp_o));                     //lower stack pointer
-
-   //Parameter stack AGU
-   //-------------------
-   assign lps_agu_res = lps_agu_sp + {{SP_WIDTH-1{lps_agu_dec}},(lps_agu_inc|lps_agu_dec)};
-     
-
-
-
-   
-
 
    //Intermediate return stack
    //-------------------------
    N1_is
      #(.SP_WIDTH   (SP_WIDTH),                               //width of a stack pointer
-    .CELL_WIDTH   = 16,                                      //cell width
-    .IS_DEPTH     =  8,                                      //depth of the intermediate stack
-    .LS_DIR       =  1)                                      //grow lower stack towards higher addresses
+    .CELL_WIDTH      = 16,                                   //cell width
+    .IS_DEPTH        =  8,                                   //depth of the intermediate stack
+    .LS_GROW_UPWARDS =  1)                                   //grow lower stack towards higher addresses
    N1_irs				                     
      (//Clock and reset			                     
       .clk_i		(clk_i),                             //module clock
@@ -256,17 +252,19 @@ module N1
       .excpt_lsbus_o    (excpt_lrsbus),                      //bus error
   
       //External address in-/decrementer
-      .agu_sp_o         (lrs_agu_sp),                        //current address
-      .agu_inc_o        (lrs_agu_inc),                       //increment address
-      .agu_dec_o        (lrs_agu_dec),                       //decrement address
-      .agu_res_i        (lrs_agu_res),                       //result
+      .sagu_sp_o         (lrs_agu_sp),                        //current address
+      .sagu_inc_o        (lrs_agu_inc),                       //increment address
+      .sagu_dec_o        (lrs_agu_dec),                       //decrement address
+      .sagu_res_i        (lrs_agu_res),                       //result
 
       //Probe signals
+      .prb_is_o         (prb_irs_o),                         //intermediate stack content
       .prb_is_stat_o    (prb_irs_stat_o),                    //intermediate stack status
       .prb_ls_sp_o      (prb_lrs_sp_o));                     //lower stack pointer
 
-   //Return stack AGU
-   //----------------
+   //Parameter and return stack AGU (...to be replaced by DSP cells)
+   //---------------------------------------------------------------
+   assign lps_agu_res = lps_agu_sp + {{SP_WIDTH-1{lps_agu_dec}},(lps_agu_inc|lps_agu_dec)};
    assign lrs_agu_res = lrs_agu_sp + {{SP_WIDTH-1{lrs_agu_dec}},(lrs_agu_inc|lrs_agu_dec)};
      
    //Lower stack bus arbiter

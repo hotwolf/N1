@@ -38,8 +38,9 @@
 //###############################################################################
 `default_nettype none
 
-module N1_upstack
-  #(parameter CELL_WIDTH  = 16)   //cell width
+module N1_us
+  #(localparam CELL_WIDTH  = 16,   //cell width
+    localparam STP_WIDTH   = 12)   //width of the stack transition pattern
    
    (//Clock and reset
     //---------------
@@ -49,7 +50,10 @@ module N1_upstack
 
     //IR interface
     //------------
-   
+    input wire [STP_WIDTH-1:0]             ir_stp_i          //stack transition pattern 
+    input wire [STP_WIDTH-1:0]             ir_set_ps0_i      //overwrite PS0 
+    input wire [STP_WIDTH-1:0]             ir_set_ps1_i      //overwrite PS1 
+    input wire [STP_WIDTH-1:0]             ir_set_rs0_i      //overwrite RS0 
     
    
     
