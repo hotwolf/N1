@@ -1,7 +1,7 @@
 //###############################################################################
 //# N1 - Flow control                                                           #
 //###############################################################################
-//#    Copyright 2018 Dirk Heisswolf                                            #
+//#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
 //#                                                                             #
 //#    N1 is free software: you can redistribute it and/or modify               #
@@ -72,96 +72,197 @@ module N1_flowctrl
     localparam  PC_WIDTH      = 15)                          //width of the program counter
 
    (//Clock and reset
-    //---------------
-    input wire 			  clk_i,                     //module clock
-    input wire 			  async_rst_i,               //asynchronous reset
-    input wire 			  sync_rst_i,                //synchronous reset
-
-    //Program bus
-    //-----------
-    output reg  		  pbus_cyc_o,                //bus cycle indicator       +-
-    output reg  		  pbus_stb_o,                //access request            | initiator to target
-    output wire [PC_WIDTH-1:0] 	  pbus_adr_o,                //address bus               +-
-    input wire 			  pbus_ack_i,                //bus cycle acknowledge     +-
-    input wire 			  pbus_err_i,                //error indicator           | target
-    input wire 			  pbus_rty_i,                //retry request             | to
-    input wire 			  pbus_stall_i,              //access delay              | initiator
+    input wire 			     clk_i,                  //module clock
+    input wire 			     async_rst_i,            //asynchronous reset
+    input wire 			     sync_rst_i,             //synchronous reset
+				     
+    //Program bus		     	     
+    output wire                      pbus_cyc_o,             //bus cycle indicator       +-
+    output wire                      pbus_stb_o,             //access request            |
+    output wire                      pbus_we_o,              //write enable              |
+    output wire [(CELL_WIDTH/8)-1:0] pbus_sel_o,             //write data selects        |
+    output wire                      pbus_tga_rst_o,         //reset                     |
+    output wire                      pbus_tga_excpt_o,       //exception                 |
+    output wire                      pbus_tga_irq_o,         //interrupt request         | initiator
+    output wire                      pbus_tga_jmp_imm_o,     //immediate jump            | to	    
+    output wire                      pbus_tga_jmp_ind_o,     //indirect jump             | target   
+    output wire                      pbus_tga_cal_imm_o,     //immediate call            |
+    output wire                      pbus_tga_cal_ind_o,     //indirect call             |
+    output wire                      pbus_tga_bra_imm_o,     //immediate branch          |
+    output wire                      pbus_tga_bra_ind_o,     //indirect branch           |
+    output wire                      pbus_tga_dat_imm_o,     //immediate data access     |
+    output wire                      pbus_tga_dat_ind_o,     //indirect data access      +-
+    input  wire                      pbus_ack_i,             //bus cycle                 +-
+    input  wire                      pbus_err_i,             //error indicator           | target
+    input  wire                      pbus_rty_i,             //retry request             | to initiator
+    input  wire                      pbus_stall_i,           //access delay              +-
    
-    //Interrupt interface
-    //-------------------
-    output wire 		  irq_ack_o,                 //interrupt acknowledge           
-    input wire [PC_WIDTH-1:0] 	  irq_vec_i,                 //requested interrupt vector 
+    //Exception interface
+    output wire                      excpt_throw_pbus_o;     //throw pbus error 
+    output wire 		     excpt_ack_o,            //exception acknowledge          
+    input  wire [PC_WIDTH-1:0]       excpt_vec_i,            //requested interrupt vector
+				     
+    //Interrupt interface	     
+    output wire 		     irq_block_o,            //block interrupts        
+    output wire 		     irq_unblock_o,          //unblock interrupts        
+    output wire 		     irq_ack_o,              //interrupt acknowledge           
+    input wire [PC_WIDTH-1:0] 	     irq_vec_i,              //requested interrupt vector 
+				     
+    //IR interface		     
+    output  wire                     ir_capture_i,           //capture current IR   
+    output  wire                     ir_hoard_i,             //capture hoarded IR
+    output  wire                     ir_expend_i,            //hoarded IR -> current IR
+  				     
+    //Upper stack interface	     
+    output  wire                     ust_fetch_o,           //capture current IR
+    output  wire                     ust_store_o,           //capture current IR
+    output  wire                     ust_fetch_o,           //capture current IR
+    output  wire                     ust_fetch_o,           //capture current IR
 
 
-    //IR interface
-    //------------
-    output reg 			  fc_fetch_opc_o,           //fetch opcode from Pbus
-    input wire [PC_WIDTH-1:0]     ir_rel_adr_i,             //relative address from opcode
-    input wire [PC_WIDTH-1:0]     ir_abs_adr_i,             //absolute address from opcode
-    input wire 			  ir_jmp_i,                 //jump decoded (absolute)
-    input wire 			  ir_bra_i,                 //branch decoded (relative)
-    input wire 			  ir_ret_i,                 //returm decoded (absolute)
-  
-    //Upper stack interface
-    //---------------------
-    input wire [CELL_WIDTH-1:0]   ust_ps0_i,                //top of the parameter stack
-    input wire [CELL_WIDTH-1:0]   ust_rs0_i,                //top of the return stack
+    input wire [CELL_WIDTH-1:0]      ust_ps0_i,              //top of the parameter stack
+    input wire [CELL_WIDTH-1:0]      ust_rs0_i,              //top of the return stack
     
-    
-     
-    );
+    //Hard IP interface (program counter)
+    output wire                      pc_abs_o,               //drive absolute address
+    output wire                      pc_update_o,            //update PC
+    output wire [PC_WIDTH-1:0]       pc_rel_adr_o,           //relative COF address
+    output wire [PC_WIDTH-1:0]       pc_abs_adr_o);          //absolute COF address
 
    //Internal signals
    //----------------  
    //State variable
-   reg [2:0] 			state_reg;                  //state variable
-   reg [2:0] 			state_next;                 //next state
-   					                       
-   //AGU control signals		                       
-   wire [PC_WIDTH-1:0]		agu_abs_adr;                //absolute address
-   wire	[PC_WIDTH-1:0]		agu_rel_adr;                //lelative address
-   reg                          agu_drv_rst;                //drive reset vector
-   reg                          agu_drv_irq;                //drive interrupt vector
-   reg                          agu_drv_pc;                 //drive current PC
-   reg                          agu_drv_ir;                 //drive absolute address from IR
-   reg                          agu_drv_ps;                 //drive absolute address from PS
-   reg                          agu_drv_rs;                 //drive absolute address from RS
-   reg                          agu_drv_rel;                //drive relative address from IR
-   reg                          agu_drv_inc;                //drive address increment
-   
-
-
-
+   reg [2:0] 			  state_reg;                 //state variable
+   reg [2:0] 			  state_next;                //next state
+   				
+	                       
+  
 
 
 
 
    //Finite state machine
    //--------------------
-   localparam STATE_COF0  = 'b00;
-   localparam STATE_COF1  = 'b00;
-   localparam STATE_EXEC0 = 'b00;
-   
-   always @*
-     begin
-	//Default outputs
-	fc_capt_opc_o   = 1'b0;                             //don't update IR
-	fc_bus_err_o    = 1'b0;                             //don't flag bus error
-	pbus_cyc_o      = 1'b0;                             //don't request a bus access
-	pbus_stb_o      = 1'b0;                             //don't request a bus access
-        agu_drv_rst     = 1'b0;                             //don't drive reset vector
-        agu_drv_irq     = 1'b0;                             //don't drive interrupt vector
-        agu_drv_pc      = 1'b0;                             //don't drive current PC
-        agu_drv_ir      = 1'b0;                             //don't drive absolute address from IR
-        agu_drv_ps      = 1'b0;                             //don't drive absolute address from PS
-        agu_drv_rs      = 1'b0;                             //don't drive absolute address from RS
-        agu_drv_rel     = 1'b0;                             //don't drive relative address from IR
-        agu_drv_inc     = 1'b0;                             //don't drive address increment
-	state_next      = state_reg;                        //no state transition
-	
+   localparam STATE_COF0   = 'b00;
+   localparam STATE_COF1   = 'b00;
+   localparam STATE_EXEC0  = 'b00;
+   			   
+   always @*		   
+     begin		   
+        //Default autputs
+        pbus_cyc_o	   = 1'b1;                            1'b1;                            //request
+        pbus_stb_o	   = 1'b1;                            // bus access
+        pbus_we_o	   = 1'b0;                            //read access  
+        pbus_sel_o	   = 2'b11;                           //word access  
+        pbus_tga_rst_o     = 1'b0;                            //no reset             
+        pbus_tga_excpt_o   = 1'b0;                            //no exception         
+        pbus_tga_irq_o	   = 1'b0;                            //no interrupt request 
+        pbus_tga_jmp_imm_o = 1'b0;                            //no immediate jump         
+        pbus_tga_jmp_ind_o = 1'b0;                            //no indirect jump          
+        pbus_tga_cal_imm_o = 1'b0;                            //no immediate call         
+        pbus_tga_cal_ind_o = 1'b0;                            //no indirect call          
+        pbus_tga_bra_imm_o = 1'b0;                            //no immediate branch       
+        pbus_tga_bra_ind_o = 1'b0;                            //no indirect branch        
+        pbus_tga_dat_imm_o = 1'b0;                            //no immediate data access  
+        pbus_tga_dat_ind_o = 1'b0;                            //no indirect data access   
+        excpt_ack_o        = 1'b0;                            //exception acknowledge           
+        excpt_throw_pbus_o = pbus_err_i;                      //throw pbus error 
+        irq_block_o        = 1'b0;                            //don't block interrupts        
+        irq_unblock_o      = 1'b0;                            //don't unblock interrupts        
+        irq_ack_o	   = 1'b0;                            //no interrupt acknowledge           
+        ir_capture_i	   = 1'b0;                            //capture current IR   
+        ir_hoard_i	   = 1'b0;                            //capture hoarded IR
+        ir_expend_i	   = 1'b0;                            //don't update IR
+        pc_abs_o	   = 1'b0;                            //drive absolute address
+        pc_update_o	   = ~pbus_stall;                     //update PC
+        pc_rel_adr_o	   = 15'h0001;                        //increment
+        pc_abs_adr_o	   = RESET_ADR;                       //start of code	
+	state_next         = state_reg;                       //remain in current state  
+
 	case (state_reg)
-	  STATE_RESET0: //(initiate reset vector fetch from PC)
+	  STATE_RESET: //(Jump to start of code)
 	    begin
+               pbus_tga_rst_o     = 1'b1;                     //signal reset             
+               excpt_ack_o        = 1'b1;                     //acknowledge any pending exception          
+               irq_block_o        = 1'b1;                     //don't block interrupts        
+               irq_ack_o          = 1'b0;                     //acknowledge any pending interrupt request           
+	       excpt_throw_pbus_o = 1'b0;                     //ignore bus response 
+	       pc_abs_o	          = 1'b1;                     //drive reset address
+	       state_next         = pbus_stall_i ?            //continue if bus is available
+				       state_reg :
+                                       STATE_FETCH_1ST;
+	    end // case: STATE_RESET
+
+	  STATE_EXCPT: //(Jump to exception vector)
+	    begin
+               pbus_tga_excpt_o   = 1'b1;                     //signal resetexception             
+               excpt_ack_o        = 1'b1;                     //acknowledge any pending exception          
+               irq_block_o        = 1'b1;                     //don't block interrupts        
+               irq_ack_o          = 1'b0;                     //acknowledge any pending interrupt request           
+	       excpt_throw_pbus_o = 1'b0;                     //ignore bus response 
+	       pc_abs_o	          = 1'b1;                     //drive reset address
+               pc_abs_adr_o	  = excpt_vec_i;              //exception vector	
+	       state_next         = pbus_stall_i ?            //continue if bus is available
+				       state_reg :
+                                       STATE_FETCH_1ST;
+	    end // case: STATE_EXEPT
+	  
+	  STATE_IRQ: //(Jump to interrupt vector)
+	    begin
+               pbus_tga_irq_o     = 1'b1;                     //signal interrupt request             
+               excpt_ack_o        = 1'b1;                     //acknowledge any pending exception          
+               irq_block_o        = 1'b1;                     //don't block interrupts        
+               irq_ack_o          = 1'b0;                     //acknowledge any pending interrupt request           
+	       excpt_throw_pbus_o = 1'b0;                     //ignore bus response 
+	       pc_abs_o	          = 1'b1;                     //drive reset address
+               pc_abs_adr_o	  = irq_vec_i;                //exception vector	
+	       state_next         = pbus_stall_i ?            //continue if bus is available
+				       state_reg :
+                                       STATE_FETCH_1ST;
+	    end // case: STATE_IRQ	  
+	  
+	  STATE_FETCH_1ST: //(Fetch first opcode)
+	    begin
+	       if (pbus_ack_i |                               //wait for acknowledge
+		   pbus_rty_i |                               //
+		   pbus_err_i)                                //
+		 begin
+		   if (|excpt_vec_i)                          //exception 		     
+		     begin
+			pbus_stb_o  = 1'b0;                   //pause bus access
+                        pc_update_o = 1'b0;                   //don'tupdate PC
+			state_next  = STATE_EXCPT;            //handle exception
+		     end
+		    else if (|irq_vec_i)                      //interrupt request
+		     begin
+			pbus_stb_o  = 1'b0;                   //pause bus access
+                        pc_update_o = 1'b0;                   //don'tupdate PC
+                        ust_call_o  = 1'b1;                   //
+
+
+
+			  
+			state_next  = STATE_IRQ;              //handle exception
+		     end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		      
+
+
+
 	       agu_drv_rst    = 1'b1;                       //drive reset vector
 	       if (~pbus_stall_i)                           //proceed, unless the bus is stalled
 		 state_next = STATE_COF1;

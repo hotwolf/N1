@@ -51,9 +51,16 @@ module N1_us
     //IR interface
     //------------
     input wire [STP_WIDTH-1:0]             ir_stp_i          //stack transition pattern 
-    input wire [STP_WIDTH-1:0]             ir_set_ps0_i      //overwrite PS0 
-    input wire [STP_WIDTH-1:0]             ir_set_ps1_i      //overwrite PS1 
-    input wire [STP_WIDTH-1:0]             ir_set_rs0_i      //overwrite RS0 
+    input wire                             ir_set_ps0_i      //overwrite PS0 
+    input wire                             ir_set_ps1_i      //overwrite PS1 
+    input wire                             ir_set_rs0_i      //overwrite RS0 
+    
+    //ALU interface
+    //-------------
+    input wire [STP_WIDTH-1:0]             ir_stp_i          //stack transition pattern 
+    input wire                             ir_set_ps0_i      //overwrite PS0 
+    input wire                             ir_set_ps1_i      //overwrite PS1 
+    input wire                             ir_set_rs0_i      //overwrite RS0 
     
    
     

@@ -34,34 +34,61 @@ module N1_ir
     localparam STP_WIDTH   = 10)   //width of the stack transition pattern
 
    (//Clock and reset
-    //---------------
     input wire                    clk_i,                    //module clock
     input wire                    async_rst_i,              //asynchronous reset
     input wire                    sync_rst_i,               //synchronous reset
-						            
-    //Program bus				            
-    //-----------				            
-    input  wire [CELL_WIDTH-1:0]  pbus_dat_i,               //read data
+
+    //Parameter stack interface				            
+    input  wire [CELL_WIDTH-1:0]  ps1_i,                    //TOS+1
+    input  wire [CELL_WIDTH-1:0]  ps0_i,                    //TOS
 						            
     //IR interface				            
-    //------------				            
-    input  wire                   ir_capt_cur_i,            //capture current IR   
-    input  wire                   ir_capt_next_i,           //capture next IR
-    input  wire                   ir_next_2_cur_i,          //next IR -> current IR
-    
-    output wire [PC_WIDTH-1:0]    ir_abs_adr_o,             //absolute address from opcode
-    output wire [PC_WIDTH-1:0]    ir_rel_adr_o,             //relative address from opcode
+    input  wire [CELL_WIDTH-1:0]  ir_dat_i,                 //read data input
+    input  wire                   ir_capture_i,             //capture current IR   
+    input  wire                   ir_hoard_i,               //capture hoarded IR
+    input  wire                   ir_expend_i,              //hoarded IR -> current IR
+
+    //Program Counter
+    output wire                   pc_rel_o,                 //add address offset
+    output wire                   pc_abs_o,                 //drive absolute address
+    output wire [PC_WIDTH-1:0]    pc_rel_adr_o,             //relative COF address
+    output wire [PC_WIDTH-1:0]    pc_abs_adr_o,             //absolute COF address
+ 
+    //ALU
+    output wire                   alu_add_o,                //op1 + op0
+    output wire                   alu_sub_o,                //op1 - op0
+    output wire                   alu_umul_o,               //op1 * op0 (unsigned)
+    output wire                   alu_smul_o,               //op1 * op0 (signed)
+    output wire  [CELL_WIDTH-1:0] alu_op0_o,                //first operand
+    output wire  [CELL_WIDTH-1:0] alu_op1_o,                //second operand
+   
+    //Literal
+    output wire  [CELL_WIDTH-1:0] ir_lit_o,                 //literal value
+
+    //Upper stacks
+    output wire  [STP_WIDTH-1:0]  us_stp_o,                 //stack transition pattern
+
+
+
+
+
     output wire [CELL_WIDTH-1:0]  ir_lit_o,                 //literal value
+
+
     output wire [CELL_WIDTH-1:0]  ir_io_adr_o,              //immediate I/O address
     output wire [STP_WIDTH-1:0]   ir_stp_o,                 //stack transition pattern 
     output wire [STP_WIDTH-1:0]   ir_alu_opr_o,             //ALU operator 
-    output wire [STP_WIDTH-1:0]   ir_alu_opd_o,             //ALU operand 
-    
+    output wire [STP_WIDTH-1:0]   ir_alu_opd_o,
 
+
+             //ALU operand 
+    
 
     
     //Upper stack interface
     //---------------------
+
+
 
 
 
@@ -76,11 +103,35 @@ module N1_ir
    
    //Internal signals
    //----------------  
-   //instruction registers
-   reg  [CELL_WIDTH-1:0] 	ir_cur_reg;                 //current instruction
-   reg  [CELL_WIDTH-1:0] 	ir_next_reg;                //next instruction
+   //Instruction registers
+   reg  [CELL_WIDTH-1:0] 	ir_cur_reg;                  //current instruction register
+   reg  [CELL_WIDTH-1:0] 	ir_hoard_reg;                //hoarded instruction register
 
-
+   //Flip flops
+   //----------
+   //Current instruction register
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+	if (async_rst_i)                                    //asynchronous reset
+	  ir_cur_reg  <= {CELL_WIDTH{1'b0}};
+	else if (sync_rst_i)                                //synchronous reset
+	  ir_cur_reg  <= {CELL_WIDTH{1'b0}};
+	else if (ir_capture_i | ir_expend_i)                //update IR
+	  ir_cur_reg  <= (({CELL_WIDTH{ir_capture_i}} &  ir_dat_i) |
+	                  ({CELL_WIDTH{ir_expend_i}}  &  ir_hoard_reg));
+      end // always @ (posedge async_rst_i or posedge clk_i)
+   
+   //Hoarded instruction register
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+	if (async_rst_i)                                    //asynchronous reset
+	  ir_hoard_reg  <= {CELL_WIDTH{1'b0}};
+	else if (sync_rst_i)                                //synchronous reset
+	  ir_hoard_reg  <= {CELL_WIDTH{1'b0}};
+	else if (ir_hoard_i)                                //capture opcode
+	  ir_hoard_reg  <= ir_dat_i;
+      end // always @ (posedge async_rst_i or posedge clk_i)
+  
    //Instruction decoding
    //--------------------  
    assign ir_abs_adr_o = {{CELL_WIDTH-14{1'b0},            ir_cur_reg[13:0]};
@@ -91,29 +142,14 @@ module N1_ir
    assign ir_alu_opt_o = ir_cur_reg[7:4];
    assign ir_alu_opd_o = ir_cur_reg[3:0];
    
-   //Flip flops
-   //----------
-   //Instruction registers
-   always @(posedge async_rst_i or posedge clk_i)
-     begin
-	if (async_rst_i)
-	  begin
-	     ir_cur_reg  <= {CELL_WIDTH:1'b0}};
-	     ir_next_reg <= {CELL_WIDTH:1'b0}}; 
-	  end
-	else if (sync_rst_i)
-	  begin
-	     ir_cur_reg  <= {CELL_WIDTH:1'b0}};
-	     ir_next_reg <= {CELL_WIDTH:1'b0}}; 
-	  end
-	else
-	  begin
-	     if (|{ir_capt_cur_i, ir_next_2_cur_i})
-	       ir_cur_reg   <= (({CELL_WIDTH{ir_capt_cur_i}}   & pbus_dat_i) |
-	                        ({CELL_WIDTH{ir_next_2_cur_i}} & ir_next_reg));	     
-	     if (ir_capt_next_i, ir_next_2_cur_i}
-	       ir_next_reg  <= pbus_dat_i;
-	  end // else: !if(sync_rst_i)
-     end // always @ (posedge async_rst_i or posedge clk_i)
+
+
+
+
+
+
+
+
+
 
 endmodule // N1_ir
