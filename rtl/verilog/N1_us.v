@@ -43,144 +43,157 @@ module N1_us
     localparam STP_WIDTH   = 12)   //width of the stack transition pattern
    
    (//Clock and reset
-    //---------------
-    input wire                             clk_i,            //module clock
-    input wire                             async_rst_i,      //asynchronous reset
-    input wire                             sync_rst_i,       //synchronous reset
+    input wire                             clk_i,             //module clock
+    input wire                             async_rst_i,       //asynchronous reset
+    input wire                             sync_rst_i,        //synchronous reset
+							      
+    //IR interface					      
+    input wire [CELL_WIDTH-1:0]            ir_ps0_i,          //literal value 
+    input wire [CELL_WIDTH-1:0]            ir_rs0_i,          //COF address 
 
-    //IR interface
-    //------------
-    input wire [STP_WIDTH-1:0]             ir_stp_i          //stack transition pattern 
-    input wire                             ir_set_ps0_i      //overwrite PS0 
-    input wire                             ir_set_ps1_i      //overwrite PS1 
-    input wire                             ir_set_rs0_i      //overwrite RS0 
+    input wire                             ir_ps_reset_i,     //reset stack
+    input wire                             ir_rs_reset_i,     //reset stack
+
+    input wire                             ir_pagu_to_rs0_i   //pbus_dat_i -> RS0
+    input wire                             ir_ir_to_rs0_i     //opcode     -> RS0
+    input wire                             ir_ps0_to_rs0_i    //PS0        -> RS0  
+    input wire                             ir_rs1_to_rs0_i    //RS1        -> RS0  
+
+    input wire                             ir_rs0_to_rs1_i    //RS0        -> RS1  
+
+    input wire                             ir_pbus_to_ps0_i   //pbus_dat_i -> PS0
+    input wire                             ir_ir_to_ps0_i     //opcode     -> RS0
+    input wire                             ir_alu_to_ps0_i    //ALU        -> PS0
+    input wire                             ir_rs0_to_ps0_i    //RS0        -> PS0
+    input wire                             ir_ps1_to_ps0_i    //PS1        -> PS0
+
+    input wire                             ir_alu_to_ps1_i    //ALU        -> RS1
+    input wire                             ir_ps0_to_ps1_i    //PS0        -> PS1
+    input wire                             ir_ps2_to_ps1_i    //PS2        -> PS1
+
+    input wire                             ir_ps1_to_ps2_i    //PS1        -> PS2
+    input wire                             ir_ps3_to_ps2_i    //PS3        -> PS2
+
+    input wire                             ir_ps2_to_ps3_i    //PS2        -> PS3
+    input wire                             ir_ps4_to_ps3_i    //PS4        -> PS3
+
+    input wire                             ir_ps3_to_ps4_i    //PS3        -> PS4
+
+    //Flow control interface
+    input wire                             fc_update_stacks_i //do stack transition
     
     //ALU interface
-    //-------------
-    input wire [STP_WIDTH-1:0]             ir_stp_i          //stack transition pattern 
-    input wire                             ir_set_ps0_i      //overwrite PS0 
-    input wire                             ir_set_ps1_i      //overwrite PS1 
-    input wire                             ir_set_rs0_i      //overwrite RS0 
+    input wire [CELL_WIDTH-1:0]            alu_ps0_i          //ALU output for PS0 
+    input wire [CELL_WIDTH-1:0]            alu_ps1_i          //overwrite PS1 
     
+    //Program AGU interface
+    input wire [CELL_WIDTH-1:0]            pagu_pc_next_i     //PAGU output for S0 
    
-    
-   
-    
-   
-    
-   
-    
-    //ALU interface
-    //------------- 
-    output wire [CELL_WIDTH-1:0]           alu_psinfo_up_o,  //stack status 
-    output wire [CELL_WIDTH-1:0]           alu_op0_o,        //1st operand
-    output wire [CELL_WIDTH-1:0]           alu_op1_o,        //2nd operand
-    input  wire [(2*CELL_WIDTH)-1:0]       alu_res_i,        //result
+    //Dbus interface					      
+    input  wire [CELL_WIDTH-1:0]           pbus_dat_i,        //read data
+    							      
+    //Upper stack interface
+    output wire [CELL_WIDTH:0]             us_rs0_o           //RS0 (TOS)
+    output wire [CELL_WIDTH:0]             us_ps0_o           //PS0 (TOS)
+    output wire [CELL_WIDTH:0]             us_ps1_o           //PS1 (TOS+1)
+    output wire [CELL_WIDTH:0]             us_ps2_o           //PS2 (TOS+2)
+    output wire [CELL_WIDTH:0]             us_ps3_o           //PS3 (TOS+3)
+     							      
+    //Lower return stack interface			      
+    input  wire [CELL_WIDTH:0]             irs_rs1_i,         //RS1 (TOS+1)
+   							      
+    //Lower parameter stack 		      
+    input  wire [CELL_WIDTH:0]             ips_ps4_i);        //PS4 (TOS+4)
 
-    //Dbus interface
-    //--------------
-    output wire [CELL_WIDTH-1:0]           dbus_adr_o,       //address
-    output wire [CELL_WIDTH-1:0]           dbus_dat_o,       //write data
-    input  wire [CELL_WIDTH-1:0]           dbus_dat_i,       //read data
-    
-    //Interface io lower return stack
-    //-------------------------------
-    output wire [CELL_WIDTH:0]             rs0_o,            //RS0 (TOS)
-    input  wire [CELL_WIDTH:0]             rs1_i,            //RS1 (TOS+1)
-   
-    //Interface io lower parameter stack
-    //----------------------------------
-    output wire [CELL_WIDTH:0]             ps3_o,            //PS3 (TOS+3)
-    input  wire [CELL_WIDTH:0]             ps4_i,            //PS4 (TOS+4)
-    
-    );
-   
-   //Stack cells
-   reg  [CELL_WIDTH:0] 			   rs0_reg;          //RS0 (TOS)
-   reg  [CELL_WIDTH:0] 			   ps0_reg;          //PS0 (TOS)
-   reg  [CELL_WIDTH:0] 			   ps1_reg;          //PS1 (TOS+1)
-   reg  [CELL_WIDTH:0] 			   ps2_reg;          //PS2 (TOS+2)
-   reg  [CELL_WIDTH:0] 			   ps3_reg;          //PS3 (TOS+3)
-   
-   //Stack transition controls 
-   reg                                     ps0_to_rs0;       //PS0  -> RS0
-   reg                                     rs1_to_rs0;       //RS1  -> RS0
-   reg                                     alu_to_ps0;       //ALU  -> PS0
-   reg                                     dbus_to_ps0;      //DBUS -> PS0
-   reg                                     rs0_to_ps0;       //RS0  -> PS0
-   reg                                     ps1_t0_ps0;       //PS1  -> PS0
-   reg                                     alu_to_ps1;       //ALU  -> PS1
-   reg                                     ps0_to_ps1;       //PS0  -> PS1
-   reg                                     ps2_t0_ps1;       //PS2  -> PS1
-   reg                                     ps1_to_ps2;       //PS1  -> PS2
-   reg                                     ps3_t0_ps2;       //PS3  -> PS2
-   reg                                     ps2_to_ps3;       //PS2  -> PS3
-   reg                                     ps4_to_ps3;       //PS4  -> PS3
+   //Stack cells (MSB = tag)				      
+   reg  [CELL_WIDTH:0] 			   rs0_reg;           //RS0 (TOS)
+   reg  [CELL_WIDTH:0] 			   ps0_reg;           //PS0 (TOS)
+   reg  [CELL_WIDTH:0] 			   ps1_reg;           //PS1 (TOS+1)
+   reg  [CELL_WIDTH:0] 			   ps2_reg;           //PS2 (TOS+2)
+   reg  [CELL_WIDTH:0] 			   ps3_reg;           //PS3 (TOS+3)
 
-   
-
-
-
-
-
-   
-
-
-
-   
-   //Flip flops
+   //RS0
    always @(posedge async_rst_i or posedge clk_i)
-     begin
-	if (async_rst_i)
-	  begin                                              //asynchronous reset
-	     rs0_reg <= {CELL_WIDTH+1{1'b0}};                //return stack:    TOS
-             ps0_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS
-             ps1_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+1
-             ps2_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+2
-             ps3_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+3
-          end
-        else if (sync_rst_i)
-          begin                                              //asynchronous reset
-   	     rs0_reg <= {CELL_WIDTH+1{1'b0}};                //return stack:    TOS
-             ps0_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS
-             ps1_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+1
-             ps2_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+2
-             ps3_reg <= {CELL_WIDTH+1{1'b0}};                //parameter stack: TOS+3
-          end
-        else
-          begin                                              //asynchronous reset
-	     //RS0 (TOS)
-	     if (ps0_to_rs0 |
-                 rs1_to_rs0)
-	       rs0_reg <= ({CELL_WIDTH+1{ps0_to_rs0}} & ps0_reg) |
-	     	          ({CELL_WIDTH+1{rs1_to_rs0}} & rs1_i);
-	     //PS0 (TOS)
-	     if (alu_to_ps0  |
-		 dbus_to_ps0 |
-		 rs0_to_ps0  |
-		 ps1_t0_ps0)
-	       ps0_reg <= ({CELL_WIDTH+1{alu_to_ps0}} & {1'b1, alu_res_i[CELL_WIDTH-1:0]})  |
-		          ({CELL_WIDTH+1{alu_to_ps0}} & {1'b1, dbus_dat_i[CELL_WIDTH-1:0]}) |
-		          ({CELL_WIDTH+1{rs0_to_ps0}} & rs0)                                |
-		          ({CELL_WIDTH+1{ps1_to_ps0}} & ps1);
-	     //PS1 (TOS+1)
-	     if (alu_to_ps1 |
-		 ps0_to_ps1 |
-		 ps2_t0_ps1)
-	       ps1_reg <= ({CELL_WIDTH+1{alu_to_ps1}} & {1'b1, alu_in[(2*CELL_WIDTH)-1:CELL_WIDTH]}) |
-		          ({CELL_WIDTH+1{ps0_to_ps1}} & rs0)                                         |
-		          ({CELL_WIDTH+1{ps2_to_ps1}} & ps2);
-	     //PS2 (TOS+2)
-	     if (ps1_to_ps2 |
-		 ps3_t0_ps2)
-	       ps2_reg <= ({CELL_WIDTH+1{ps1_to_ps12} & ps1) |
-		          ({CELL_WIDTH+1{ps3_to_ps12} & ps3);	
-	     //PS3 (TOS+3)
-	     if (ps2_to_ps3 |
-                 ps4_to_ps3)
-	       rs3_reg <= ({CELL_WIDTH+1{ps2_to_ps3}} & ps0_reg) |
-	     	          ({CELL_WIDTH+1{ps4_to_ps3}} & ps4_i);
-          end // else: !if(sync_rst_i)
-     end // always @ (posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                         //asynchronous reset
+       rs0_reg <= {CELL_WIDTH+1{1'b0}};           
+     else if (sync_rst_i)                                     //synchronous reset
+       rs0_reg <= {CELL_WIDTH+1{1'b0}};
+     else if (fc_update_stacks_i &                            //stack transition
+	      |{ir_rs_reset,
+		ps0_to_rs0,
+		ir_to_rs0,
+		ps0_to_rs0,
+		rs1_to_rs0})
+       rs0_reg <= ({CELL_WIDTH+1{ps0_to_rs0}}       & {1'b1, pagu_pc_next_i}) |
+	          ({CELL_WIDTH+1{ir_to_rs0}}        & {1'b1, ir_rs0_i})       |
+	          ({CELL_WIDTH+1{ps0_to_rs0}}       &        ps0_reg)         |
+	          ({CELL_WIDTH+1{rs1_to_rs0}}       &        irs_rs1_i);
+	  
+   //PS0 (TOS)
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                         //asynchronous reset
+       ps0_reg <= {CELL_WIDTH+1{1'b0}};           
+     else if (sync_rst_i)                                     //synchronous reset
+       ps0_reg <= {CELL_WIDTH+1{1'b0}};
+     else if (fc_update_stacks_i &                            //stack transition
+              |{ir_ps_reset,
+		ir_pbus_to_ps0_i,
+                ir_ir_to_ps0_i,
+                ir_alu_to_ps0_i,
+                ir_rs0_to_ps0_i,
+                ir_ps1_to_ps0_i})
+       ps0_reg <= ({CELL_WIDTH+1{ir_pbus_to_ps0_i}} & {1'b1, pbus_dat_i}) |
+	          ({CELL_WIDTH+1{ir_ir_to_ps0_i}}   & {1'b1, ir_ps0_i})   |
+	          ({CELL_WIDTH+1{ir_alu_to_ps0_i}}  & {1'b1, alu_ps0_i})  |
+	          ({CELL_WIDTH+1{ir_rs0_to_ps0_i}}  &        rs0_reg)     |
+	          ({CELL_WIDTH+1{ir_ps1_to_ps0_i}}  &        ps1_rs1_i);
 
-endmodule // N1_upstack
+   //PS1
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                         //asynchronous reset
+       ps1_reg <= {CELL_WIDTH+1{1'b0}};           
+     else if (sync_rst_i)                                     //synchronous reset
+       ps1_reg <= {CELL_WIDTH+1{1'b0}};
+     else if (fc_update_stacks_i &                            //stack transition
+              |{ir_ps_reset,
+		ir_alu_to_ps1_i,
+                ir_ps0_to_ps1_i,
+                ir_ps2_to_ps1_i})
+       ps1_reg <= ({CELL_WIDTH+1{ir_alu_to_ps1_i}}  & {1'b1, alu_ps1_i})  |
+	          ({CELL_WIDTH+1{ir_ps0_to_ps1_i}}  &        ps0_reg)     |
+	          ({CELL_WIDTH+1{ir_ps2_to_ps1_i}}  &        ps2_reg);
+
+   //PS2
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                         //asynchronous reset
+       ps2_reg <= {CELL_WIDTH+1{1'b0}};           
+     else if (sync_rst_i)                                     //synchronous reset
+       ps2_reg <= {CELL_WIDTH+1{1'b0}};
+     else if (fc_update_stacks_i &                            //stack transition
+              |{ir_ps_reset,
+		ir_ps0_to_ps1_i,
+                ir_ps2_to_ps1_i})
+       ps2_reg <= ({CELL_WIDTH+1{ir_ps1_to_ps2_i}}  &        ps1_reg)     |
+	          ({CELL_WIDTH+1{ir_ps3_to_ps2_i}}  &        ips_ps3_reg);
+
+   //PS3
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                         //asynchronous reset
+       ps3_reg <= {CELL_WIDTH+1{1'b0}};           
+     else if (sync_rst_i)                                     //synchronous reset
+       ps3_reg <= {CELL_WIDTH+1{1'b0}};
+     else if (fc_update_stacks_i &                            //stack transition
+              |{ir_ps_reset,
+		ir_ps2_to_ps3_i,
+                ir_ps4_to_ps3_i})
+       ps3_reg <= ({CELL_WIDTH+1{ir_ps1_to_ps2_i}}  &        ps1_reg)     |
+	          ({CELL_WIDTH+1{ir_ps3_to_ps2_i}}  &        ps3_reg);
+
+   //Outputs
+   assign us_rs0_o = rs0_reg;                                //RS0 (TOS)
+   assign us_ps0_o = ps0_reg;                                //PS0 (TOS)
+   assign us_ps3_o = ps1_reg;                                //PS1 (TOS+1)
+   assign us_ps3_o = ps2_reg;                                //PS2 (TOS+2)
+   assign us_ps3_o = ps3_reg;                                //PS3 (TOS+3)
+	  
+endmodule // N1_us

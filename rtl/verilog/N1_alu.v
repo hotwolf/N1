@@ -40,44 +40,72 @@ module N1_alu
  
    (//Clock and reset
     //---------------
-    input wire                             clk_i,            //module clock
-    input wire                             async_rst_i,      //asynchronous reset
-    input wire                             sync_rst_i,       //synchronous reset
+    //input wire                           clk_i,            //module clock
+    //input wire                           async_rst_i,      //asynchronous reset
+    //input wire                           sync_rst_i,       //synchronous reset
 
+
+
+
+    
     //IR interface
-    //------------
-    input wire [3:0]                       ir_op_i           //operator
-    input wire [3:0]                       ir_imm_i          //immediate operand
+
+
+
+
+
+
     
     //Interface to the upper stacks
     //-----------------------------
-    input  wire [3:0]                      ps_stat_up_i,     //stack status
-    input  wire [CELL_WIDTH-1:0]           alu_op0_i,        //1st operand
-    input  wire [CELL_WIDTH-1:0]           alu_op1_i,        //2nd operand
-    output wire [(2*CELL_WIDTH)-1:0]       alu_res_o,        //result
+    input wire [3:0] 		     ps_stat_up_i, //stack status
+    input wire [CELL_WIDTH-1:0]      alu_op0_i, //1st operand
+    input wire [CELL_WIDTH-1:0]      alu_op1_i, //2nd operand
+    output wire [(2*CELL_WIDTH)-1:0] alu_res_o, //result
 
     //Interface to the intermediate stacks
     //------------------------------------
-    input  wire [ISTACK_DEPTH-1:0]         ps_stat__im_i,    //stack status
+    input wire [ISTACK_DEPTH-1:0]    ps_stat__im_i, //stack status
 
     //Interface to the lower stacks
     //-----------------------------
-    input  wire [SBUS_ADR_WIDTH-1:0]       ps_stat_lo_i,     //stack status
+    input wire [SBUS_ADR_WIDTH-1:0]  ps_stat_lo_i, //stack status
 
     
 
-
-
-
-
     
-
-
+    //Hard IP interface		     
+    output wire 		     hip_alu_add_o, //op1 + op0
+    output wire 		     hip_alu_sub_o, //op1 - op0
+    output wire 		     hip_alu_umul_o, //op1 * op0 (unsigned)
+    output wire 		     hip_alu_smul_o, //op1 * op0 (signed)
+    output wire [CELL_WIDTH-1:0]     hip_alu_op0_o, //first operand
+    output wire [CELL_WIDTH-1:0]     hip_alu_op1_o, //second operand
+    input wire [(2*CELL_WIDTH)-1:0]  hip_alu_i,             //result
 
 
     
 
     ); 
 
+   
+
+
+
+   
+
+    //Add, subtract, multiply
+   assign hip_alu_add_o  = ir_add, //op1 + op0
+   assign hip_alu_sub_o  = ir_sub, //op1 - op0
+   assign hip_alu_umul_o = ir_umul, //op1 * op0 (unsigned)
+   assign hip_alu_smul_o = ir_smul, //op1 * op0 (signed)
+   assign hip_alu_op0_o, //first operand
+   assign hip_alu_op1_o, //second operand
+
+   
+
+
+
+   
 
 endmodule // N1_alu

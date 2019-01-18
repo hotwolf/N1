@@ -49,20 +49,24 @@ module N1_is
     parameter   LS_GROW_UPWARDS =  0)                          //0=lower stack grows towards lower addresses
                                                                //1=lower stack grows towards higher addresses
    (//Clock and reset
-    input  wire                              clk_i,            //module clock
-    input  wire                              async_rst_i,      //asynchronous reset
-    input  wire                              sync_rst_i,       //synchronous reset
+    input  wire                             clk_i,             //module clock
+    input  wire                             async_rst_i,       //asynchronous reset
+    input  wire                             sync_rst_i,        //synchronous reset
 
     //Upper stack interface
-    input  wire  [CELL_WIDTH-1:0]            us_bos_i,         //data input: US->IS
+    input  wire  [CELL_WIDTH-1:0]           us_bos_i,          //data input: US->IS
 
     //Intermediate stack interface
-    output wire [CELL_WIDTH-1:0]            is_tos_o,          //data output: IS->US
-    output wire                             is_filled_o,       //immediate stack holds data
+    output wire [CELL_WIDTH:0]              is_tos_o,          //data output: IS->US
     output reg                              is_busy_o,         //RAM controller is busy
-    input  wire                             is_push_i,         //push data to TOS
-    input  wire                             is_pull_i,         //pull data from TOS
-    input  wire                             is_reset_i,        //pull data from TOS
+
+    //IR interface					      
+    input wire                              ir_reset_i,        //reset stack
+    input wire                              ir_us_to_is_i,     //US(BOS) -> IS(TOS)
+    input wire                              ir_is_to_us_i,     //IS(TOS) -> US(BOS)
+
+    //Flow control interface
+    input wire                              fc_update_stacks_i, //do stack transition
 
     //Lower stack bus
     output reg                              lsbus_cyc_o,       //bus cycle indicator       +-
