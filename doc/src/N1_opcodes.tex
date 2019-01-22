@@ -694,120 +694,187 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
     \hline
     \endlastfoot
 
-    %Add
-      \texttt{00000}          &
-      Addition                &
-      x1 $+$ $uimm$           &
-      x1 $+$ x2               \\ \hline
-                              
-    %Subtract                 
-      \texttt{00001}          &
-      Subtraction             &
-      x1 $-$ $uimm$           &
-      x1 $-$ x2               \\ \hline
-
-    %Unsigned multiply
-      \texttt{00010}          &
-      Unsigned multiplication &
-      x1 $*$ $uimm$           &
-      x1 $*$ x2               \\ \hline
-
-    %Signed multiply
-      \texttt{00011}          &
-      Signed multiplication   &
-      x1 $*$ $simm$           &
-      x1 $*$ x2               \\ \hline
-
-    %AND
-      \texttt{00100}          &
-      Logical AND             &
-      x1 $\land$ $simm$       &
-      x1 $\land$ x2           \\ \hline
-
-    %OR
-      \texttt{00101}          &
-      Logical OR              &
-      x1 $\lor$ $uimm$        &
-      x1 $\lor$ x2            \\ \hline
-
-    %XOR
-      \texttt{00110}          &
-      Logical XOR             &
-      x1 $\oplus$ $uimm$     &
-      x1 $\oplus$ x2         \\ \hline
-    
-    %One's complement
-      \texttt{00111}          &
-      One's complement        &
-      $\lnot$ x1              &
-      $\lnot$ x2              \\ \hline
-
-    %Two's complement
-      \texttt{01000}          &
-      Two's complement        &
-      $-$ x1                  &
-      $-$ x2                 \\ \hline
- 
-
-    %Right shift
-      \texttt{01001}          &
-      Logical right shift     &
-      x1 $\gg$ $uimm$         &
-      x2 $\gg$ x1             \\ \hline
-
-    %Left shift
-      \texttt{01010}          &
-      Logic left shift        &
-      x1 $\ll$ $uimm$         &
-      x2 $\ll$ x1             \\ \hline
-
-    %<
-      \texttt{01011}          &
-      Less than               &
-      x1 $<$ $simm$           &
-      x1 $<$ x2               \\ \hline
-            
-    %=
-      \texttt{01100}          &
-      Equals                  &
-      x1 $\equiv$ $simm$      &
-      x1 $\equiv$ x2          \\ \hline
-
-    %>
-      \texttt{01101}          &
-      Greater than            &
-      x1 $>$ $simm$           &
-      x1 $>$ x2               \\ \hline
+    %Single cell zero comparisons
+    %Signed greater-than
+      \texttt{00000}                       &
+      Signed greater-than comparison       &
+      x1 $>$ $oimm$                        &
+      x1 $>$ x2                            \\ \hline
+                                           
+    %Signed lower-than                     
+      \texttt{00001}                       &
+      Signed lower-than comparison         &
+      x1 $<$ $oimm$                        &
+      x1 $<$ x2                            \\ \hline
+                                           
+    %Equals                                
+      \texttt{00010}                       &
+      Equals comparison                    &
+      x1 $\equiv$ $oimm$                   &
+      x1 $\equiv$ x2                       \\ \hline
+                                           
+    %Not-Equals                            
+      \texttt{00011}                       &
+      Not-equals comparison                &
+      x1 $\ne$ $oimm$                      &
+      x1 $\ne$ x2                          \\ \hline
+    %---------------------------------
       
-    %0<
-      \texttt{01110}          &
-      Less than zero          &
-      x1 $<$ $0$              &
-      x2 $<$ $0$              \\ \hline
+    %Adder operations
+    %Sum
+      \texttt{00100}                       &
+      Sum                                  &
+      x1 $+$ $uimm$                        &
+      x1 $+$ x2                            \\ \hline
+                                           
+    %Difference                            
+      \texttt{00101}                       &
+      Difference                           &
+      x1 $-$ $uimm$                        &
+      x1 $-$ x2                            \\ \hline
+                                           
+    %Sum                                   
+      \texttt{00100}                       &
+      Sum with inverted summand            &
+      x1 $+$ $uimm$                        &
+      x1 $+$ x2                            \\ \hline
+                                           
+    %Difference                            
+      \texttt{00101}                       &
+      Difference with inverted summand     &
+      $\bar{x1}$ $-$ $uimm$                &
+      $\bar{x1}$ $-$ x2                    \\ \hline
+    %---------------------------------
+                                                                             
+    %Multiplier operations             
+    %Unsigned product                  
+      \texttt{01000}                       &
+      Unsigned product                     &
+      x1 $*$ $uimm$                        &
+      x1 $*$ x2                            \\ \hline
+                                           
+    %Signed product                        
+      \texttt{01001}                       &
+      Signed product                       &
+      x1 $*$ $simm$                        &
+      x1 $*$ x2                            \\ \hline
+                                           
+    %Reserved                              
+      \texttt{01010}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+                                           
+    %Reserved                              
+      \texttt{01011}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+    %---------------------------------
+                                       
+    %Bitwise logic operations          
+    %AND                               
+      \texttt{01100}                       &
+      Logic AND                            &
+      x1 $\land$ $simm$                    &
+      x1 $\land$ x2                        \\ \hline
+                                           
+    %OR                                    
+      \texttt{01101}                       &
+      Logical OR                           &
+      x1 $\lor$ $uimm$                     &
+      x1 $\lor$ x2                         \\ \hline
+                                           
+    %XOR                                   
+      \texttt{01110}                       &
+      Logical XOR                          &
+      x1 $\oplus$ $simm$                   &
+      x1 $\oplus$ x2                       \\ \hline
+                                           
+    %Reserved                              
+      \texttt{01111}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+    %---------------------------------
+                                       
+    %Shift operations             
+    %Logic right shift
+      \texttt{10000}                       &
+      Logic right shift                    &
+      x1 $\gg$ $uimm$                      &
+      x2 $\gg$ x1                          \\ \hline
+                                           
+    %Logic left shift                      
+      \texttt{10001}                       &
+      Logic left shift                     &
+      x1 $\ll$ $uimm$                      &
+      x2 $\ll$ x1                          \\ \hline
+                                           
+    %Arithmetic right shift                
+      \texttt{10010}                       &                      
+      Arithmetic right shift               &
+      x1 $\gg$ $uimm$                      &
+      x2 $\gg$ x1                          \\ \hline
 
-    %0=
-      \texttt{01110}          &
-      Equals zero             &
-      x1 $\equiv$ $0$         &
-      x2 $\equiv$ $0$         \\ \hline
-      
+    %Reserved                          
+      \texttt{10011}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+    %---------------------------------
+
+    %Reserved operators         
+    %Reserved                          
+      \texttt{10101}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+
+    %Reserved                          
+      \texttt{10101}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+
+    %Reserved                          
+      \texttt{10110}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+
+    %Reserved                          
+      \texttt{10111}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+    %---------------------------------
+
+    %Special operations             
     %Immediate value
-      \texttt{10000}          &
-      Immediate value         &
-      $simm$:x1               &
-      x1:x2                   \\ \hline
-   
+      \texttt{11000}                       &
+      Set upper bits of an immediate value &
+      {$simm$, x1[11:0]}                   &   
+      {$simm$, x2[11:0]}                   \\ \hline
+ 
+    %Reserved                          
+      \texttt{11001}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+
+
+    %Reserved                          
+      \texttt{11010}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+
+    %Reserved                          
+      \texttt{11011}                       &
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
+    %---------------------------------
+    
+    %Status information            
+    %Interrupt requests
+      \texttt{11000}                       &
+      Current interrupt vector             &
+      \multicolumn{2}{|l|}{Vector address} \\ \hline
+
+    %Exception code
+      \texttt{11000}                       &
+      Current error code                   &
+      \multicolumn{2}{c|}{throw code}      \\ \hline
+
     %PS status
-      \texttt{10000}          &
-      \Gls{ps} status         &
-      stack information       &
-      stack information       \\ \hline
+      \texttt{10000}                       &
+      \Gls{ps} status                      &
+      \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
 
     %RS status
-      \texttt{10000}          &
-      \Gls{rs} status         &
-      stack information       &
-      stack information       \\ \hline
+      \texttt{10000}                       &
+      \Gls{rs} status                      &
+      \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
     
   \end{longtable}
 \end{center}  

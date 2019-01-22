@@ -31,7 +31,7 @@
 module N1_ir
   #(localparam CELL_WIDTH  = 16,   //cell width
     localparam PC_WIDTH    = 15)   //width of the program counter
-    localparam STP_WIDTH   = 10)   //width of the stack transition pattern
+    localparam IMOP_WIDTH  =  5)   //width of immediate operands
 
    (//Clock and reset
     input wire                    clk_i,                    //module clock
@@ -66,7 +66,7 @@ module N1_ir
     output wire                   alu_rsh_o,                //op1 >> op0
 
 
-    output wire [CELL_WIDTH-1:0]  ir_op_i,                  //immediate ALU operand 
+    output wire [IMOP_WIDTH-1:0]  ir_imop_i,                //immediate ALU operand 
 
     output wire [CELL_WIDTH-1:0]  ir_ps0_i,                 //literal value 
     output wire [CELL_WIDTH-1:0]  ir_rs0_i,                 //COF address 

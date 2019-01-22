@@ -67,8 +67,10 @@ module N1_hard
     input wire                              alu_sub_i,         //op1 - op0
     input wire                              alu_umul_i,        //op1 * op0 (unsigned)
     input wire                              alu_smul_i,        //op1 * op0 (signed)
-    input wire  [CELL_WIDTH-1:0]            alu_op0_i,         //first operand
-    input wire  [CELL_WIDTH-1:0]            alu_op1_i,         //second operand
+    input wire  [CELL_WIDTH-1:0]            alu_add_op0_i,     //first operand for adder/subtractor
+    input wire  [CELL_WIDTH-1:0]            alu_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
+    input wire  [CELL_WIDTH-1:0]            alu_mul_op0_i,     //first operand for multipliers
+    input wire  [CELL_WIDTH-1:0]            alu_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
     output wire [(2*CELL_WIDTH)-1:0]        alu_o);            //result
 
    //Internal Signals
