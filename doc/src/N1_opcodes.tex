@@ -666,7 +666,18 @@ a single instruction. For larger integers a supplemental TBD \gls{call} is requi
 the most significant \gls{cell}. The first operand is always taken from the \Gls{ps}. The second operand can be
 either taken from the \Gls{ps} or encoded into the opcode of the instruction. In the latter case,
 the interpretation of the embedded 5-bit value depends on the operation. It is either regarded as an unsigned
-($uimm$) or a sign extended value( $simm$). \tabref{opcodes:alu:operators} lists the supported \gls{alu} operations.
+($uimm$), a sign extended ($simm$), or an offsetted ($oimm$) integer value:
+
+\begin{align*}
+  uimm &= \text{opcode[4:0]}                                     \\
+  simm &= \begin{cases}
+            \text{opcode[4:0]},      &\text{if opcode[4:0]} < 16 \\
+            \text{opcode[4:0]} - 32, &\text{if opcode[4:0]} \ge 16
+          \end{cases}                                            \\
+  oimm &= \text{opcode[4:0]} - 16
+\end{align*}
+
+\tabref{opcodes:alu:operators} lists the supported \gls{alu} operations.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
