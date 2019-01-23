@@ -35,9 +35,9 @@
 `default_nettype none
 
 module N1_alu
-  #(localparam CELL_WIDTH     = 16,   //cell width
-    localparam OPERATOR_WIDTH = 5,    //width of the operator field
-    localparam IMMOP_WIDTH    = 5)    //width of immediate values
+  #(localparam CELL_WIDTH  = 16,   //cell width
+    localparam OPR_WIDTH   = 5,    //width of the operator field
+    localparam IMMOP_WIDTH = 5)    //width of immediate values
  
    (//Clock and reset
     //---------------
@@ -46,8 +46,8 @@ module N1_alu
     //input wire                           sync_rst_i,       //synchronous reset
 
     //IR interface				            
-    output wire [OPERATOR_WIDTH-1:0] ir_alu_operator,        //ALU operator
-    output wire [IMMOP_WIDTH:0]      ir_alu_immop,           //immediade operand
+    output wire [OPERATOR_WIDTH-1:0] ir_alu_opr_i,        //ALU operator
+    output wire [IMMOP_WIDTH:0]      ir_alu_immop_i,           //immediade operand
  
     
 
@@ -85,13 +85,16 @@ module N1_alu
 
     
     //Hard IP interface		     
-    output wire 		     hip_alu_add_o, //op1 + op0
-    output wire 		     hip_alu_sub_o, //op1 - op0
-    output wire 		     hip_alu_umul_o, //op1 * op0 (unsigned)
-    output wire 		     hip_alu_smul_o, //op1 * op0 (signed)
-    output wire [CELL_WIDTH-1:0]     hip_alu_op0_o, //first operand
-    output wire [CELL_WIDTH-1:0]     hip_alu_op1_o, //second operand
-    input wire [(2*CELL_WIDTH)-1:0]  hip_alu_i,             //result
+    output wire 		     alu_hm_add_o,           //op1 + op0
+    output wire 		     alu_hm_sub_o,           //op1 - op0
+    output wire 		     alu_hm_umul_o,          //op1 * op0 (unsigned)
+    output wire 		     alu_hm_smul_o,          //op1 * op0 (signed)
+    output wire [CELL_WIDTH-1:0]     alu_hm_add_op0_o,       //first operand for adder
+    output wire [CELL_WIDTH-1:0]     alu_hm_add_op1_o,       //second operand for adder
+    output wire [CELL_WIDTH-1:0]     alu_hm_mul_op0_o,       //first operand for multiplier
+    output wire [CELL_WIDTH-1:0]     alu_hm_mul_op1_o,       //second operand for multiplier
+    input wire  [(2*CELL_WIDTH)-1:0] alu_hm_add_i,           //result from adder
+    input wire  [(2*CELL_WIDTH)-1:0] alu_hm_mul_i,           //result from multiplier
 
 
     
@@ -113,87 +116,78 @@ module N1_alu
       
    //Internal signals
    //----------------  
-   //Immediate operands 
-   wire [CELL_WIDTH-1:0] uimm = {{  CELL_WIDTH-IMMOP_WIDTH{1'b0}},                         ir_alu_immop}; //unsigned immediate operand
-   wire [CELL_WIDTH-1:0] simm = {{1+CELL_WIDTH-IMMOP_WIDTH{ ir_alu_immop[IMMOP_WIDTH-1]}}, ir_alu_immop}; //signed immediate operand
-   wire [CELL_WIDTH-1:0] oimm = {{1+CELL_WIDTH-IMMOP_WIDTH{~ir_alu_immop[IMMOP_WIDTH-1}},  ir_alu_immop}; //unsigned immediate operand
-   wire                  imm_is_zero = ~|ir_alu_immop;                                                 //immediate operand is zero
+   //Intermediate operands
+   wire                      imm_is_zero;                    //immediate operand is zero
+   wire [CELL_WIDTH-1:0]     uimm;                           //unsigned immediate operand   (1..31)
+   wire [CELL_WIDTH-1:0]     simm;                           //signed immediate operand   (-16..-1,1..15)
+   wire [CELL_WIDTH-1:0]     oimm;                           //shifted immediate oprtand  (-15..15)
+   //Adder
+   wire [(2*CELL_WIDTH)-1:0] add_out;                        //adder output
+   //Comparator
+   wire                      cmp_eq;                         //equals comparator output		     
+   wire                      cmp_neq;                        //not-equals comparator output          
+   wire                      cmp_lt_unsig;                   //unsigned lower_than comparator output 
+   wire                      cmp_gt_sig                      //signed greater-than comparator output 
+   wire                      cmp_gt_unsig;                   //unsigned greater_than comparator output
+   wire                      cmp_lt_sig;                     //signed lower-than comparator output   
+   wire                      cmp_eq;                         //equals comparator output		     
+   wire                      cmp_neq;                        //not-equals comparator output          
+   wire                      cmp_mexed;                      //multiplexed comparator outputs          
+   wire [(2*CELL_WIDTH)-1:0] cmp_out;                        //comparator output   
+   //Multiplier
+   wire [(2*CELL_WIDTH)-1:0] mul_out;                        //multiplier output
 
-   //Operators
-   wire                  opr_add  = ~|(ir_alu_operator ^ ALU_ADD);  //addition
-   wire                  opr_sub  = ~|(ir_alu_operator ^ ALU_SUB);  //subtracttion
-   wire                  opr_umul = ~|(ir_alu_operator ^ ALU_UMUL); //unsigned multiplication
-   wire                  opr_smul = ~|(ir_alu_operator ^ ALU_SMUL); //signed multiplication
-   wire                  opr_and  = ~|(ir_alu_operator ^ ALU_AND);  //logic AND
-   wire                  opr_or   = ~|(ir_alu_operator ^ ALU_OR);   //logic OR
-   wire                  opr_xor  = ~|(ir_alu_operator ^ ALU_XOR);  //logic XOR
-   wire                  opr_neg  = ~|(ir_alu_operator ^ ALU_NEG);  //2's complement
-   wire                  opr_lsr  = ~|(ir_alu_operator ^ ALU_LSR);  //logic right shift
-   wire                  opr_asr  = ~|(ir_alu_operator ^ ALU_ASR);  //arithmetic right shift
-   wire                  opr_lsl  = ~|(ir_alu_operator ^ ALU_LSL);  //logic left shift
+  
+ 
+
+   //Immediate operands
+   //------------------  
+   assign imm_is_zero = ~|ir_alu_immop;                                                                            //immediate operand is zero
+   assign uimm        = {{  CELL_WIDTH-IMMOP_WIDTH{1'b0}},                         ir_alu_immop};                  //unsigned immediate operand   (1..31)
+   assign simm        = {{1+CELL_WIDTH-IMMOP_WIDTH{ ir_alu_immop[IMMOP_WIDTH-1]}}, ir_alu_immop[IMMOP_WIDTH-2:0]}; //signed immediate operand   (-16..-1,1..15)
+   assign oimm        = {{1+CELL_WIDTH-IMMOP_WIDTH{~ir_alu_immop[IMMOP_WIDTH-1}},  ir_alu_immop[IMMOP_WIDTH-2:0]}; //shifted immediate oprtand  (-15..15)
+
+   //Hard IP adder
+   //-------------
+   //Inputs
+   assign alu_hw_sub_add_b_o = |ir_alu_opr_i[3:1];           //0:op1 + op0, 1:op1 + op0 
+   assign alu_hw_add_op0_o   = ir_alu_opr_i[0] ? (imm_is_zero ? us_ps0_i : oimm) :
+                                                 (imm_is_zero ? us_ps1_i : us_ps0_i);
+   assign alu_hw_add_op1_o   = ir_alu_opr_i[0] ? (imm_is_zero ? us_ps1_i : us_ps0_i) :
+                                                 (imm_is_zero ? us_ps0_i : uimm);
+   //Result
+   assign add_out            = ~|ir_alu_opr_i[4:2] ? {{CELL_WIDTH{alu_hw_add_i[CELL_WIDTH]}}, alu_hw_add_i[CELL_WIDTH-1:0]} :
+                                                     {2*CELL_WIDTH{1'b0}};
+
+   //Comparator
+   //----------
+   assign cmp_eq          = ~|alu_hw_add_i[CELL_WIDTH-1:0];  //equals comparator output		     
+   assign cmp_neq         = ~cmp_eq;                         //not-equals comparator output          
+   assign cmp_lt_unsig    =   alu_hw_add_i[CELL_WIDTH];	     //unsigned lower_than comparator output 
+   assign cmp_gt_sig      =   alu_hw_add_i[CELL_WIDTH-1];    //signed greater-than comparator output 
+   assign cmp_gt_unsig    =   ~|{lt_unsig, cmp_eq};          //unsigned greater_than comparator output
+   assign cmp_lt_sig      =   ~|{gt_sig,   cmp_eq};          //signed lower-than comparator output   
+   assign cmp_muxed       = (&{ir_alu_opr_i^5'b11011}                &  cmp_lt_unsig) |
+                            (&{ir_alu_opr_i^5'b11010}                &  cmp_gt_sig)   |
+                            (&{ir_alu_opr_i^5'b11001}                &  cmp_gt_unsig) |
+                            (&{ir_alu_opr_i^5'b11000}                &  cmp_lt_sig)   |
+                            (&{ir_alu_opr_i[CELL_WIDTH-1:1]^4'b1011} &  cmp_eq)       |
+                            (&{ir_alu_opr_i[CELL_WIDTH-1:1]^4'b1010} &  cmp_neq);
+   assign cmp_our         = {2*CELL_WIDTH{cmp_muxed}};
+
+   //Hard IP multiplier
+   //------------------
+   //Inputs
+   assign alu_smul_umul_b_0 = ir_alu_opr_i[1];;              //0:signed, 1:unsigned
+   assign alu_add_op0_o     = &{ir_alu_opr_i[4:2]^3'b100) ? us_ps0_i : {CELL_WIDTH{1'b0}};
+   assign alu_add_op1_o     = imm_is_zero ? us_ps1_i :
+                              (ir_alu_opr_i[0] ?  simm : uimm);           
+   //Result
+   assign mul_out           = alu_hw_mul_i;
 
 
 
-   //Immediate operands 
-   assign uimm        = {{  CELL_WIDTH-IMMOP_WIDTH{1'b0}},                         ir_alu_immop}; //unsigned immediate operand
-   assign simm        = {{1+CELL_WIDTH-IMMOP_WIDTH{ ir_alu_immop[IMMOP_WIDTH-1]}}, ir_alu_immop[IMMOP_WIDTH-2:0]}; //signed immediate operand
-   assign oimm        = {{1+CELL_WIDTH-IMMOP_WIDTH{~ir_alu_immop[IMMOP_WIDTH-1}},  ir_alu_immop[IMMOP_WIDTH-2:0]}; //unsigned immediate operand
-   assign imm_is_zero = ~|ir_alu_immop;                                                 //immediate operand is zero
 
-   //Operators
-   assign opr_add     = ~|(ir_alu_operator ^ ALU_ADD);  //addition
-   assign opr_sub     = ~|(ir_alu_operator ^ ALU_SUB);  //subtracttion
-   assign opr_umul    = ~|(ir_alu_operator ^ ALU_UMUL); //unsigned multiplication
-   assign opr_smul    = ~|(ir_alu_operator ^ ALU_SMUL); //signed multiplication
-   assign opr_and     = ~|(ir_alu_operator ^ ALU_AND);  //logic AND
-   assign opr_or      = ~|(ir_alu_operator ^ ALU_OR);   //logic OR
-   assign opr_xor     = ~|(ir_alu_operator ^ ALU_XOR);  //logic XOR
-   assign opr_neg     = ~|(ir_alu_operator ^ ALU_NEG);  //2's complement
-   assign opr_lsr     = ~|(ir_alu_operator ^ ALU_LSR);  //logic right shift
-   assign opr_asr     = ~|(ir_alu_operator ^ ALU_ASR);  //arithmetic right shift
-   assign opr_lsl     = ~|(ir_alu_operator ^ ALU_LSL);  //logic left shift
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   //Hard IP interface (adders and multipliers)
-   //Adder/Subtractor:
-   //  PS0 + uimm
-   //  PS1 + PS0
-   //  PS0 - uimm
-   //  PS1 - PS0
-   //    0 - PS0  
-   assign alu_add_o     = opr_add;                                     //op1 + op0
-   assign alu_sub_o     = opr_sub |opr_neg;                            //op1 - op0
-   assign alu_add_op1_o = opr_add |opr_sub  ?                          //op1 is zero
-			  (imm_is_zero       ? us_ps1_i : us_ps0_i) :  // if no operator
-                          {CELL_WIDTH{1'b0}};                          // is selected
-   assign alu_add_op0_o = ~imm_is_zero | opr_neg ? us_ps0_i : uimm;        //op0
-   //Multipliers:
-   //  PS0 * uimm (unsigned)
-   //  PS0 * PS1  (unsigned)
-   //  PS0 * simm (signed)
-   //  PS0 * PS1  (signed)
-   assign alu_umul_o    = opr_umul;                                    //op1 * op0 (unsigned)
-   assign alu_smul_o    = opr_smul;                                    //op1 * op0 (signed)
-   assign alu_mul_op1_o = opr_umul | opr_smul ? us_ps1_i :             //op1 is zero if no
-			                        {CELL_WIDTH{1'b0}};    // operator is selected
-   assign alu_mul_op0_o =  imm_is_zero ? us_ps0_i :                    //op0      
-			   (opr_smul   ? simm : uimm);                 //
 
    //Bitwise logic
    //AND

@@ -63,15 +63,14 @@ module N1_hard
     output wire [PC_WIDTH-1:0]              pc_next_o,         //result
 
     //ALU
-    input wire                              alu_add_i,         //op1 + op0
-    input wire                              alu_sub_i,         //op1 - op0
-    input wire                              alu_umul_i,        //op1 * op0 (unsigned)
-    input wire                              alu_smul_i,        //op1 * op0 (signed)
-    input wire  [CELL_WIDTH-1:0]            alu_add_op0_i,     //first operand for adder/subtractor
-    input wire  [CELL_WIDTH-1:0]            alu_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
-    input wire  [CELL_WIDTH-1:0]            alu_mul_op0_i,     //first operand for multipliers
-    input wire  [CELL_WIDTH-1:0]            alu_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
-    output wire [(2*CELL_WIDTH)-1:0]        alu_o);            //result
+    input wire                              alu_hw_sub_add_b_i,   //0:op1 + op0, 1:op1 + op0 
+    input wire                              alu_hw_smul_umul_b_i, //0:signed, 1:unsigned
+    input wire  [CELL_WIDTH-1:0]            alu_hw_add_op0_i,     //first operand for adder/subtractor
+    input wire  [CELL_WIDTH-1:0]            alu_hw_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
+    input wire  [CELL_WIDTH-1:0]            alu_hw_mul_op0_i,     //first operand for multipliers
+    input wire  [CELL_WIDTH-1:0]            alu_hw_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
+    output wire [(2*CELL_WIDTH)-1:0]        alu_hw_add_o);        //result from adder
+    output wire [(2*CELL_WIDTH)-1:0]        alu_hw_mul_o);        //result from multiplier
 
    //Internal Signals
    //----------------
