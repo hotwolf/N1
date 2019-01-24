@@ -63,14 +63,14 @@ module N1_hard
     output wire [PC_WIDTH-1:0]              pc_next_o,         //result
 
     //ALU
-    input wire                              alu_hw_sub_add_b_i,   //0:op1 + op0, 1:op1 + op0 
-    input wire                              alu_hw_smul_umul_b_i, //0:signed, 1:unsigned
-    input wire  [CELL_WIDTH-1:0]            alu_hw_add_op0_i,     //first operand for adder/subtractor
-    input wire  [CELL_WIDTH-1:0]            alu_hw_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
-    input wire  [CELL_WIDTH-1:0]            alu_hw_mul_op0_i,     //first operand for multipliers
-    input wire  [CELL_WIDTH-1:0]            alu_hw_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
-    output wire [(2*CELL_WIDTH)-1:0]        alu_hw_add_o);        //result from adder
-    output wire [(2*CELL_WIDTH)-1:0]        alu_hw_mul_o);        //result from multiplier
+    input wire                              alu_hm_sub_add_b_i,   //0:op1 + op0, 1:op1 + op0
+    input wire                              alu_hm_smul_umul_b_i, //0:signed, 1:unsigned
+    input wire  [CELL_WIDTH-1:0]            alu_hm_add_op0_i,     //first operand for adder/subtractor
+    input wire  [CELL_WIDTH-1:0]            alu_hm_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
+    input wire  [CELL_WIDTH-1:0]            alu_hm_mul_op0_i,     //first operand for multipliers
+    input wire  [CELL_WIDTH-1:0]            alu_hm_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
+    output wire [(2*CELL_WIDTH)-1:0]        alu_hm_add_o,        //result from adder
+    output wire [(2*CELL_WIDTH)-1:0]        alu_hm_mul_o);        //result from multiplier
 
    //Internal Signals
    //----------------
@@ -178,8 +178,8 @@ module N1_hard
    SB_MAC16_pagu
      (.CLK                       (clk_i),                      //clock input
       .CE                        (1'b1),                       //clock enable
-      .C                         (alu_op1_i),                  //op1
-      .A                         (alu_op0_i),                  //op0
+      .C                         (alu_hm_op1_i),               //op1
+      .A                         (alu_hm_op0_i),               //op0
       .B                         (pc_rel_adr_i),               //relative COF address
       .D                         (pc_abs_adr_i),               //absolute COF address
       .AHOLD                     (1'b1),                       //keep hold register stable
@@ -192,7 +192,7 @@ module N1_hard
       .ORSTBOT                   (|{async_rst_i,sync_rst_i}),  //use common reset
       .OLOADTOP                  (1'b0),                       //no bypass
       .OLOADBOT                  (pc_abs_i),                   //absolute COF
-      .ADDSUBTOP                 (alu_sub_i),                  //subtract
+      .ADDSUBTOP                 (alu_hm_sub_add_bi),          //subtract
       .ADDSUBBOT                 (1'b0),                       //always use adder
       .OHOLDTOP                  (1'b1),                       //keep hold register stable
       .OHOLDBOT                  (~pc_update_i),               //update PC
@@ -204,9 +204,9 @@ module N1_hard
       .ACCUMCO                   (alu_add_c),                  //carry bit determines upper word
       .SIGNEXTOUT                ());                          //ignore sign extension output
 
-   assign alu_add_out = {2*CELL_WIDTH{alu_add_i|alu_sub_i}} &
-                        {{CELL_WIDTH{alu_add_c}}, pagu_out[(2*CELL_WIDTH)-1:CELL_WIDTH]};
-   assign pc_next_o   = pagu_out[PC_WIDTH:0];
+   //Outputs
+   assign alu_hm_add_o = {{CELL_WIDTH{alu_add_c}}, pagu_out[(2*CELL_WIDTH)-1:CELL_WIDTH]};
+   assign pc_next_o    = pagu_out[PC_WIDTH:0];
 
    //SB_MAC32 cell for unsigned multiplications
    //-------------------------------------------
@@ -237,9 +237,8 @@ module N1_hard
      (.CLK                       (1'b0),                       //no clock
       .CE                        (1'b0),                       //no clock
       .C                         (16'h0000),                   //not in use
-      .A                         ({CELL_WIDTH{alu_umul_i}} &   //gated op0
-                                  alu_op0_i),                  //
-      .B                         (alu_op1_i),                  //op1
+      .A                         (alu_hm_op0_i),               //op0
+      .B                         (alu_hm_op1_i),               //op1
       .D                         (16'h0000),                   //not in use
       .AHOLD                     (1'b1),                       //keep hold register stable
       .BHOLD                     (1'b1),                       //keep hold register stable
@@ -292,9 +291,8 @@ module N1_hard
      (.CLK                       (1'b0),                       //no clock
       .CE                        (1'b0),                       //no clock
       .C                         (16'h0000),                   //not in use
-      .A                         (alu_op0_i),                  //op0
-      .B                         ({CELL_WIDTH{alu_smul_i}} &   //gated op1
-                                  alu_op1_i),                  //
+      .A                         (alu_hm_op0_i),               //op0
+      .B                         (alu_hm_op1_i),               //op1
       .D                         (16'h0000),                   //not in use
       .AHOLD                     (1'b1),                       //keep hold register stable
       .BHOLD                     (1'b1),                       //keep hold register stable
@@ -318,8 +316,8 @@ module N1_hard
       .ACCUMCO                   (),                           //ignore carry output
       .SIGNEXTOUT                ());                          //ignore sign extension output
 
-   //ALU output
-   //----------
-   assign alu_o = alu_add_out | alu_umul_out | alu_smul_out;
+   //Output
+   assign alu_hm_mul_o = {(alu_hm_smul_umul_b_i ? alu_smul_out[31:16] : alu_umul_out[31:16]),
+                                                                        alu_umul_out[15:0]};
 
 endmodule // N1_hard

@@ -821,17 +821,17 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
       x1 $\land$ $simm$                    &
       x1 $\land$ x2                        \\ \hline
                                            
-    %OR                                    
-      \texttt{10001}                       &
-      Logic OR                             &
-      x1 $\lor$ $uimm$                     &
-      x1 $\lor$ x2                         \\ \hline
-                                           
     %XOR                                   
-      \texttt{10010}                       &
+      \texttt{10001}                       &
       Logic XOR                            &
       x1 $\oplus$ $simm$                   &
       x1 $\oplus$ x2                       \\ \hline
+                                           
+    %OR                                    
+      \texttt{10010}                       &
+      Logic OR                             &
+      x1 $\lor$ $uimm$                     &
+      x1 $\lor$ x2                         \\ \hline
                                            
     %Reserved                              
       \texttt{10011}                       &
@@ -865,9 +865,9 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
 
     %Special operations             
     %---------------------------------
-    %Immediate value
+    %Literal value
       \texttt{11000}                       &
-      Set upper bits of an immediate value &
+      Set upper bits of a literal value    &
       {$simm$, x1[11:0]}                   &   
       {$simm$, x2[11:0]}                   \\ \hline
  
@@ -887,23 +887,23 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
    
     %Status information            
     %---------------------------------
-    %Interrupt requests
+    %Processor status
       \texttt{11100}                       &
-      Current interrupt vector             &
-      \multicolumn{2}{c|}{vector address} \\ \hline
+      Processor status                     &
+      \multicolumn{2}{c|}{status word}     \\ \hline
 
     %Exception code
-      \texttt{11100}                       &
-      Current error code                   &
+      \texttt{11101}                       &
+      Current exception                    &
       \multicolumn{2}{c|}{throw code}      \\ \hline
 
     %PS status
-      \texttt{11100}                       &
+      \texttt{11110}                       &
       \Gls{ps} status                      &
       \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
 
     %RS status
-      \texttt{11100}                       &
+      \texttt{11111}                       &
       \Gls{rs} status                      &
       \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
     %---------------------------------
