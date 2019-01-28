@@ -139,7 +139,7 @@ module N1
    wire [STP_WIDTH-1:0]                      ir_us_rtc;          //return from call
    wire [STP_WIDTH-1:0]                      ir_us_stp;          //stack transition pattern
    wire [CELL_WIDTH-1:0]                     ir_us_ps0_next;     //literal value
-   wire [CELL_WIDTH-1:0]                     ir_us_rs0_naxt;     //COF address
+   wire [CELL_WIDTH-1:0]                     ir_us_rs0_next;     //COF address
 
    //ALU - Hard macro interface
    wire                                      alu_hm_sub_add_b;   //1:op1 - op0, 0:op1 + op0
@@ -152,10 +152,10 @@ module N1
    wire [(2*CELL_WIDTH)-1:0]                 alu_hm_mul_res;     //result from multiplier
 
    //Upper stack - ALU interface
-   wire [CELL_WIDTH-1:0]                     us_alu_ps0_cur;     //current PS0 (TOS)
-   wire [CELL_WIDTH-1:0]                     us_alu_ps1_cur;     //current PS1 (TOS+1)
    wire [CELL_WIDTH-1:0]                     us_alu_ps0_next;    //new PS0 (TOS)
    wire [CELL_WIDTH-1:0]                     us_alu_ps1_next;    //new PS1 (TOS+1)
+   wire [CELL_WIDTH-1:0]                     us_alu_ps0_cur;     //current PS0 (TOS)
+   wire [CELL_WIDTH-1:0]                     us_alu_ps1_cur;     //current PS1 (TOS+1)
    wire [UPS_STAT_WIDTH-1:0]                 us_alu_pstat;       //UPS status
    wire [URS_STAT_WIDTH-1:0]                 us_alu_rstat;       //URS status
 
@@ -260,6 +260,12 @@ module N1
       .sync_rst_i               (sync_rst_i),                    //synchronous reset
 
 
+
+
+
+
+
+      
       );
 
 

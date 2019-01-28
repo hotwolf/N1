@@ -46,6 +46,46 @@ module N1_us
     input wire                             clk_i,             //module clock
     input wire                             async_rst_i,       //asynchronous reset
     input wire                             sync_rst_i,        //synchronous reset
+
+    //Flow control - upper stack interface
+    input  wire                            fc_us_update_i,    //do stack transition
+    output wire                            fc_us_busy_o,      //upper stack is busy
+
+    //Instruction register - upper stack interface
+    input  wire [STP_WIDTH-1:0]            ir_us_rtc_i,       //return from call
+    input  wire [STP_WIDTH-1:0]            ir_us_stp_i,       //stack transition pattern
+    input  wire [CELL_WIDTH-1:0]           ir_us_ps0_next_i,  //literal value
+    input  wire [CELL_WIDTH-1:0]           ir_us_rs0_next_i,  //COF address
+
+    //Upper stack - ALU interface
+    input  wire [CELL_WIDTH-1:0]           us_alu_ps0_next_i, //new PS0 (TOS)
+    input  wire [CELL_WIDTH-1:0]           us_alu_ps1_next_i, //new PS1 (TOS+1)
+    output wire [CELL_WIDTH-1:0]           us_alu_ps0_cur_o,  //current PS0 (TOS)
+    output wire [CELL_WIDTH-1:0]           us_alu_ps1_cur_o,  //current PS1 (TOS+1)
+    output wire [UPS_STAT_WIDTH-1:0]       us_alu_pstat_o,    //UPS status
+    output wire [URS_STAT_WIDTH-1:0]       us_alu_rstat_o,    //URS status
+
+   //Upper stack - intermediate parameter stack interface
+   wire                                      us_ips_rst;         //reset stack
+   wire                                      us_ips_psh;         //US  -> IRS
+   wire                                      us_ips_pul;         //IRS -> US
+   wire                                      us_ips_psh_ctag;    //upper stack cell tag
+   wire [CELL_WIDTH-1:0]                     us_ips_psh_cell;    //upper stack cell
+   wire                                      us_ips_busy;        //intermediate stack is busy
+   wire                                      us_ips_pul_ctag;    //intermediate stack cell tag
+   wire [CELL_WIDTH-1:0]                     us_ips_pul_cell;    //intermediate stack cell
+								 
+   //Upper stack - intermediate return stack interface		 
+   wire                                      us_irs_rst;         //reset stack
+   wire                                      us_irs_psh;         //US  -> IRS
+   wire                                      us_irs_pul;         //IRS -> US
+   wire                                      us_irs_psh_ctag;    //upper stack tag
+   wire [CELL_WIDTH-1:0]                     us_irs_psh_cell;    //upper stack data
+   wire                                      us_irs_busy;        //intermediate stack is busy
+   wire                                      us_irs_pul_ctag;    //intermediate stack tag
+   wire [CELL_WIDTH-1:0]                     us_irs_pul_cell;    //intermediate stack data
+
+
 							      
     //IR interface					      
     input wire [CELL_WIDTH-1:0]            ir_ps0_i,          //literal value 

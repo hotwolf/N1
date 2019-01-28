@@ -45,7 +45,7 @@
 module N1_is
   #(parameter   SP_WIDTH        =     8,                       //width of the stack pointer
     parameter   IS_DEPTH        =     8,                       //depth of the intermediate stack
-    parameter   LS_EMPTY        = 8'h00,                       //stack pointer value of the empty lower stack 
+    parameter   LS_BOS          = 8'h00,                       //stack pointer value of the empty lower stack 
     localparam  CELL_WIDTH      =    16)                       //cell width
                                                                //1=lower stack grows towards higher addresses
    (//Clock and reset
@@ -64,7 +64,7 @@ module N1_is
     output wire [CELL_WIDTH-1:0]            us_is_pul_cell_o,  //intermediate stack cell
  
     //Intermediate stack - exception interface
-    output wire                             is_excpt_buserr_o, //bus error
+    output reg                              is_excpt_buserr_o, //bus error
 
     //Intermediate stack - stack bus arbiter interface (wishbone)
     output reg                              is_sarb_cyc_o,     //bus cycle indicator       +-
@@ -128,14 +128,17 @@ module N1_is
    
    //Intermediate stack
    //------------------
+   assign is_push          =  us_is_psh_i;                     //push request
+   assign is_pull          =  us_is_pul_i;                     //pull request 
    assign is_empty         = ~is_ctags_reg[0];                 //intermediate stack is empty
    assign is_almost_empty  = ~is_ctags_reg[1];                 //only one cell left
    assign is_full;         =  is_ctags_reg[IS_DEPTH-1];        //intermediate stack is full
    assign is_almost_full;  =  is_ctags_reg[IS_DEPTH-2];        //only room for one more cell
-   assign is_needs_load;   = ~ls_empty & is_empty;             //transfer from lower stack required
-   assign is_needs_unload  =  is_full;                         //transfer to lower stack required 
-   assign is_push          =  us_is_psh_i;                     //push request
-   assign is_pull          =  us_is_pul_i;                     //pull request 
+   assign is_needs_load    =  ~ls_empty &                      //LS not empty and
+			      (is_empty |                      // IS empty or
+			       (is_almost_empty & is_pull));   // pull from almost empty IS  
+   assign is_needs_unload  = is_full |                         // IS full or
+			     (is_almost_full & is_pull);       // push to almost full IS  
 
    //Cell tag transitions
    assign is_ctags_next = (is_push   ? {is_ctags_reg[IS_DEPTH-2:0]}, us_is_psh_ctag_i} : {IS_DEPTH{1'b0}}}) |
@@ -167,16 +170,18 @@ module N1_is
      else if (sync_rst_i)                                        //synchronous reset
        begin
           is_ctags_reg <= {IS_DEPTH{1'b0}};
-          is_sells_reg <= {CELL_WIDTH*IS_DEPTH{1'b0}};
+          is_cells_reg <= {CELL_WIDTH*IS_DEPTH{1'b0}};
        end
      else if (is_push | is_pull | is_load | is_unload | is_reset)//stack operation
        begin
           is_ctags_reg <= is_ctags_next;
-          is_cellsreg  <= is_cells_next;
+          is_cells_reg <= is_cells_next;
        end
   
    //Lower stack
    //-----------
+   assign ls_empty      = ~|(is_hm_sp_i ^ LS_BOS);
+
    assign is_sarb_adr_o = is_hm_sp_i;                                                 //address bus
    assign is_sarb_dat_o = is_cells[(CELL_WIDTH*IS_DEPTH)-1:CELL_WIDTH*(IS_DEPTH-1)]; //write data bus
      
@@ -189,138 +194,64 @@ module N1_is
    always @*
      begin
         //Default outputs
-        state_next    = state_reg;                             //remain in current state 
-        is_sarb_cyc_o = 1'b0;                                  //no bus request
-        is_sarb_stb_o = 1'b0;                                  //no bus request     
-        is_sarb_we_o  = 1'b0;                                  //read       
-        is_hm_psh_o   = 1'b0;                                  //don't push to lower stack
-        is_hm_pul_o   = 1'b0;                                  //don't pull from lower stack
-        is_hm_rst_o   = 1'b0;                                  //don't reset lower stack
-        is_load       = 1'b0;                                  //don't load from lower stack
-        is_unload     = 1'b0;                                  //don't unload to lower stack 
-        is_reset      = 1'b0;                                  //don't reset intermediate stack 
-        us_is_busy_o  = is_needs_load | is_needs_unload;       //busy if imediate stack need action
-
+        state_next        = state_reg;                         //remain in current state 
+        is_sarb_cyc_o     = 1'b0;                              //no bus request
+        is_sarb_stb_o     = 1'b0;                              //no bus request     
+        is_sarb_we_o      = is_needs_unload;                   //write on unload       
+        is_hm_psh_o       = 1'b0;                              //don't push to lower stack
+        is_hm_pul_o       = 1'b0;                              //don't pull from lower stack
+        is_hm_rst_o       = us_is_rst_i;                       //reset lower stack on request
+        is_load           = 1'b0;                              //don't load from lower stack
+        is_unload         = 1'b0;                              //don't unload to lower stack 
+        is_reset          = us_is_rst_i;                       //reset intermediate stack on request 
+        us_is_busy_o      = (~ls_empty & is_empty) | is_full;  //busy if imediate stack need action
+	is_excpt_buserr_o = 1'b0;                              //no exceptionbus error 
         case (state_reg)
 	  STATE_RESET:
 	    begin
-               state_next    = STATE_READY;                    //remain in current state 
+               state_next    = STATE_READY;                    //stack ready
                is_hm_rst_o   = 1'b1;                           //reset lower stack
                is_reset      = 1'b1;                           //reset intermediate stack 
                us_is_busy_o  = 1'b1;                           //busy signal
 	    end // case: STATE_RESET
 	  
-          STATE_READY:                                           //no ongoing bus cycle
+          STATE_READY:                                         //no ongoing bus cycle
             begin
-	       TBD
-
-
-
-
-
-
-
-
-
-
-
-               //Check if IS loading is required
-               if ((is_empty & ls_filled) &                      //loading required immediately
-                   (is_almost_empty & is_pull_i & ls_filled))    //loading required after pull
-                 begin
-                    state_next  = lsbus_stall_i ? state_reg :    //stall
-                                                  STATE_LOAD;    //load operation
-                    lsbus_cyc_o = 1'b1;                          //request bus cycle
-                    lsbus_stb_o = 1'b1;                          //
-                    if (is_empty)                                //IS is empty
-                      begin
-                         is_busy     = 1'b1;                     //set busy flag
-                         is_push     = 1'b0;                     //disable push operation
-                         is_pull     = 1'b0;                     //disable pull operation
-                         is_reset    = 1'b0;                     //disable reset operation
-                         ls_sp_reset = 1'b0;                     //disable SP reset
-                      end
-                 end // if ((is_empty & ls_filled) &...
-
-               //Check if IS unloading is required
-               if ( is_full &                                    //unloading required immediately
-                   (is_almost_full & is_push_i))                 //unloading required after pull
-                 begin
-                    state_next  = lsbus_stall_i ? state_reg :    //stall
-                                                  STATE_UNLOAD;  //load operation
-                    lsbus_cyc_o = 1'b1;                          //request bus cycle
-                    lsbus_stb_o = 1'b1;                          //
-                    lsbus_we_o = 1'b1;                           //write access
-                    if (is_full)                                 //IS is full
-                      begin
-                         is_busy     = 1'b1;                     //set busy flag
-                         is_push     = 1'b0;                     //disable push operation
-                         is_pull     = 1'b0;                     //disable pull operation
-                         is_reset    = 1'b0;                     //disable reset operation
-                         ls_sp_reset = 1'b0;                     //disable SP reset
-                      end
-                 end // if ( is_full &...
-
-               //Check for underflow
-               if (is_empty & is_pull_i& ~ls_filled )            //pull from empty stack
-                 begin
-                    excpt_is_uf_o    = 1'b0;                     //underflow exception
-                 end
-            end // case: STATE_READY
-
-          STATE_LOAD:
-            begin
-               is_busy     = 1'b1;                               //set busy signal
-               is_push     = 1'b0;                               //disable push operation
-               is_pull     = 1'b0;                               //disable pull operation
-               is_reset    = 1'b0;                               //disable reset operation
-               ls_sp_reset = 1'b0;                               //disable SP reset
-               if (lsbus_rty_i)                                  //retry request
-                 begin
-                    state_next    = STATE_READY;                 //retry bus access
-                 end
-               if (lsbus_err_i)                                  //bus error
-                 begin
-                    excpt_lsbus_o = 1'b1;                        //trigger exception
-                    state_next    = STATE_READY;                 //retry bus access
-                 end
-               if (lsbus_ack_i)                                  //bus acknowledge
-                 begin
-                    is_load       = 1'b1;                        //load IS
-                    ls_sp_pull    = 1'b1;                        //update PS
-                    state_next    = STATE_READY;                 //ready for next operation
-                 end
-            end // case: STATE_LOAD
-
-          STATE_UNLOAD:
-            begin
-               is_busy     = 1'b1;                               //set busy signal
-               is_push     = 1'b0;                               //disable push operation
-               is_pull     = 1'b0;                               //disable pull operation
-               is_reset    = 1'b0;                               //disable reset operation
-               ls_sp_reset = 1'b0;                               //disable SP reset
-               if (lsbus_rty_i)                                  //retry request
-                 begin
-                    state_next    = STATE_READY;                 //retry bus access
-                 end
-               if (lsbus_err_i)                                  //bus error
-                 begin
-                    excpt_lsbus_o = 1'b1;                        //trigger exception
-                    state_next    = STATE_READY;                 //retry bus access
-                 end
-               if (lsbus_ack_i)                                  //bus acknowledge
-                 begin
-                    is_unload     = 1'b1;                        //load IS
-                    ls_sp_push    = 1'b1;                        //update PS
-                    state_next     = STATE_READY;                //ready for next operation
-                 end
-            end // case: STATE_LOAD
-
-          STATE_INVALID:  //unreachable
-            begin
-               state_next    = STATE_READY;                      //retry bus access
-            end
-
+	       //Load/unload
+	       if (is_needs_load | is_needs_unload)
+		 begin
+		    is_sarb_cyc_o = 1'b1;                      //no bus request
+		    is_sarb_stb_o = 1'b1;                      //no bus request     
+		    if (~is_sarb_stall_i)                      //stack bus is busy
+		      state_next = (is_needs_load ?            //either load
+				     STATE_LOAD : 2'b00) |     //
+				   (is_needs_unload ?          //or unload
+		  		     STATE_UNLOAD : 2'b00);    //
+		 end
+	    end // case: STATE_READY
+	  	  
+	  STATE_LOAD:                                          //load cycle ongoing
+	    begin
+	       is_load           = is_sarb_ack_i;              //load from lower stack
+	       is_hm_pul_o       = is_sarb_ack_i;              //adjust stack pointer
+	       is_excpt_buserr_o = is_sarb_err_i;              //bus error
+	       if (is_sarb_ack_i |
+		   is_sarb_rty_i |
+		   is_sarb_err_i) 
+		 state_next    = STATE_READY;                  //remain in current state 
+	    end // case: STATE_LOAD
+	  
+	  STATE_UNLOAD:                                        //unload cycle ongoing
+	    begin
+	       is_unload         = is_sarb_ack_i;              //unload to lower stack
+	       is_hm_psh_o       = is_sarb_ack_i;              //adjust stack pointer
+	       is_excpt_buserr_o = is_sarb_err_i;              //bus error
+	       if (is_sarb_ack_i |
+		   is_sarb_rty_i |
+		   is_sarb_err_i) 
+		 state_next    = STATE_READY;                  //remain in current state 
+	    end // case: STATE_UNLOAD
+	  
         endcase // case (state_reg)
      end // always @ *
 
