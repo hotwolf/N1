@@ -34,9 +34,11 @@
 `default_nettype none
 
 module N1_hm
-  #(parameter   SP_WIDTH   =  8,                                  //width of a stack pointer
-    localparam  CELL_WIDTH = 16,                                  //width of a cell
-    localparam  PC_WIDTH   = 15)                                  //width of the program counter
+  #(//Integration parameters
+    parameter   SP_WIDTH   =  8,                                  //width of a stack pointer
+    //Local parameters
+    parameter   CELL_WIDTH = 16,                                  //width of a cell
+    parameter   PC_WIDTH   = 16)                                  //width of the program counter
 
    (//Clock and reset
     input  wire                             clk_i,                //module clock
@@ -79,7 +81,7 @@ module N1_hm
    wire [PC_WIDTH:0]                        pc_agu_sum;           //long AGU result
    //ALU
    wire [CELL_WIDTH:0]                      alu_sum;              //long sum
-   wire [(4*CELL_WIDTH)-1:0]                alu_prod;             //long product
+   wire [(2*CELL_WIDTH)-1:0]                alu_prod;             //long product
    //Lower parameter stack AGU
    reg  [SP_WIDTH-1:0]                      lps_sp_reg;           //stack pointer
    wire [SP_WIDTH:0]                        lps_agu_sum;          //long AGU result
@@ -98,7 +100,7 @@ module N1_hm
         if (async_rst_i)                                          //asynchronous reset
           pc_reg <= {PC_WIDTH{1'b0}};                             //start address
         else if (sync_rst_i)                                      //synchronous reset
-          pc_reg <= {SP_WIDTH{1'b0}};                             //start address
+          pc_reg <= {PC_WIDTH{1'b0}};                             //start address
         else if (fc_hm_update_i)                                  //update PC
            pc_reg <= fc_hm_next_pc_o;
      end // always @ (posedge async_rst_i or posedge clk_i)
@@ -111,20 +113,23 @@ module N1_hm
    //---
    //Adder
    assign alu_sum  = {CELL_WIDTH+1{alu_hm_sub_add_b_i}} ^
-                     (({CELL_WIDTH{alu_hm_sub_add_b_i}} ^ alu_hm_op1_i) + alu_hm_op0_i);
+                     ({1'b0, {CELL_WIDTH{alu_hm_sub_add_b_i}} ^ alu_hm_add_op1_i} + 
+                      {1'b0, alu_hm_add_op0_i});
 
    //Multiplier
-   assign alu_prod = {{CELL_WIDTH{alu_smul_umul_b_i & alu_op0_i[CELL_WIDTH-1]}}, alu_op0_i} *
-                     {{CELL_WIDTH{alu_smul_umul_b_i & alu_op1_i[CELL_WIDTH-1]}}, alu_op1_i};
+   assign alu_prod = {{CELL_WIDTH{alu_hm_smul_umul_b_i & alu_hm_mul_op0_i[CELL_WIDTH-1]}}, alu_hm_mul_op0_i} *
+                     {{CELL_WIDTH{alu_hm_smul_umul_b_i & alu_hm_mul_op1_i[CELL_WIDTH-1]}}, alu_hm_mul_op1_i};
 
    //Output
-   assign alu_hm_add_res_o = {{CELL_WIDTH-1{alu_smul_umul_b_i & alu_sum[CELL_WIDTH]}}, alu_sum};
-   assign alu_hm_mul_res_o = alu_prod;
+   assign alu_hm_add_res_o[(2*CELL_WIDTH)-1:CELL_WIDTH] = alu_hm_smul_umul_b_i ? {CELL_WIDTH{alu_sum[CELL_WIDTH]}} :
+                                                                                 {{CELL_WIDTH-1{1'b0}}, alu_sum[CELL_WIDTH]};
+   assign alu_hm_add_res_o[CELL_WIDTH-1:0]              = alu_sum[CELL_WIDTH-1:0];
+   assign alu_hm_mul_res_o                              = alu_prod;
 
    //Lower parameter stack AGU
    //-------------------------
    //In-/decrementer
-   assign lps_agu_sum = {{SP_WIDTH-1{lps_agu_psh_i}},1'b1} + lps_sp_reg;
+   assign lps_agu_sum = {{SP_WIDTH-1{ips_hm_psh_i}},1'b1} + lps_sp_reg;
 
    //Stack pointer
    always @(posedge async_rst_i or posedge clk_i)

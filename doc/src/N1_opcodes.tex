@@ -32,7 +32,7 @@ of the instructuion encoding.
 \begin{figure}[!htb]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.4375} {
+    \scalebox{0.475} {
       \begin{tikzpicture}
       
         %Instruction
@@ -59,8 +59,8 @@ of the instructuion encoding.
         };
 
         %Return bit
-        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,40.2);
-        \node [above] at (1.4,40.2) {
+        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,36.2);
+        \node [above] at (1.4,36.2) {
           \begin{minipage}[c]{10em}
             \begin{center}
               End of\\
@@ -69,8 +69,8 @@ of the instructuion encoding.
           \end{minipage}};
 
         %Change of flow instructions
-        \draw [thick] (21.5,39.5) -- (22.5,39.5) -- (22.5,28.5) -- (21.5,28.5);
-        \node [right] at (23,33.5) {
+        \draw [thick] (21.5,35.5) -- (22.5,35.5) -- (22.5,24.5) -- (21.5,24.5);
+        \node [right] at (23,29.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               Change \\
@@ -80,7 +80,7 @@ of the instructuion encoding.
            \end{minipage}};
 
         %Jump
-        \begin{scope}[shift={(1,38.5)}]
+        \begin{scope}[shift={(1,34.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{1}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -109,12 +109,12 @@ of the instructuion encoding.
         \end{scope}
 
         %Jump
-        \begin{scope}[shift={(1,36.5)}]
+        \begin{scope}[shift={(1,32.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{1}}};
           \draw [thick] (1,0) rectangle  (2,1);
           \node         at (1.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9,0.45)      {\LARGE{14-bit absolute word address $<$ 0x3FFF}};
+          \node         at (9,0.45)      {\LARGE{14-bit absolute address $<$ 0x3FFF}};
           \node [right] at (16.2,0.5) {
             \begin{minipage}[l]{14em}
               \large{
@@ -125,7 +125,7 @@ of the instructuion encoding.
         \end{scope}
 
         %Call
-        \begin{scope}[shift={(1,34.5)}]
+        \begin{scope}[shift={(1,30.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{0}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -154,12 +154,12 @@ of the instructuion encoding.
         \end{scope}
 
         %Call
-        \begin{scope}[shift={(1,32.5)}]
+        \begin{scope}[shift={(1,28.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{0}}};
           \draw [thick] (1,0) rectangle  (2,1);
           \node         at (1.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9,0.45)      {\LARGE{14-bit absolute word address $<$ 0x3FFF}};
+          \node         at (9,0.45)      {\LARGE{14-bit absolute address $<$ 0x3FFF}};
           \node [right] at (16.2,0.5) {
             \begin{minipage}[l]{14em}
               \large{
@@ -170,7 +170,7 @@ of the instructuion encoding.
         \end{scope}
 
         %Conditional Branch
-        \begin{scope}[shift={(1,30.5)}]
+        \begin{scope}[shift={(1,26.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (3,1);
@@ -199,13 +199,13 @@ of the instructuion encoding.
         \end{scope}
         
         %Conditional Branch
-        \begin{scope}[shift={(1,28.5)}]
+        \begin{scope}[shift={(1,24.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (3,1);
           \node         at (1.5,0.5)     {\huge{\texttt{0}}};
           \node         at (2.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9.5,0.45)    {\LARGE{13-bit relative word address $<$ 0x1FFF}};
+          \node         at (9.5,0.45)    {\LARGE{13-bit relative address $<$ 0x1FFF}};
           \node [right] at (16.2,0.5) {
             \begin{minipage}[l]{14em}
               \large{
@@ -216,8 +216,8 @@ of the instructuion encoding.
         \end{scope}
 
         %Literal instructions
-        \draw [thick] (21.5,26.5) -- (22.5,26.5) -- (22.5,27.5) -- (21.5,27.5);
-        \node [right] at (23,27) {
+        \draw [thick] (21.5,22.5) -- (22.5,22.5) -- (22.5,23.5) -- (21.5,23.5);
+        \node [right] at (23,23) {
           \begin{minipage}[l]{12em}
             \Huge{
               Literals
@@ -225,7 +225,7 @@ of the instructuion encoding.
            \end{minipage}};
 
         %Literal 
-        \begin{scope}[shift={(1,26.5)}]
+        \begin{scope}[shift={(1,22.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (4,1);
@@ -243,8 +243,8 @@ of the instructuion encoding.
         \end{scope}
 
         %ALU instructions
-        \draw [thick] (21.5,25.5) -- (22.5,25.5) -- (22.5,18.5) -- (21.5,18.5);
-        \node [right] at (23,21.5) {
+        \draw [thick] (21.5,21.5) -- (22.5,21.5) -- (22.5,14.5) -- (21.5,14.5);
+        \node [right] at (23,17.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               ALU \\
@@ -253,7 +253,7 @@ of the instructuion encoding.
           \end{minipage}};
   
         %ALU operation ( x -- x )
-        \begin{scope}[shift={(1,24.5)}]
+        \begin{scope}[shift={(1,20.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (6,1);
@@ -275,7 +275,7 @@ of the instructuion encoding.
         \end{scope}
 
         %ALU operation ( x x -- x )
-        \begin{scope}[shift={(1,22.5)}]
+        \begin{scope}[shift={(1,18.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (6,1);
@@ -301,7 +301,7 @@ of the instructuion encoding.
         \end{scope}
                
         %ALU operation ( x -- x x )
-        \begin{scope}[shift={(1,20.5)}]
+        \begin{scope}[shift={(1,16.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (6,1);
@@ -323,7 +323,7 @@ of the instructuion encoding.
         \end{scope}
 
         %ALU operation ( x x -- x x )
-        \begin{scope}[shift={(1,18.5)}]
+        \begin{scope}[shift={(1,14.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle  (6,1);
@@ -349,8 +349,8 @@ of the instructuion encoding.
         \end{scope}
 
         %Stack instructions
-        \draw [thick] (21.5,16.5) -- (22.5,16.5) -- (22.5,17.5) -- (21.5,17.5);
-        \node [right] at (23,16.5) {
+        \draw [thick] (21.5,12.5) -- (22.5,12.5) -- (22.5,13.5) -- (21.5,13.5);
+        \node [right] at (23,12.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               Stack \\
@@ -359,7 +359,7 @@ of the instructuion encoding.
            \end{minipage}};
 
         %Stack operation 
-        \begin{scope}[shift={(1,16.5)}]
+        \begin{scope}[shift={(1,12.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
           \draw [thick] (1,0) rectangle (6,1); 
@@ -378,8 +378,8 @@ of the instructuion encoding.
         \end{scope}
 
         %Memory access instructions
-        \draw [thick] (21.5,15.5) -- (22.5,15.5) -- (22.5,4.5) -- (21.5,4.5);
-        \node [right] at (23,9.5) {
+        \draw [thick] (21.5,11.5) -- (22.5,11.5) -- (22.5,4.5) -- (21.5,4.5);
+        \node [right] at (23,7.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               Memory \\
@@ -388,65 +388,7 @@ of the instructuion encoding.
             }
            \end{minipage}};
 
-        %Memory read (byte access)
-        \begin{scope}[shift={(1,14.5)}]
-          \node at (0,0) {\usebox{\instruction}};
-          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
-          \draw [thick] (1,0) rectangle  (8,1);
-          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
-          \node [right] at (16.2,0.5) {
-           \begin{minipage}[l]{14em}
-              \large{
-                Byte read \\
-                ( c-addr -- x )
-              }
-          \end{minipage}};
-        \end{scope}
-
-        %Memory read (word access)
-        \begin{scope}[shift={(1,12.5)}]
-          \node at (0,0) {\usebox{\instruction}};
-          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
-          \draw [thick] (1,0) rectangle  (8,1);
-          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (15.5,0.5)    {\huge{\texttt{0}}};
-          \node [right] at (16.2,0.5) {
-           \begin{minipage}[l]{14em}
-              \large{
-                Word read \\
-                ( addr -- x )
-              }
-          \end{minipage}};
-        \end{scope}
-
-        %Memory read (Word access)
+        %Memory read
         \begin{scope}[shift={(1,10.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -458,28 +400,6 @@ of the instructuion encoding.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{1}}};
           \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)    {\LARGE{8-bit word address $<$ 0xFE}};
-          \node [right] at (16.2,0.5) {
-           \begin{minipage}[l]{14em}
-              \large{
-                Word read \\
-                ( -- x )
-              }
-          \end{minipage}};
-        \end{scope}
-                 
-        %Memory write (byte access)
-        \begin{scope}[shift={(1,8.5)}]
-          \node at (0,0) {\usebox{\instruction}};
-          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
-          \draw [thick] (1,0) rectangle  (8,1);
-          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{0}}};
           \node         at (8.5,0.5)     {\huge{\texttt{1}}};
           \node         at (9.5,0.5)     {\huge{\texttt{1}}};
           \node         at (10.5,0.5)    {\huge{\texttt{1}}};
@@ -491,13 +411,36 @@ of the instructuion encoding.
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Byte write \\
-                ( x c-addr -- )
+                Memory read \\
+                ( addr -- x )
               }
           \end{minipage}};
         \end{scope}
 
-        %Memory write (word access)
+        %Memory read
+        \begin{scope}[shift={(1,8.5)}]
+          \node at (0,0) {\usebox{\instruction}};
+          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+          \draw [thick] (1,0) rectangle  (8,1);
+          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (2.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (3.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (4.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (5.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (12,0.45)    {\LARGE{8-bit address $<$ 0xFE}};
+          \node [right] at (16.2,0.5) {
+           \begin{minipage}[l]{14em}
+              \large{
+                Memory read \\
+                ( -- x )
+              }
+          \end{minipage}};
+        \end{scope}
+
+
+        %Memory write
         \begin{scope}[shift={(1,6.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -516,17 +459,17 @@ of the instructuion encoding.
           \node         at (12.5,0.5)    {\huge{\texttt{1}}};
           \node         at (13.5,0.5)    {\huge{\texttt{1}}};
           \node         at (14.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (15.5,0.5)    {\huge{\texttt{0}}};
+          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Word write \\
-                ( x addr -- )
+                Memory write \\
+                ( addr -- x )
               }
           \end{minipage}};
         \end{scope}
 
-        %Memory write (Word access)
+        %Memory write
         \begin{scope}[shift={(1,4.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -537,12 +480,12 @@ of the instructuion encoding.
           \node         at (4.5,0.5)     {\huge{\texttt{0}}};
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)     {\LARGE{8-bit word address $<$ 0xFE}};
+          \node         at (7.5,0.5)     {\huge{\texttt{0}}};
+          \node         at (12,0.45)     {\LARGE{8-bit address $<$ 0xFE}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Word write \\
+                Memory write \\
                 ( x -- )
               }
           \end{minipage}};
@@ -574,7 +517,7 @@ of the instructuion encoding.
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Comtrol instruction \\
+                Control instruction \\
                 ( -- )
               }
           \end{minipage}};
@@ -591,7 +534,7 @@ of the instructuion encoding.
           \node         at (4.5,0.5)     {\huge{\texttt{0}}};
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+          \node         at (7.5,0.5)     {\huge{\texttt{0}}};
           \node         at (12,0.45)    {\LARGE{Reserved}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
@@ -631,16 +574,16 @@ always translates to setting bit 15 of the last instruction.
 \subsection{Jump Instructions}
 \label{opcodes:jump}
 
-\Gls{jump} instructions transfer the program flow to any \gls{word}
-location within the supported 64KB program space. \Gls{jump} instructions consume an absolute
+\Gls{jump} instructions transfer the program flow to any address
+location within the supported 128KB program space. \Gls{jump} instructions consume an absolute
 destination address, which can be either placed on the top of the \Gls{ps} or encoded
 into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
 
 \subsection{Call Instructions}
 \label{opcodes:call}
 
-\Gls{call} instructions temporarily transfer the program flow to any \gls{word}
-location within the supported 64KB program space, while pushing a return address onto
+\Gls{call} instructions temporarily transfer the program flow to any address
+location within the supported 128KB program space, while pushing a return address onto
 the return stack. \Gls{call} instructions consume an absolute
 destination address, which can be either placed on the top of the \Gls{ps} or encoded
 into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
@@ -2585,10 +2528,9 @@ Two options are selectable:
 \subsection{Memory Access Instructions}
 \label{opcodes:memacc}
 
-Memory access instruction perform read or write acesses to the system's 64-Kbyte address space.
-Data can be accessed in \gls{word} or \gls{byte} entities.
-Misaligned \gls{word} accesses are not supported.
-\Gls{word} accesses to a 510-Kbyte subset of the address space can be done through an immediate
+Memory access instruction perform read or write acesses to the system's 128KB address space.
+Data is solely accessed in 16-bit entities.
+Accesses to a 510B subset of the address space can be done through an immediate
 addressing. This will offer faster access to frequently used system variables.
 
 \subsection{Control Instructions}

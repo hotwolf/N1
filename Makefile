@@ -52,14 +52,15 @@ GTKWAVE      := gtkwave
 VCD2FST      := vcd2fst
 
 #List of modules and their supported configurations <module>.<configuration>
-MODCONFS := $(sort	N1_alu.default \
-			N1_alu_SB_MAC16.default \
-			N1_fsm.default \
-			N1_imstack.default \
+MODCONFS := $(sort	N1.default \
+			N1_alu.default \
+			N1_fc.default \
+			N1_hm_synth.default \
+			N1_hm_iCE40UP5K.default \
 			N1_ir.default \
-			N1_pc.default \
-			N1_pc_SB_MAC16.default \
-			N1_upstack.default \
+			N1_is.default \
+			N1_sarb.default \
+			N1_us.default \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
@@ -78,46 +79,46 @@ help:
 	$(info lint.<module>:                   Lint a module in all supported cinfigurations)
 	$(info lint.<configuration>:            Lint all modules which support the given configuration)
 	$(info lint.clean:                      Clean up lint targets)
-	$(info )
-	$(info verify:                          Verify all modules in all supported configurations)
-	$(info verify.<module>.<configuration>: Verify a module in one particular configuration)
-	$(info verify.<module>:                 Verify a module in all supported cinfigurations)
-	$(info verify.<configuration>:          Verify all modules which support the given configuration)
-	$(info verify.clean:                    Clean up verify targets)
-	$(info )
-	$(info bmc:                             Generate bounded proofs for all modules in all support configurations)
-	$(info bmc.<module>.<configuration>:    Generate bounded proofs for a module in one particular configuration)
-	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported cinfigurations)
-	$(info bmc.<configuration>:             Generate bounded proofs for all modules which support the given configuration)
-	$(info bmc.clean:                       Clean up bounded proof targets)
-	$(info )
-	$(info prove:                           Generate unboundeds proof for all modules in all supported configurations)
-	$(info prove.<module>.<configuration>:  Generate unboundeds proof for a module in one particular configuration)
-	$(info prove.<module>:                  Generate unboundeds proof for a module in all supported cinfigurations)
-	$(info prove.<configuration>:           Generate unboundeds proof for all modules which support the given configuration)
-	$(info prove.clean:                     Clean up unbounded proof targets)
-	$(info )
-	$(info live:                            Prove liveness of all modules in all supported configurations)
-	$(info live.<module>.<configuration>:   Prove liveness of a module in one particular configuration)
-	$(info live.<module>:                   Prove liveness of a module in all supported cinfigurations)
-	$(info live.<configuration>:            Prove liveness of all modules which support the given configuration)
-	$(info live.clean:                      Clean up liveness targets)
-	$(info )
-	$(info cover:                           Generate cover traces for all modules in all supported configurations)
-	$(info cover.<module>.<configuration>:  Generate cover traces for a module in one particular configuration)
-	$(info cover.<module>:                  Generate cover traces for a module in all supported cinfigurations)
-	$(info cover.<configuration>:           Generate cover traces for all modules which support the given configuration)
-	$(info cover.clean:                     Clean up cover targets)
-	$(info )
-	$(info debug.list:                      List all available VCD dump files)
-	$(info debug:                           View the most recent VCD dump file)
-	$(info debug.prev:                      View the previous VCD dump file)
-	$(info debug<n>:                        View a VCD dump file from the selection given by 'debug.list')
-	$(info )
-	$(info clean:                           Clean up all targets)
-	$(info )
-	$(info doc:                             Build the user manual)
-	@echo "" > /dev/null
+#	$(info )
+#	$(info verify:                          Verify all modules in all supported configurations)
+#	$(info verify.<module>.<configuration>: Verify a module in one particular configuration)
+#	$(info verify.<module>:                 Verify a module in all supported cinfigurations)
+#	$(info verify.<configuration>:          Verify all modules which support the given configuration)
+#	$(info verify.clean:                    Clean up verify targets)
+#	$(info )
+#	$(info bmc:                             Generate bounded proofs for all modules in all support configurations)
+#	$(info bmc.<module>.<configuration>:    Generate bounded proofs for a module in one particular configuration)
+#	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported cinfigurations)
+#	$(info bmc.<configuration>:             Generate bounded proofs for all modules which support the given configuration)
+#	$(info bmc.clean:                       Clean up bounded proof targets)
+#	$(info )
+#	$(info prove:                           Generate unboundeds proof for all modules in all supported configurations)
+#	$(info prove.<module>.<configuration>:  Generate unboundeds proof for a module in one particular configuration)
+#	$(info prove.<module>:                  Generate unboundeds proof for a module in all supported cinfigurations)
+#	$(info prove.<configuration>:           Generate unboundeds proof for all modules which support the given configuration)
+#	$(info prove.clean:                     Clean up unbounded proof targets)
+#	$(info )
+#	$(info live:                            Prove liveness of all modules in all supported configurations)
+#	$(info live.<module>.<configuration>:   Prove liveness of a module in one particular configuration)
+#	$(info live.<module>:                   Prove liveness of a module in all supported cinfigurations)
+#	$(info live.<configuration>:            Prove liveness of all modules which support the given configuration)
+#	$(info live.clean:                      Clean up liveness targets)
+#	$(info )
+#	$(info cover:                           Generate cover traces for all modules in all supported configurations)
+#	$(info cover.<module>.<configuration>:  Generate cover traces for a module in one particular configuration)
+#	$(info cover.<module>:                  Generate cover traces for a module in all supported cinfigurations)
+#	$(info cover.<configuration>:           Generate cover traces for all modules which support the given configuration)
+#	$(info cover.clean:                     Clean up cover targets)
+#	$(info )
+#	$(info debug.list:                      List all available VCD dump files)
+#	$(info debug:                           View the most recent VCD dump file)
+#	$(info debug.prev:                      View the previous VCD dump file)
+#	$(info debug<n>:                        View a VCD dump file from the selection given by 'debug.list')
+#	$(info )
+#	$(info clean:                           Clean up all targets)
+#	$(info )
+#	$(info doc:                             Build the user manual)
+#	@echo "" > /dev/null
 
 ###########
 # Linting #
@@ -142,9 +143,6 @@ $(LINT_CONFS): $$(filter lint.%.$$(lastword $$(subst ., ,$$@)),$(LINT_MODCONFS))
 lint:	$(LINT_MODCONFS) 
 
 lint.clean:
-
-test:
-	$(info $(MODCONFS))
 
 ################################
 # Complete formal verification #

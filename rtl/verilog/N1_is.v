@@ -181,7 +181,6 @@ module N1_is
    //Lower stack
    //-----------
    assign ls_empty      = ~|(is_hm_sp_i ^ LS_BOS);
-
    assign is_sarb_adr_o = is_hm_sp_i;                                                 //address bus
    assign is_sarb_dat_o = is_cells[(CELL_WIDTH*IS_DEPTH)-1:CELL_WIDTH*(IS_DEPTH-1)]; //write data bus
      

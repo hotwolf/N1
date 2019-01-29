@@ -34,9 +34,11 @@
 `default_nettype none
 
 module N1_hm
-  #(parameter   SP_WIDTH   =  8,                                  //width of a stack pointer
-    localparam  CELL_WIDTH = 16,                                  //width of a cell
-    localparam  PC_WIDTH   = 15)                                  //width of the program counter
+  #(//Integration parameters
+    parameter   SP_WIDTH   =  8,                                  //width of a stack pointer
+    //Local parameters
+    parameter   CELL_WIDTH = 16,                                  //width of a cell
+    parameter   PC_WIDTH   = 16)                                  //width of the program counter
 
    (//Clock and reset
     input  wire                             clk_i,                //module clock
@@ -79,7 +81,7 @@ module N1_hm
    //Program AGU
    wire [31:0]                              pagu_out;             //Program AGU output
    //ALU
-   wire [31:0]                              alu_add_c;            //ALU adder carry bit
+   wire                                     alu_add_c;            //ALU adder carry bit
    wire [31:0]                              alu_add_out;          //ALU adder output
    wire [31:0]                              alu_umul_out;         //ALU unsigned multiplier output
    wire [31:0]                              alu_smul_out;         //ALU signed multiplier output
@@ -115,8 +117,8 @@ module N1_hm
    SB_MAC16_pagu
      (.CLK                       (clk_i),                         //clock input
       .CE                        (1'b1),                          //clock enable
-      .C                         (alu_hm_op1_i),                  //op1
-      .A                         (alu_hm_op0_i),                  //op0
+      .C                         (alu_hm_add_op1_i),              //op1
+      .A                         (alu_hm_add_op0_i),              //op0
       .B                         (fc_hm_rel_adr_i),               //relative COF address
       .D                         (fc_hm_abs_adr_i),               //absolute COF address
       .AHOLD                     (1'b1),                          //keep hold register stable
@@ -143,7 +145,7 @@ module N1_hm
 
    //Outputs
    assign alu_hm_add_res_o = {{CELL_WIDTH{alu_add_c}}, pagu_out[(2*CELL_WIDTH)-1:CELL_WIDTH]};
-   assign fc_hm_next_pc_o    = pagu_out[PC_WIDTH:0];
+   assign fc_hm_next_pc_o    = pagu_out[PC_WIDTH-1:0];
 
    //Shared SB_MAC32 cell for both stack AGUs
    //----------------------------------------
@@ -233,12 +235,12 @@ module N1_hm
        .MODE_8x8                 (1'b1),                          //C22        -> power safe
        .A_SIGNED                 (1'b0),                          //C23        -> unsigned
        .B_SIGNED                 (1'b0))                          //C24        -> unsigned
-   SB_MAC16_pagu
+   SB_MAC16_umul
      (.CLK                       (1'b0),                          //no clock
       .CE                        (1'b0),                          //no clock
       .C                         (16'h0000),                      //not in use
-      .A                         (alu_hm_op0_i),                  //op0
-      .B                         (alu_hm_op1_i),                  //op1
+      .A                         (alu_hm_mul_op0_i),                  //op0
+      .B                         (alu_hm_mul_op1_i),                  //op1
       .D                         (16'h0000),                      //not in use
       .AHOLD                     (1'b1),                          //keep hold register stable
       .BHOLD                     (1'b1),                          //keep hold register stable
@@ -287,12 +289,12 @@ module N1_hm
        .MODE_8x8                 (1'b1),                          //C22        -> power safe
        .A_SIGNED                 (1'b1),                          //C23        -> signed
        .B_SIGNED                 (1'b1))                          //C24        -> signed
-   SB_MAC16_pagu
+   SB_MAC16_smul
      (.CLK                       (1'b0),                          //no clock
       .CE                        (1'b0),                          //no clock
       .C                         (16'h0000),                      //not in use
-      .A                         (alu_hm_op0_i),                  //op0
-      .B                         (alu_hm_op1_i),                  //op1
+      .A                         (alu_hm_mul_op0_i),              //op0
+      .B                         (alu_hm_mul_op1_i),              //op1
       .D                         (16'h0000),                      //not in use
       .AHOLD                     (1'b1),                          //keep hold register stable
       .BHOLD                     (1'b1),                          //keep hold register stable
