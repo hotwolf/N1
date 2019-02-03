@@ -43,10 +43,9 @@
 `default_nettype none
 
 module N1_is
-  #(parameter   SP_WIDTH        =     8,                       //width of the stack pointer
+  #(parameter   SP_WIDTH        =    12,                       //width of the stack pointer
     parameter   IS_DEPTH        =     8,                       //depth of the intermediate stack
-    parameter   LS_BOS          = 8'h00,                       //stack pointer value of the empty lower stack 
-    localparam  CELL_WIDTH      =    16)                       //cell width
+    parameter   LS_START        = 8'h00)                       //stack pointer value of the empty lower stack 
                                                                //1=lower stack grows towards higher addresses
    (//Clock and reset
     input  wire                             clk_i,             //module clock
@@ -58,10 +57,10 @@ module N1_is
     input  wire                             us_is_psh_i,       //US  -> IRS
     input  wire                             us_is_pul_i,       //IRS -> US
     input  wire                             us_is_psh_ctag_i,  //upper stack cell tag
-    input  wire [CELL_WIDTH-1:0]            us_is_psh_cell_i,  //upper stack cell
+    input  wire [15:0]                      us_is_psh_cell_i,  //upper stack cell
     output reg                              us_is_busy_o,      //intermediate stack is busy
     output wire                             us_is_pul_ctag_o,  //intermediate stack cell tag
-    output wire [CELL_WIDTH-1:0]            us_is_pul_cell_o,  //intermediate stack cell
+    output wire [15:0]                      us_is_pul_cell_o,  //intermediate stack cell
  
     //Intermediate stack - exception interface
     output reg                              is_excpt_buserr_o, //bus error
@@ -71,25 +70,25 @@ module N1_is
     output reg                              is_sarb_stb_o,     //access request            | initiator
     output reg                              is_sarb_we_o,      //write enable              | to
     output wire [SP_WIDTH-1:0]              is_sarb_adr_o,     //address bus               | target
-    output wire [CELL_WIDTH-1:0]            is_sarb_dat_o,     //write data bus            +-
+    output wire [15:0]                      is_sarb_dat_o,     //write data bus            +-
     input  wire                             is_sarb_ack_i,     //bus cycle acknowledge     +-
     input  wire                             is_sarb_err_i,     //error indicator           | target
     input  wire                             is_sarb_rty_i,     //retry request             | to
     input  wire                             is_sarb_stall_i,   //access delay              | initiator
-    input  wire [CELL_WIDTH-1:0]            is_sarb_dat_i,     //read data bus             +-
+    input  wire [15:0]                      is_sarb_dat_i,     //read data bus             +-
 
     //Intermediate return stack - ALU interface
     output wire [IS_DEPTH-1:0]              is_alu_ctags_o,    //cell tags
 
     //Intermediate stack - hard macro interface
-    output reg                              is_hm_psh_o,       //push (decrement address)
-    output reg                              is_hm_pul_o,       //pull (increment address)
-    output reg                              is_hm_rst_o,       //reset AGU
-    input  wire [SP_WIDTH-1:0]              is_hm_sp_i,        //stack pointer
+    output reg                              is_dsp_psh_o,       //push (decrement address)
+    output reg                              is_dsp_pul_o,       //pull (increment address)
+    output reg                              is_dsp_rst_o,       //reset AGU
+    input  wire [SP_WIDTH-1:0]              is_dsp_sp_i,        //stack pointer
 
     //Probe signals
     output wire [IS_DEPTH-1:0]              prb_is_ctags_o,    //intermediate stack cell tags
-    output wire [(IS_DEPTH*CELL_WIDTH)-1:0] prb_is_cells_o;    //intermediate stack cells
+    output wire [(IS_DEPTH*16)-1:0]         prb_is_cells_o;    //intermediate stack cells
     output wire [SP_WIDTH-1:0]              prb_is_sp_o,       //stack pointer
     output wire [1:0]                       prb_is_state_o);   //FSM state
 
@@ -97,9 +96,9 @@ module N1_is
    //----------------
    //Intermediate stack
    reg  [IS_DEPTH-1:0]                      is_ctags_reg;      //intermediate stack cell tags
-   reg  [(IS_DEPTH*CELL_WIDTH)-1:0]         is_cells_reg;      //intermediate stack cells
+   reg  [(IS_DEPTH*16)-1:0]                 is_cells_reg;      //intermediate stack cells
    wire [IS_DEPTH-1:0]                      is_ctags_next;     //intermediate stack cell tags
-   wire [(IS_DEPTH*CELL_WIDTH)-1:0]         is_cells_next;     //intermediate stack cells
+   wire [(IS_DEPTH*16)-1:0]                 is_cells_next;     //intermediate stack cells
  
    wire                                     is_empty;          //intermediate stack is empty
    wire                                     is_almost_empty;   //only one cell left
@@ -124,7 +123,7 @@ module N1_is
    //Upper stack
    //-----------
    assign us_is_pul_ctag_o = is_ctags[0];                      //intermediate stack cell tag
-   assign us_is_pul_cell_o = is_cells[CELL_WIDTH-1:0];         //intermediate stack cell
+   assign us_is_pul_cell_o = is_cells[15:0];         //intermediate stack cell
    
    //Intermediate stack
    //------------------
@@ -148,29 +147,29 @@ module N1_is
    
    //Cell transitions
    assign is_cells_next = (is_push   ? 
-			     {is_cells_reg[(CELL_WIDTH*(IS_DEPTHTH-1))-1:0], us_is_psh_cell_i} : 
-			     {CELL_WIDTH*IS_DEPTH{1'b0}})                                                  |
+			     {is_cells_reg[(16*(IS_DEPTHTH-1))-1:0], us_is_psh_cell_i} : 
+			     {16*IS_DEPTH{1'b0}})                                                  |
 			  (is_pull   ? 
-			    {{2*CELL_WIDTH{1'b0}}, is_cells_reg[(CELL_WIDTH*(IS_DEPTH-1))-1:CELL_WIDTH]} : 
-			    {CELL_WIDTH*IS_DEPTH{1'b0}})                                                   |
+			    {{2*16{1'b0}}, is_cells_reg[(16*(IS_DEPTH-1))-1:16]} : 
+			    {16*IS_DEPTH{1'b0}})                                                   |
                           (is_load   ? 
 			     {{CELL_WTDTH*(IS_DEPTH-1){1'b0}}, is_sarb_dat_i} : 
-			     {CELL_WIDTH*IS_DEPTH{1'b0}})                                                  |
+			     {16*IS_DEPTH{1'b0}})                                                  |
                           (is_unload ? 
-			     {{CELL_WIDTH{1'b0}}, is_cells_reg[(CELL_WIDTH*(IS_DEPTH-1))-1:0]} : 
-			  {CELL_WIDTH*IS_DEPTH{1'b0}});
+			     {{16{1'b0}}, is_cells_reg[(16*(IS_DEPTH-1))-1:0]} : 
+			  {16*IS_DEPTH{1'b0}});
    
    //Flip-flops
    always @(posedge async_rst_i or posedge clk_i)
      if (async_rst_i)                                            //asynchronous reset
        begin
           is_ctags_reg <= {IS_DEPTH{1'b0}};
-          is_cells_reg <= {CELL_WIDTH*IS_DEPTH{1'b0}};
+          is_cells_reg <= {16*IS_DEPTH{1'b0}};
      end  
      else if (sync_rst_i)                                        //synchronous reset
        begin
           is_ctags_reg <= {IS_DEPTH{1'b0}};
-          is_cells_reg <= {CELL_WIDTH*IS_DEPTH{1'b0}};
+          is_cells_reg <= {16*IS_DEPTH{1'b0}};
        end
      else if (is_push | is_pull | is_load | is_unload | is_reset)//stack operation
        begin
@@ -180,9 +179,9 @@ module N1_is
   
    //Lower stack
    //-----------
-   assign ls_empty      = ~|(is_hm_sp_i ^ LS_BOS);
-   assign is_sarb_adr_o = is_hm_sp_i;                                                 //address bus
-   assign is_sarb_dat_o = is_cells[(CELL_WIDTH*IS_DEPTH)-1:CELL_WIDTH*(IS_DEPTH-1)]; //write data bus
+   assign ls_empty      = ~|(is_dsp_sp_i ^ LS_BOS);
+   assign is_sarb_adr_o = is_dsp_sp_i;                                                 //address bus
+   assign is_sarb_dat_o = is_cells[(16*IS_DEPTH)-1:16*(IS_DEPTH-1)]; //write data bus
      
    //Finite state machine
    //--------------------
@@ -197,9 +196,9 @@ module N1_is
         is_sarb_cyc_o     = 1'b0;                              //no bus request
         is_sarb_stb_o     = 1'b0;                              //no bus request     
         is_sarb_we_o      = is_needs_unload;                   //write on unload       
-        is_hm_psh_o       = 1'b0;                              //don't push to lower stack
-        is_hm_pul_o       = 1'b0;                              //don't pull from lower stack
-        is_hm_rst_o       = us_is_rst_i;                       //reset lower stack on request
+        is_dsp_psh_o       = 1'b0;                              //don't push to lower stack
+        is_dsp_pul_o       = 1'b0;                              //don't pull from lower stack
+        is_dsp_rst_o       = us_is_rst_i;                       //reset lower stack on request
         is_load           = 1'b0;                              //don't load from lower stack
         is_unload         = 1'b0;                              //don't unload to lower stack 
         is_reset          = us_is_rst_i;                       //reset intermediate stack on request 
@@ -209,7 +208,7 @@ module N1_is
 	  STATE_RESET:
 	    begin
                state_next    = STATE_READY;                    //stack ready
-               is_hm_rst_o   = 1'b1;                           //reset lower stack
+               is_dsp_rst_o   = 1'b1;                           //reset lower stack
                is_reset      = 1'b1;                           //reset intermediate stack 
                us_is_busy_o  = 1'b1;                           //busy signal
 	    end // case: STATE_RESET
@@ -232,7 +231,7 @@ module N1_is
 	  STATE_LOAD:                                          //load cycle ongoing
 	    begin
 	       is_load           = is_sarb_ack_i;              //load from lower stack
-	       is_hm_pul_o       = is_sarb_ack_i;              //adjust stack pointer
+	       is_dsp_pul_o       = is_sarb_ack_i;              //adjust stack pointer
 	       is_excpt_buserr_o = is_sarb_err_i;              //bus error
 	       if (is_sarb_ack_i |
 		   is_sarb_rty_i |
@@ -243,7 +242,7 @@ module N1_is
 	  STATE_UNLOAD:                                        //unload cycle ongoing
 	    begin
 	       is_unload         = is_sarb_ack_i;              //unload to lower stack
-	       is_hm_psh_o       = is_sarb_ack_i;              //adjust stack pointer
+	       is_dsp_psh_o       = is_sarb_ack_i;              //adjust stack pointer
 	       is_excpt_buserr_o = is_sarb_err_i;              //bus error
 	       if (is_sarb_ack_i |
 		   is_sarb_rty_i |
@@ -266,7 +265,7 @@ module N1_is
    //Probe signals
    assign prb_is_ctags_o = ctags_reg;                            //intermediate stack cell tags
    assign prb_is_cells_o = cells_reg;                            //intermediate stack cells
-   assign prb_is_sp_o    = is_hm_sp_i;                           //stack pointer
+   assign prb_is_sp_o    = is_dsp_sp_i;                           //stack pointer
    assign prb_is_state_o = state_reg;                            //FSM state
 
 endmodule // N1_is

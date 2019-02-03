@@ -29,8 +29,7 @@
 `default_nettype none
 
 module N1_lsarb
-  #(parameter   SP_WIDTH   =  8,                                       //width of a stack pointer
-    localparam  CELL_WIDTH = 16)                                       //cell width
+  #(parameter   SP_WIDTH   = 12)                                       //width of a stack pointer
 
    (//Clock and reset
     input  wire                             clk_i,                     //module clock
@@ -42,38 +41,38 @@ module N1_lsarb
     output reg                              sbus_stb_o,                //access request            |
     output reg                              sbus_we_o,                 //write enable              | initiator
     output reg  [SP_WIDTH-1:0]              sbus_adr_o,                //address bus               | to
-    output reg  [CELL_WIDTH-1:0]            sbus_dat_o,                //write data bus            | target
+    output reg  [15:0]                      sbus_dat_o,                //write data bus            | target
     output reg                              sbus_tga_ps_o,             //parameter stack access    |
     output reg                              sbus_tga_rs_o,             //return stack access       +-
     input  wire                             sbus_ack_i,                //bus cycle acknowledge     +-
     input  wire                             sbus_err_i,                //error indicator           | target
     input  wire                             sbus_rty_i,                //retry request             | to
     input  wire                             sbus_stall_i,              //access delay              | initiator
-    input  wire [CELL_WIDTH-1:0]            sbus_dat_i,                //read data bus             +-
+    input  wire [15:0]                      sbus_dat_i,                //read data bus             +-
 
     //Parameter stack bus (wishbone)
     input  wire                             ips_sarb_cyc_i,            //bus cycle indicator       +-
     input  wire                             ips_sarb_stb_i,            //access request            | initiator
     input  wire                             ips_sarb_we_i,             //write enable              | to
     input  wire [SP_WIDTH-1:0]              ips_sarb_adr_i,            //address bus               | target
-    input  wire [CELL_WIDTH-1:0]            ips_sarb_dat_i,            //write data bus            +-
+    input  wire [15:0]                      ips_sarb_dat_i,            //write data bus            +-
     output reg                              ips_sarb_ack_o,            //bus cycle acknowledge     +-
     output reg                              ips_sarb_err_o,            //error indicator           | target
     output reg                              ips_sarb_rty_o,            //retry request             | to
     output reg                              ips_sarb_stall_o,          //access delay              | initiator
-    output reg  [CELL_WIDTH-1:0]            ips_sarb_dat_o,            //read data bus             +-
+    output reg  [15:0]                      ips_sarb_dat_o,            //read data bus             +-
 
     //Return stack bus (wishbone)
     input  wire                             irs_sarb_cyc_i,            //bus cycle indicator       +-
     input  wire                             irs_sarb_stb_i,            //access request            | initiator
     input  wire                             irs_sarb_we_i,             //write enable              | to
     input  wire [SP_WIDTH-1:0]              irs_sarb_adr_i,            //address bus               | target
-    input  wire [CELL_WIDTH-1:0]            irs_sarb_dat_i,            //write data bus            +-
+    input  wire [15:0]                      irs_sarb_dat_i,            //write data bus            +-
     output reg                              irs_sarb_ack_o,            //bus cycle acknowledge     +-
     output reg                              irs_sarb_err_o,            //error indicator           | target
     output reg                              irs_sarb_rty_o,            //retry request             | to
     output reg                              irs_sarb_stall_o,          //access delay              | initiator
-    output reg  [CELL_WIDTH-1:0]            irs_sarb_dat_o,            //read data bus             +-
+    output reg  [15:0]                      irs_sarb_dat_o,            //read data bus             +-
 
     //Probe signals
     output wire [1:0]                       prb_sarb_state_o);         //FSM state
@@ -84,7 +83,7 @@ module N1_lsarb
    wire        ips_sarb_req = ips_sarb_cyc_i & ips_sarb_stb_i;         //parameter stack bus request
    wire        irs_sarb_req = irs_sarb_cyc_i & irs_sarb_stb_i;         //return stack bus request
    wire        any_req   = irs_sarb_req   | irs_sarb_req;              //any bus request
-   wire        any_ack   = sbus_ack_i|lsbus_err_i|lsbus_rty_i;         //any acknowledge
+   wire        any_ack   = sbus_ack_i|sbus_err_i|sbus_rty_i;           //any acknowledge
    //FSM
    reg  [1:0]  state_reg;                                              //state variable
    reg  [1:0]  state_next;                                             //next state
