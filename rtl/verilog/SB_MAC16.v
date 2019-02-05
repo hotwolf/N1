@@ -29,7 +29,7 @@
 //###############################################################################
 `default_nettype none
 
-module mySB_MAC16
+module SB_MAC16
   #(parameter   NEG_TRIGGER              = 1'b0,              //Clock edge -> active clock edge (0:posedge, 1:negedge)
     parameter   C_REG                    = 1'b0,              //C0         -> hold register C (0:bypass, 1:use)
     parameter   A_REG                    = 1'b0,              //C1         -> hold register A (0:bypass, 1:use)

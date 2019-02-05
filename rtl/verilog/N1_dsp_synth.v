@@ -60,7 +60,7 @@ module N1_dsp
     input  wire                             ips_dsp_rst_i,         //reset AGU
     output wire [SP_WIDTH-1:0]              ips_dsp_sp_o,          //stack pointer
 
-    //Intermediate return stack interface (AGU, stack grows tpwardshigher addresses)
+    //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
     input  wire                             irs_dsp_psh_i,         //push (increment address)
     input  wire                             irs_dsp_pul_i,         //pull (decrement address)
     input  wire                             irs_dsp_rst_i,         //reset AGU

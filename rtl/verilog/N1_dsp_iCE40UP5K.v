@@ -62,7 +62,7 @@ module N1_dsp
     input  wire                             ips_dsp_rst_i,         //reset AGU
     output wire [SP_WIDTH-1:0]              ips_dsp_sp_o,          //stack pointer
 
-    //Intermediate return stack interface (AGU, stack grows tpwardshigher addresses)
+    //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
     input  wire                             irs_dsp_psh_i,         //push (increment address)
     input  wire                             irs_dsp_pul_i,         //pull (decrement address)
     input  wire                             irs_dsp_rst_i,         //reset AGU
@@ -87,7 +87,7 @@ module N1_dsp
    //The "Lo" part of the SB_MAC32 implements the program AGU
    //The output hold register implement the program counter
    //The AGU output is unregistered (= next address)
-   mySB_MAC16
+   SB_MAC16
      #(.NEG_TRIGGER              (1'b0),                           //Clock edge -> posedge
        .C_REG                    (1'b0),                           //C0         -> C input unregistered
        .A_REG                    (1'b0),                           //C1         -> A input unregistered
@@ -147,7 +147,7 @@ module N1_dsp
    //The "Lo" part of the SB_MAC32 implements the return stack AGU.
    //The output hold register implement the stack pointers.
    //The AGU outputs are registered (= stack pointers)
-   mySB_MAC16
+   SB_MAC16
      #(.NEG_TRIGGER              (1'b0),                           //Clock edge -> posedge
        .C_REG                    (1'b0),                           //C0         -> C input unregistered
        .A_REG                    (1'b0),                           //C1         -> A input unregistered
@@ -208,7 +208,7 @@ module N1_dsp
    //-------------------------------------------
    //Unsigned 16x16 bit multiplication
    //Neither inputs nor outputs are registered
-   mySB_MAC16
+   SB_MAC16
      #(.NEG_TRIGGER              (1'b0),                           //Clock edge -> posedge
        .C_REG                    (1'b1),                           //C0         -> keep unused signals quiet
        .A_REG                    (1'b0),                           //C1         -> A input unregistered
@@ -262,7 +262,7 @@ module N1_dsp
    //----------------------------------------
    //Unsigned 16x16 bit multiplication
    //Neither inputs nor outputs are registered
-   mySB_MAC16
+   SB_MAC16
      #(.NEG_TRIGGER              (1'b0),                           //Clock edge -> posedge
        .C_REG                    (1'b1),                           //C0         -> keep unused signals quiet
        .A_REG                    (1'b0),                           //C1         -> A input unregistered

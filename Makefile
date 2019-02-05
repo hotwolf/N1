@@ -52,15 +52,22 @@ GTKWAVE      := gtkwave
 VCD2FST      := vcd2fst
 
 #List of modules and their supported configurations <module>.<configuration>
-MODCONFS := $(sort	N1.default \
-			N1_alu.default \
-			N1_fc.default \
-			N1_hm_synth.default \
-			N1_hm_iCE40UP5K.default \
-			N1_ir.default \
-			N1_is.default \
+#MODCONFS := $(sort	N1.default \
+#			N1_alu.default \
+#			N1_fc.default \
+#			N1_hm_synth.default \
+#			N1_hm_iCE40UP5K.default \
+#			N1_ir.default \
+#			N1_is.default \
+#			N1_sarb.default \
+#			N1_us.default \
+#		)
+
+MODCONFS := $(sort	N1_dsp_synth.default \
+			N1_dsp_iCE40UP5K.default \
 			N1_sarb.default \
-			N1_us.default \
+			N1_is.ps_default \
+			N1_is.rs_default \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
@@ -129,12 +136,13 @@ LINT_CONFS    := $(CONFS:%=lint.%)
 
 $(LINT_MODCONFS):
 	$(eval mod     := $(word 2,$(subst ., ,$@)))
+	$(eval commod  := $(patsubst N1_dsp_%,N1_dsp,${mod}))
 	$(eval conf    := $(lastword $(subst ., ,$@)))
 	$(eval confdef := CONF_$(shell echo $(conf) | tr '[:lower:]' '[:upper:]'))
 	$(info ...Linting $(mod) in $(conf) configuration)
-	@$(VERILATOR) -D$(confdef) --top-module ftb_$(mod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(mod).sv $(RTL_DIR)/$(mod).v 
-	@$(IVERILOG) -D$(confdef) -s ftb_$(mod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(mod).sv $(RTL_DIR)/$(mod).v  
-	@$(YOSYS) -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(BENCH_DIR)/ftb_$(mod).sv $(RTL_DIR)/$(mod).v"
+	@$(VERILATOR) -D$(confdef) --top-module ftb_$(commod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v 
+	@$(IVERILOG) -D$(confdef) -s ftb_$(commod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v  
+	@$(YOSYS) -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v"
 
 $(LINT_MODS): $$(filter $$@.%,$(LINT_MODCONFS))
 

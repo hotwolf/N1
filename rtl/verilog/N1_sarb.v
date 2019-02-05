@@ -28,7 +28,7 @@
 //###############################################################################
 `default_nettype none
 
-module N1_lsarb
+module N1_sarb
   #(parameter   SP_WIDTH   = 12)                                       //width of a stack pointer
 
    (//Clock and reset
