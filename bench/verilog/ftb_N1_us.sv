@@ -1,5 +1,5 @@
 //###############################################################################
-//# N1 - Formal Testbench - Intermediate and Lower Stack                        #
+//# N1 - Formal Testbench - Upper Stacks                                        #
 //###############################################################################
 //#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
@@ -18,8 +18,7 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This is the the formal testbench for the intermediate and lower stack    #
-//#    block.                                                                   #
+//#    This is the the formal testbench for the upper stack block.              #
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
@@ -30,28 +29,13 @@
 
 //DUT configuration
 //=================
-//Default parameter stack configuration
-//-------------------------------------
-`ifdef CONF_PS_DEFAULT
-`endif
-
-//Default return stack configuration
-//----------------------------------
-`ifdef CONF_RS_DEFAULT
-`define LS_START  12'h000  //return stack grows towards higher addresses
+//Default configuration
+//---------------------
+`ifdef CONF_DEFAULT
 `endif
 
 //Fall back
 //---------
-`ifndef SP_WIDTH
-`define SP_WIDTH       12
-`endif
-`ifndef IS_DEPTH
-`define IS_DEPTH        8
-`endif
-`ifndef LS_START
-`define LS_START  12'hfff
-`endif
 
 module ftb_N1_is
    (//Clock and reset
