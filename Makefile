@@ -32,7 +32,7 @@ REPO_DIR     := .
 #REPO_DIR    := $(CURDIR)
 RTL_DIR      := $(REPO_DIR)/rtl/verilog
 BENCH_DIR    := $(REPO_DIR)/bench/verilog
-SBY_DIR      := $(REPO_DIR)/tools/SymbiYosis
+SBY_DIR      := $(REPO_DIR)/tools/SymbiYosys
 SBY_SRC_DIR  := $(SBY_DIR)/src
 SBY_WRK_DIR  := $(SBY_DIR)/run
 GTKW_DIR     := $(REPO_DIR)/tools/gtkwave
@@ -68,6 +68,7 @@ MODCONFS := $(sort	N1_dsp_synth.default \
 			N1_sarb.default \
 			N1_is.ps_default \
 			N1_is.rs_default \
+			N1_ir.default \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))

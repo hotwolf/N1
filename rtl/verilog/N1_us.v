@@ -47,15 +47,44 @@ module N1_us
     input wire                             async_rst_i,       //asynchronous reset
     input wire                             sync_rst_i,        //synchronous reset
 
-    //Flow control - upper stack interface
-    input  wire                            fc_us_update_i,    //do stack transition
-    output wire                            fc_us_busy_o,      //upper stack is busy
+    //Program bus (wishbone)
+    input  wire [15:0]                     pbus_dat_o,        //write data bus
+    input  wire [15:0]                     pbus_dat_i,        //read data bus
 
-    //Instruction register - upper stack interface
-    input  wire [11:0]                     ir_us_rtc_i,       //return from call
-    input  wire [11:0]                     ir_us_stp_i,       //stack transition pattern
-    input  wire [15:0]                     ir_us_ps0_next_i,  //literal value
-    input  wire [15:0]                     ir_us_rs0_next_i,  //COF address
+    //Instruction decoder output
+    input  wire                            ir_eow_i,          //end of word
+    input  wire                            ir_jmp_i,          //jump instruction (any)
+    input  wire                            ir_jmp_ind_i,      //jump instruction (indirect addressing)
+    input  wire                            ir_jmp_dir_i,      //jump instruction (direct addressing)
+    input  wire                            ir_call_i,         //call instruction (any)
+    input  wire                            ir_call_ind_i,     //call instruction (indirect addressing)
+    input  wire                            ir_call_dir_i,     //call instruction (direct addressing)
+    input  wire                            ir_bra_i,          //branch instruction (any)
+    input  wire                            ir_bra_ind_i,      //branch instruction (indirect addressing)
+    input  wire                            ir_bra_dir_i,      //branch instruction (direct addressing)
+    input  wire                            ir_lit_i,          //literal instruction
+    input  wire                            ir_alu_i,          //ALU instruction (any)
+    input  wire                            ir_alu_x_x_i,      //ALU instruction (   x --   x )
+    input  wire                            ir_alu_xx_x_i,     //ALU instruction ( x x --   x )
+    input  wire                            ir_alu_x_xx_i,     //ALU instruction (   x -- x x )
+    input  wire                            ir_alu_xx_xx_i,    //ALU instruction ( x x -- x x )
+    input  wire                            ir_sop_i,          //stack operation
+    input  wire                            ir_fetch_i,        //memory read (any)
+    input  wire                            ir_fetch_ind_i,    //memory read (indirect addressing)
+    input  wire                            ir_fetch_dir_i,    //memory read (direct addressing)
+    input  wire                            ir_store_i,        //memory write (any)
+    input  wire                            ir_store_ind_i,    //memory write (indirect addressing)
+    input  wire                            ir_store_dir_i,    //memory write (direct addressing)
+    input  wire [13:0]                     ir_abs_adr_i,      //direct absolute COF address
+    input  wire [12:0]                     ir_rel_adr_i,      //direct relative COF address
+    input  wire [11:0]                     ir_lit_val_i,      //literal value
+    input  wire [4:0]                      ir_opr_i,          //ALU operator
+    input  wire [4:0]                      ir_op_i,           //immediate operand
+    input  wire [9:0]                      ir_stp_i,          //stack transition pattern
+    input  wire [7:0]                      ir_mem_adr_i,      //direct absolute data address
+
+    //Flow control - upper stack interface
+    output wire                            fc_us_busy_o,      //upper stack is busy
 
     //Upper stack - ALU interface
     input  wire [15:0]                     us_alu_ps0_next_i, //new PS0 (TOS)
@@ -65,25 +94,25 @@ module N1_us
     output wire [3:0]                      us_alu_pstat_o,    //UPS status
     output wire                            us_alu_rstat_o,    //URS status
 
-   //Upper stack - intermediate parameter stack interface
-   wire                                    us_ips_rst;         //reset stack
-   wire                                    us_ips_psh;         //US  -> IRS
-   wire                                    us_ips_pul;         //IRS -> US
-   wire                                    us_ips_psh_ctag;    //upper stack cell tag
-   wire [15:0]                             us_ips_psh_cell;    //upper stack cell
-   wire                                    us_ips_busy;        //intermediate stack is busy
-   wire                                    us_ips_pul_ctag;    //intermediate stack cell tag
-   wire [15:0]                             us_ips_pul_cell;    //intermediate stack cell
+    //Upper stack - intermediate parameter stack interface
+    wire                                    us_ips_rst;         //reset stack
+    wire                                    us_ips_psh;         //US  -> IRS
+    wire                                    us_ips_pul;         //IRS -> US
+    wire                                    us_ips_psh_ctag;    //upper stack cell tag
+    wire [15:0]                             us_ips_psh_cell;    //upper stack cell
+    wire                                    us_ips_busy;        //intermediate stack is busy
+    wire                                    us_ips_pul_ctag;    //intermediate stack cell tag
+    wire [15:0]                             us_ips_pul_cell;    //intermediate stack cell
 								 
-   //Upper stack - intermediate return stack interface		 
-   wire                                    us_irs_rst;         //reset stack
-   wire                                    us_irs_psh;         //US  -> IRS
-   wire                                    us_irs_pul;         //IRS -> US
-   wire                                    us_irs_psh_ctag;    //upper stack tag
-   wire [15:0]                             us_irs_psh_cell;    //upper stack data
-   wire                                    us_irs_busy;        //intermediate stack is busy
-   wire                                    us_irs_pul_ctag;    //intermediate stack tag
-   wire [15:0]                             us_irs_pul_cell;    //intermediate stack data
+    //Upper stack - intermediate return stack interface		 
+    wire                                    us_irs_rst;         //reset stack
+    wire                                    us_irs_psh;         //US  -> IRS
+    wire                                    us_irs_pul;         //IRS -> US
+    wire                                    us_irs_psh_ctag;    //upper stack tag
+    wire [15:0]                             us_irs_psh_cell;    //upper stack data
+    wire                                    us_irs_busy;        //intermediate stack is busy
+    wire                                    us_irs_pul_ctag;    //intermediate stack tag
+    wire [15:0]                             us_irs_pul_cell;    //intermediate stack data
 
 
 							      

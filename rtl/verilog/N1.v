@@ -114,8 +114,7 @@ module N1
    wire                                      fc_ir_capture;      //capture current IR
    wire                                      fc_ir_hoard;        //capture hoarded IR
    wire                                      fc_ir_expend;       //hoarded IR -> current IR
-   wire [OPCODE_WIDTH-1:0]                   fc_ir_opcode;       //opcode to capture
-   //...
+   wire [15:0]                               fc_ir_opcode;       //opcode to capture
 
    //Flow control - upper stack interface
    wire                                      fc_us_update;       //do stack transition
@@ -132,8 +131,9 @@ module N1
    wire [PC_WIDTH-1:0]                       fc_hm_next_pc;      //next PC
 
    //Instruction register - ALU interface
-   wire [OPR_WIDTH-1:0]                      ir_alu_opr_i;       //ALU operator
-   wire [IMM_WIDTH-1:0]                      ir_alu_immop_i;     //immediade operand
+   wire [4:0]                                ir_alu_opr_i;       //ALU operator
+   wire [4:0]                                ir_alu_immop_i;     //immediade operand
+   wire                                      ir_alu_use_immop_o; //use immediate operand
 
    //Instruction register - upper stack interface
    wire [STP_WIDTH-1:0]                      ir_us_rtc;          //return from call
@@ -196,6 +196,7 @@ module N1
 
    //Intermediate return stack - ALU interface
    wire [IPS_DEPTH-1:0]                      ips_alu_ctags;      //cell tags
+   wire [SP_WIDTH-1:0]                       ips_alu_lsp_o,      //lower stack pointer
 
    //Intermediate parameter stack - hard macro interface
    wire                                      ips_hm_psh;         //push (decrement address)
@@ -220,6 +221,7 @@ module N1
 
    //Intermediate return stack - ALU interface
    wire [IPS_DEPTH-1:0]                      irs_alu_ctags;      //cell tags
+   wire [SP_WIDTH-1:0]                       irs_alu_lsp_o,      //lower stack pointer
    
    //Intermediate return stack - hard macro interface
    wire                                      irs_hm_psh;         //push (increment address)

@@ -266,10 +266,12 @@ module N1_is
        state_reg <= state_next;                                      //state transition
 
    //ALU interface
+   //-------------
    assign is_alu_ctags_o = is_ctags_reg;                             //intermediate stack cell tags
    assign is_alu_lsp_o   = is_dsp_sp_i;                              //stack pointer
 
    //Probe signals
+   //-------------
    assign prb_is_ctags_o = is_ctags_reg;                             //intermediate stack cell tags
    assign prb_is_cells_o = is_cells_reg;                             //intermediate stack cells
    assign prb_is_sp_o    = is_dsp_sp_i;                              //stack pointer
