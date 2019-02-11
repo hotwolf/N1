@@ -77,7 +77,7 @@ module N1_is
     input  wire                             is_sarb_stall_i,         //access delay              | initiator
     input  wire [15:0]                      is_sarb_dat_i,           //read data bus             +-
 
-    //Intermediate return stack - ALU interface
+    //Intermediate stack - ALU interface
     output wire [IS_DEPTH-1:0]              is_alu_ctags_o,          //cell tags
     output wire [SP_WIDTH-1:0]              is_alu_lsp_o,            //lower stack pointer
 

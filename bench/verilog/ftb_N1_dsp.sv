@@ -47,34 +47,34 @@ module ftb_N1_dsp
     input  wire                             async_rst_i,           //asynchronous reset
     input  wire                             sync_rst_i,            //synchronous reset
 
-    //Flow control interface (program counter)
-    input  wire                             fc_dsp_abs_rel_b_i,    //1:absolute COF, 0:relative COF
-    input  wire                             fc_dsp_update_i,       //update PC
-    input  wire [15:0]                      fc_dsp_rel_adr_i,      //relative COF address
-    input  wire [15:0]                      fc_dsp_abs_adr_i,      //absolute COF address
-    output wire [15:0]                      fc_dsp_next_pc_o,      //result
-
     //ALU interface
-    input  wire                             alu_dsp_sub_add_b_i,   //1:op1 - op0, 0:op1 + op0
-    input  wire                             alu_dsp_smul_umul_b_i, //1:signed, 0:unsigned
-    input  wire [15:0]                      alu_dsp_add_op0_i,     //first operand for adder/subtractor
-    input  wire [15:0]                      alu_dsp_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
-    input  wire [15:0]                      alu_dsp_mul_op0_i,     //first operand for multipliers
-    input  wire [15:0]                      alu_dsp_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
-    output wire [31:0]                      alu_dsp_add_res_o,     //result from adder
-    output wire [31:0]                      alu_dsp_mul_res_o,     //result from multiplier
+    input  wire                             alu2dsp_sub_add_b_i,   //1:op1 - op0, 0:op1 + op0
+    input  wire                             alu2dsp_smul_umul_b_i, //1:signed, 0:unsigned
+    input  wire [15:0]                      alu2dsp_add_op0_i,     //first operand for adder/subtractor
+    input  wire [15:0]                      alu2dsp_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
+    input  wire [15:0]                      alu2dsp_mul_op0_i,     //first operand for multipliers
+    input  wire [15:0]                      alu2dsp_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
+    output wire [31:0]                      dsp2alu_add_res_o,     //result from adder
+    output wire [31:0]                      dsp2alu_mul_res_o,     //result from multiplier
+
+    //Flow control interface (program counter)
+    input  wire                             fc2dsp_abs_rel_b_i,    //1:absolute COF, 0:relative COF
+    input  wire                             fc2dsp_update_i,       //update PC
+    input  wire [15:0]                      fc2dsp_rel_adr_i,      //relative COF address
+    input  wire [15:0]                      fc2dsp_abs_adr_i,      //absolute COF address
+    output wire [15:0]                      dsp2fc_next_pc_o,      //result
 
     //Intermediate parameter stack interface (AGU, stack grows towards lower addresses)
-    input  wire                             ips_dsp_psh_i,         //push (decrement address)
-    input  wire                             ips_dsp_pul_i,         //pull (increment address)
-    input  wire                             ips_dsp_rst_i,         //reset AGU
-    output wire [`SP_WIDTH-1:0]             ips_dsp_sp_o,          //stack pointer
+    input  wire                             ips2dsp_psh_i,         //push (decrement address)
+    input  wire                             ips2dsp_pul_i,         //pull (increment address)
+    input  wire                             ips2dsp_rst_i,         //reset AGU
+    output wire [`SP_WIDTH-1:0]             dsp2ips_lsp_o,         //lower stack pointer
 
     //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
-    input  wire                             irs_dsp_psh_i,         //push (increment address)
-    input  wire                             irs_dsp_pul_i,         //pull (decrement address)
-    input  wire                             irs_dsp_rst_i,         //reset AGU
-    output wire [`SP_WIDTH-1:0]             irs_dsp_sp_o);         //stack pointer
+    input  wire                             irs2dsp_psh_i,         //push (increment address)
+    input  wire                             irs2dsp_pul_i,         //pull (decrement address)
+    input  wire                             irs2dsp_rst_i,         //reset AGU
+    output wire [`SP_WIDTH-1:0]             dsp2irs_lsp_o);        //lower stack pointer
 
    //Instantiation
    //=============
@@ -86,34 +86,34 @@ module ftb_N1_dsp
       .async_rst_i                (async_rst_i),                   //asynchronous reset
       .sync_rst_i                 (sync_rst_i),                    //synchronous reset
 
-      //Flow control interface (program counter)
-      .fc_dsp_abs_rel_b_i         (fc_dsp_abs_rel_b_i),            //1:absolute COF, 0:relative COF
-      .fc_dsp_update_i            (fc_dsp_update_i),               //update PC
-      .fc_dsp_rel_adr_i           (fc_dsp_rel_adr_i),              //relative COF address
-      .fc_dsp_abs_adr_i           (fc_dsp_abs_adr_i),              //absolute COF address
-      .fc_dsp_next_pc_o           (fc_dsp_next_pc_o),              //result
-
       //ALU interface
-      .alu_dsp_sub_add_b_i        (alu_dsp_sub_add_b_i),           //1:op1 - op0, 0:op1 + op0
-      .alu_dsp_smul_umul_b_i      (alu_dsp_smul_umul_b_i),         //1:signed, 0:unsigned
-      .alu_dsp_add_op0_i          (alu_dsp_add_op0_i),             //first operand for adder/subtractor
-      .alu_dsp_add_op1_i          (alu_dsp_add_op1_i),             //second operand for adder/subtractor (zero if no operator selected)
-      .alu_dsp_mul_op0_i          (alu_dsp_mul_op0_i),             //first operand for multipliers
-      .alu_dsp_mul_op1_i          (alu_dsp_mul_op1_i),             //second operand dor multipliers (zero if no operator selected)
-      .alu_dsp_add_res_o          (alu_dsp_add_res_o),             //result from adder
-      .alu_dsp_mul_res_o          (alu_dsp_mul_res_o),             //result from multiplier
+      .alu2dsp_sub_add_b_i        (alu2dsp_sub_add_b_i),           //1:op1 - op0, 0:op1 + op0
+      .alu2dsp_smul_umul_b_i      (alu2dsp_smul_umul_b_i),         //1:signed, 0:unsigned
+      .alu2dsp_add_op0_i          (alu2dsp_add_op0_i),             //first operand for adder/subtractor
+      .alu2dsp_add_op1_i          (alu2dsp_add_op1_i),             //second operand for adder/subtractor (zero if no operator selected)
+      .alu2dsp_mul_op0_i          (alu2dsp_mul_op0_i),             //first operand for multipliers
+      .alu2dsp_mul_op1_i          (alu2dsp_mul_op1_i),             //second operand dor multipliers (zero if no operator selected)
+      .dsp2alu_add_res_o          (dsp2alu_add_res_o),             //result from adder
+      .dsp2alu_mul_res_o          (dsp2alu_mul_res_o),             //result from multiplier
+
+      //Flow control interface (program counter)
+      .fc2dsp_abs_rel_b_i         (fc2dsp_abs_rel_b_i),            //1:absolute COF, 0:relative COF
+      .fc2dsp_update_i            (fc2dsp_update_i),               //update PC
+      .fc2dsp_rel_adr_i           (fc2dsp_rel_adr_i),              //relative COF address
+      .fc2dsp_abs_adr_i           (fc2dsp_abs_adr_i),              //absolute COF address
+      .dsp2fc_next_pc_o           (dsp2fc_next_pc_o),              //result
 
       //Intermediate parameter stack interface (AGU, stack grows towards lower addresses)
-      .ips_dsp_psh_i              (ips_dsp_psh_i),                 //push (decrement address)
-      .ips_dsp_pul_i              (ips_dsp_pul_i),                 //pull (increment address)
-      .ips_dsp_rst_i              (ips_dsp_rst_i),                 //reset AGU
-      .ips_dsp_sp_o               (ips_dsp_sp_o),                  //stack pointer
+      .ips2dsp_psh_i              (ips2dsp_psh_i),                 //push (decrement address)
+      .ips2dsp_pul_i              (ips2dsp_pul_i),                 //pull (increment address)
+      .ips2dsp_rst_i              (ips2dsp_rst_i),                 //reset AGU
+      .dsp2ips_lsp_o              (dsp2ips_lsp_o),                 //lower stack pointer
 
       //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
-      .irs_dsp_psh_i              (irs_dsp_psh_i),                 //push (increment address)
-      .irs_dsp_pul_i              (irs_dsp_pul_i),                 //pull (decrement address)
-      .irs_dsp_rst_i              (irs_dsp_rst_i),                 //reset AGU
-      .irs_dsp_sp_o               (irs_dsp_sp_o));                 //stack pointer
+      .irs2dsp_psh_i              (irs2dsp_psh_i),                 //push (increment address)
+      .irs2dsp_pul_i              (irs2dsp_pul_i),                 //pull (decrement address)
+      .irs2dsp_rst_i              (irs2dsp_rst_i),                 //reset AGU
+      .dsp2irs_lsp_o              (dsp2irs_lsp_o));                //lower stack pointer
 
 `ifdef FORMAL
    //Testbench signals

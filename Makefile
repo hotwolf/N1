@@ -69,6 +69,8 @@ MODCONFS := $(sort	N1_dsp_synth.default \
 			N1_is.ps_default \
 			N1_is.rs_default \
 			N1_ir.default \
+			N1_alu.default \
+			N1.default \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
@@ -135,7 +137,10 @@ LINT_MODCONFS := $(MODCONFS:%=lint.%)
 LINT_MODS     := $(MODS:%=lint.%)
 LINT_CONFS    := $(CONFS:%=lint.%)
 
-$(LINT_MODCONFS):
+${RTL_DIR}/N1_dsp.v: ${RTL_DIR}/N1_dsp_synth.v 
+	ln -s N1_dsp_synth.v ${RTL_DIR}/N1_dsp.v
+
+$(LINT_MODCONFS): ${RTL_DIR}/N1_dsp.v
 	$(eval mod     := $(word 2,$(subst ., ,$@)))
 	$(eval commod  := $(patsubst N1_dsp_%,N1_dsp,${mod}))
 	$(eval conf    := $(lastword $(subst ., ,$@)))
