@@ -43,7 +43,7 @@ module N1_alu
 
     //Exception interface
     input  wire [15:0]            excpt2alu_tc_i,                    //throw code
-    
+
     //Intermediate parameter stack interface
     input  wire [IPS_DEPTH-1:0]   ips2alu_tags_i,                    //cell tags
     input  wire [SP_WIDTH-1:0]    ips2alu_lsp_i,                     //lower stack pointer
@@ -56,7 +56,7 @@ module N1_alu
    //Intermediate return stack interface
     input  wire [IRS_DEPTH-1:0]   irs2alu_tags_i,                    //cell tags
     input  wire [SP_WIDTH-1:0]    irs2alu_lsp_i,                     //lower stack pointer
-				  
+
     //Upper stack interface
     output wire [15:0]            alu2us_ps0_next_o,                 //new PS0 (TOS)
     output wire [15:0]            alu2us_ps1_next_o,                 //new PS1 (TOS+1)
@@ -116,7 +116,7 @@ module N1_alu
    wire [31:0]                    stat_out;                          //processor status output
    //ALU output
    wire [31:0]                    alu_out;                           //ALU output
-   
+
    //Immediate operands
    //------------------
    assign uimm        = { 11'h000,                  ir2alu_imm_op_i};      //unsigned immediate operand (1..31)
@@ -236,10 +236,10 @@ module N1_alu
    //----------------
    assign stat_out = ~|{ir2alu_opr_i[4:2]^3'b111} ?
                       ({32{~|(ir2alu_opr_i[2:1]^2'b01)}} & {{16{excpt2alu_tc_i[15]}}, excpt2alu_tc_i})  |
-                      ({32{~|(ir2alu_opr_i[2:1]^2'b10)}} & {{16-SP_WIDTH{1'b0}}, ips2alu_lsp_i, 4'h0, 
-							    ips2alu_tags_i, us2alu_ptags_i})            |
-                      ({32{~|(ir2alu_opr_i[2:1]^2'b11)}} & {{16-SP_WIDTH{1'b0}}, irs2alu_lsp_i, 
-							    7'h00, irs2alu_tags_i, us2alu_rtags_i})  :
+                      ({32{~|(ir2alu_opr_i[2:1]^2'b10)}} & {{16-SP_WIDTH{1'b0}}, ips2alu_lsp_i, 4'h0,
+                                                            ips2alu_tags_i, us2alu_ptags_i})            |
+                      ({32{~|(ir2alu_opr_i[2:1]^2'b11)}} & {{16-SP_WIDTH{1'b0}}, irs2alu_lsp_i,
+                                                            7'h00, irs2alu_tags_i, us2alu_rtags_i})  :
                      32'h00000000;
 
    //ALU output
@@ -253,5 +253,5 @@ module N1_alu
                      stat_out;
     assign alu2us_ps1_next_o = alu_out[31:16];                       //new PS1 (TOS+1)
     assign alu2us_ps0_next_o = alu_out[15:0];                        //new PS0 (TOS)
-   
+
 endmodule // N1_alu

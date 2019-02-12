@@ -1,7 +1,7 @@
 //###############################################################################
 //# N1 - Instruction Register                                                   #
 //###############################################################################
-//#    Copyright 2018 Dirk Heisswolf                                            #
+//#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
 //#                                                                             #
 //#    N1 is free software: you can redistribute it and/or modify               #
@@ -37,8 +37,38 @@ module N1_ir
     //Program bus (wishbone)
     input  wire [15:0]            pbus_dat_i,                                     //read data bus
 
-    //Instruction decoder output
+    //ALU interface
+    wire [4:0]                    ir2alu_opr_i,                                   //ALU operator
+    wire [4:0]                    ir2alu_imm_op_i,                                //immediate operand
+    wire                          ir2alu_sel_imm_op_i,                            //select immediate operand
+
+    //Flow control interface
+    input  wire                   fc2ir_capture_i,                                //capture current IR
+    input  wire                   fc2ir_hoard_i,                                  //capture hoarded IR
+    input  wire                   fc2ir_expend_i,                                 //hoarded IR -> current IR
+
     output wire                   ir_eow_o,                                       //end of word
+
+
+
+
+
+    output wire [13:0]            ir_dir_abs_adr_o,                               //direct absolute COF address
+    output wire [12:0]            ir_dir_rel_adr_o,                               //direct relative COF address
+    output wire [7:0]             ir_dir_mem_adr_o,                               //direct absolute data address
+
+    //Upper stack interface
+    output wire                   ir_eow_o,                                       //end of word
+
+
+
+
+    output wire [11:0]            ir_lit_val_o,                                   //literal value
+    output wire [9:0]             ir_stp_o,                                       //stack transition pattern
+
+
+
+    //Instruction decoder output
     output wire                   ir_jmp_o,                                       //jump instruction (any)
     output wire                   ir_jmp_ind_o,                                   //jump instruction (indirect addressing)
     output wire                   ir_jmp_dir_o,                                   //jump instruction (direct addressing)
@@ -66,22 +96,10 @@ module N1_ir
     output wire                   ir_ctrl_rs_rst_o,                               //control instruction (reset return stack)
     output wire                   ir_ctrl_irqen_we_o,                             //control instruction (change interrupt mask)
     output wire                   ir_ctrl_irqen_val_o,                            //control instruction (new interrupt mask value)
-    output wire [13:0]            ir_dir_abs_adr_o,                               //direct absolute COF address
-    output wire [12:0]            ir_dir_rel_adr_o,                               //direct relative COF address
-    output wire [11:0]            ir_lit_val_o,                                   //literal value
-    output wire [4:0]             ir_opr_o,                                       //ALU operator
-    output wire [4:0]             ir_imm_op_o,                                    //immediate operand
-    output wire [9:0]             ir_stp_o,                                       //stack transition pattern
-    output wire [7:0]             ir_dir_mem_adr_o,                               //direct absolute data address
     output wire                   ir_sel_dir_abs_adr_o,                           //silect direct absolute address
     output wire                   ir_sel_dir_rel_adr_o,                           //select direct relative address
     output wire                   ir_sel_dir_mem_adr_o,                           //select direct data address
-    output wire                   ir_sel_imm_op_o,                                //select immediate operand
 
-    //Flow control interface
-    input  wire                   fc_ir_capture_i,                                //capture current IR
-    input  wire                   fc_ir_hoard_i,                                  //capture hoarded IR
-    input  wire                   fc_ir_expend_i,                                 //hoarded IR -> current IR
 
     //Probe signals
     output wire [15:0]            prb_ir_cur_o,                                   //current instruction register
@@ -102,9 +120,9 @@ module N1_ir
           ir_cur_reg  <= {16{1'b0}};
         else if (sync_rst_i)                                                      //synchronous reset
           ir_cur_reg  <= {16{1'b0}};
-        else if (fc_ir_capture_i | fc_ir_expend_i)                                //update IR
-          ir_cur_reg  <= (({16{fc_ir_capture_i}} &  pbus_dat_i) |
-                          ({16{fc_ir_expend_i}}  &  ir_hoard_reg));
+        else if (fc2ir_capture_i | fc2ir_expend_i)                                //update IR
+          ir_cur_reg  <= (({16{fc2ir_capture_i}} &  pbus_dat_i) |
+                          ({16{fc2ir_expend_i}}  &  ir_hoard_reg));
       end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Hoarded instruction register
@@ -114,7 +132,7 @@ module N1_ir
           ir_hoard_reg  <= {16{1'b0}};
         else if (sync_rst_i)                                                      //synchronous reset
           ir_hoard_reg  <= {16{1'b0}};
-        else if (fc_ir_hoard_i)                                                   //capture opcode
+        else if (fc2ir_hoard_i)                                                   //capture opcode
           ir_hoard_reg  <= pbus_dat_i;
       end // always @ (posedge async_rst_i or posedge clk_i)
 

@@ -71,6 +71,10 @@ MODCONFS := $(sort	N1_dsp_synth.default \
 			N1_ir.default \
 			N1_alu.default \
 			N1.default \
+			SB_MAC16.pagu \
+			SB_MAC16.sagu \
+			SB_MAC16.umul \
+			SB_MAC16.smul \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))

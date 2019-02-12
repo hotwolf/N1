@@ -63,7 +63,7 @@
 //#         revision of the N1 processor. The signal naming convention is       #
 //#         "prb_<originating subblock>_<register base name>_o"                 #
 //#                                                                             #
-//#    The N1 consists of eight subblocks:                                      #
+//#    The N1 consists of nine subblocks:                                       #
 //#       ALU -> Arithmetic Logic Unit                                          #
 //#         This block performs arithmetic and logic operations. The            #
 //#         implementation of multipliers and adders has been moved to the DSP  #
@@ -75,7 +75,7 @@
 //#       EXCPT -> Exception Aggregator                                         #
 //#         This block tracks internal exceptions (stack over/underflows or bus #
 //#         errors) and provides information.                                   #
-//#       FC -> Flow Controller                                                 #
+//#       FC -> Flow Control                                                    #
 //#         This block implements the main finite state machine of the N1       #
 //#         processor, which controls the program execution.                    #
 //#       IPS -> Intermediate (and Lower) Parameter Stack                       #
@@ -121,8 +121,8 @@ module N1
     output wire [15:0]                       pbus_adr_o,         //address bus               |
     output wire [15:0]                       pbus_dat_o,         //write data bus            |
     output wire                              pbus_tga_jmp_dir_o, //direct jump               | initiator
-    output wire                              pbus_tga_jmp_ind_o, //indirect jump             | to	
-    output wire                              pbus_tga_cal_dir_o, //direct call               | target   
+    output wire                              pbus_tga_jmp_ind_o, //indirect jump             | to
+    output wire                              pbus_tga_cal_dir_o, //direct call               | target
     output wire                              pbus_tga_cal_ind_o, //indirect call             |
     output wire                              pbus_tga_bra_dir_o, //direct branch             |
     output wire                              pbus_tga_bra_ind_o, //indirect branch           |
@@ -157,27 +157,27 @@ module N1
     //Flow Controller
     output wire [3:0]                        prb_fc_state_o,     //FSM state
     //Intermediate parameter stack
-    output wire [IPS_DEPTH-1:0]              prb_ips_ctags_o,    //intermediate stack cell tags
+    output wire [IPS_DEPTH-1:0]              prb_ips_tags_o,     //intermediate stack cell tags
     output wire [(IPS_DEPTH*16)-1:0]         prb_ips_cells_o,    //intermediate stack cells
     output wire [SP_WIDTH-1:0]               prb_ips_lsp_o,      //lower stack pointer
     output wire [1:0]                        prb_ips_state_o,    //FSM state
     //Intermediate return stack
-    output wire [IRS_DEPTH-1:0]              prb_irs_ctags_o,    //intermediate stack cell tags
+    output wire [IRS_DEPTH-1:0]              prb_irs_tags_o,     //intermediate stack cell tags
     output wire [(IRS_DEPTH*16)-1:0]         prb_irs_cells_o,    //intermediate stack cells
     output wire [SP_WIDTH-1:0]               prb_irs_lsp_o,      //lower stack pointer
     output wire [1:0]                        prb_irs_state_o,    //FSM state
     //Stack bus arbiter
     output wire [1:0]                        prb_sarb_state_o,   //FSM state
     //Upper stacks
-    output wire [3:0]                        prb_us_ps_ctags_o,  //intermediate stack cell tags
+    output wire [3:0]                        prb_us_ps_tags_o,   //intermediate stack cell tags
     output wire [(4*16)-1:0]                 prb_us_ps_cells_o,  //intermediate stack cells
-    output wire                              prb_us_rs_ctags_o,  //intermediate stack cell tags
+    output wire                              prb_us_rs_tags_o,   //intermediate stack cell tags
     output wire [15:0]                       prb_us_rs_cells_o,  //intermediate stack cells
     output wire [1:0]                        prb_us_state_o);    //FSM state
-    
+
    //Internal interfaces
    //-------------------
-   //ALU
+   //ALU - Arithmetic Logic Unit
    //ALU -> DSP
    wire                                     alu2dsp_sub_add_b;   //1:op1 - op0, 0:op1 + op0
    wire                                     alu2dsp_smul_umul_b; //1:signed, 0:unsigned
@@ -188,53 +188,65 @@ module N1
    //ALU -> US
    wire [15:0]                              alu2us_ps0_next;     //new PS0 (TOS)
    wire [15:0]                              alu2us_ps1_next;     //new PS1 (TOS+1)
-   
-   //DSP
+
+   //DSP - DSP Cell Partition
    //DSP -> ALU
    wire [31:0]                              dsp2alu_add_res;     //result from adder
    wire [31:0]                              dsp2alu_mul_res;     //result from multiplier
-
-
    //DSP -> FC
    wire [15:0]                              dsp2fc_next_pc;      //result
-
    //DSP -> IPS
    wire [SP_WIDTH-1:0]                      dsp2ips_lsp;         //lower stack pointer
    //DSP -> IRS
    wire [SP_WIDTH-1:0]                      dsp2irs_lsp;         //lower stack pointer
 
-
-
-   
-   
-   //EXCPT
-   //EXCPT -> ALU   
+   //EXCPT - Exception Aggregator
+   //EXCPT -> ALU
    wire [15:0]                              excpt2alu_tc;        //throw code
+   //EXCPT -> FC
+   wire [15:0]                              excpt2fc_throw;      //throw exception
 
-   //FC
+   //FC - Flow Control
    //FC -> DSP
    wire                                     fc2dsp_abs_rel_b;    //1:absolute COF, 0:relative COF
    wire                                     fc2dsp_update;       //update PC
    wire [15:0]                              fc2dsp_rel_adr;      //relative COF address
    wire [15:0]                              fc2dsp_abs_adr;      //rabsolute COF address
- 
-   //IPS
+   //FC -> IR
+   wire                                     fc2ir_capture;       //capture current IR
+   wire                                     fc2ir_hoard;         //capture hoarded IR
+   wire                                     fc2ir_expend;        //hoarded IR -> current IR
+
+   //IPS - Intermediate (and Lower) Parameter Stack
    //IPS -> ALU
    wire [IPS_DEPTH-1:0]                     ips2alu_tags;        //cell tags
    wire [SP_WIDTH-1:0]                      ips2alu_lsp;         //lower stack pointer
-
    //IPS -> DSP
    wire                                     ips2dsp_psh;         //push (decrement address)
    wire                                     ips2dsp_pul;         //pull (increment address)
    wire                                     ips2dsp_rst;         //reset AGU
+   //IPS -> EXCPT
+   wire                                     ips2excpt_buserr;    //bus error
+   //IPS -> SARB
+   wire                                     ips2sarb_cyc;        //bus cycle indicator       +-
+   wire                                     ips2sarb_stb;        //access request            | initiator
+   wire                                     ips2sarb_we;         //write enable              | to
+   wire [`SP_WIDTH-1:0]                     ips2sarb_adr;        //address bus               | target
+   wire [15:0]                              ips2sarb_dat;        //write data bus            +-
+   //IPS -> US
+   wire                                     ips2us_busy;         //intermediate stack is busy
+   wire                                     ips2us_pul_ctag;     //intermediate stack cell tag
+   wire [15:0]                              ips2us_pul_cell;     //intermediate stack cell
 
-   //IR
+   //IR - Instruction Register and Decoder
    //IR -> ALU
    wire [4:0]                               ir2alu_opr;          //ALU operator
    wire [4:0]                               ir2alu_imm_op;       //immediate operand
    wire                                     ir2alu_sel_imm_op;   //select immediate operand
-
-   //IRS
+   //IR -> FC
+   //IR -> US
+   
+   //IRS - Intermediate (and Lower) Return Stack
    //IRS -> ALU
    wire [IRS_DEPTH-1:0]                     irs2alu_tags;        //cell tags
    wire [SP_WIDTH-1:0]                      irs2alu_lsp;         //lower stack pointer
@@ -242,27 +254,59 @@ module N1
    wire                                     irs2dsp_psh;         //push (increment address)
    wire                                     irs2dsp_pul;         //pull (decrement address)
    wire                                     irs2dsp_rst;         //reset AGU
+   //IRS -> EXCPT
+   wire                                     irs2excpt_buserr;    //bus error
+   //IRS -> SARB
+   wire                                     irs2sarb_cyc;        //bus cycle indicator       +-
+   wire                                     irs2sarb_stb;        //access request            | initiator
+   wire                                     irs2sarb_we;         //write enable              | to
+   wire [`SP_WIDTH-1:0]                     irs2sarb_adr;        //address bus               | target
+   wire [15:0]                              irs2sarb_dat;        //write data bus            +-
+   //IRS -> US
+   wire                                     irs2us_busy;         //intermediate stack is busy
+   wire                                     irs2us_pul_ctag;     //intermediate stack cell tag
+   wire [15:0]                              irs2us_pul_cell;     //intermediate stack cell
 
-   //SARB
-   
-   //US
+   //SARB - Stack Bus Arbiter
+   //SARB -> IPS
+   wire                                     sarb2ips_ack;        //bus cycle acknowledge     +-
+   wire                                     sarb2ips_err;        //error indicator           | target
+   wire                                     sarb2ips_rty;        //retry request             | to
+   wire                                     sarb2ips_stall;      //access delay              | initiator
+   wire [15:0]                              sarb2ips_dat;        //read data bus             +-
+   //SARB -> IRS
+   wire                                     sarb2irs_ack;        //bus cycle acknowledge     +-
+   wire                                     sarb2irs_err;        //error indicator           | target
+   wire                                     sarb2irs_rty;        //retry request             | to
+   wire                                     sarb2irs_stall;      //access delay              | initiator
+   wire [15:0]                              sarb2irs_dat;        //read data bus             +-
+
+   //US - Upper Stacks
    //US -> ALU
    wire [15:0]                              us2alu_ps0_cur;      //current PS0 (TOS)
    wire [15:0]                              us2alu_ps1_cur;      //current PS1 (TOS+1)
    wire [3:0]                               us2alu_ptags;        //UPS tags
    wire                                     us2alu_rtags;        //URS tags
-
-
-
-
+   //US -> IPS
+   wire                                     us2ips_rst;          //reset stack
+   wire                                     us2ips_psh;          //US  -> IRS
+   wire                                     us2ips_pul;          //IRS -> US
+   wire                                     us2ips_psh_ctag;     //upper stack cell tag
+   wire [15:0]                              us2ips_psh_cell;     //upper stack cell
+   //US -> IRS
+   wire                                     us2irs_rst;          //reset stack
+   wire                                     us2irs_psh;          //US  -> IRS
+   wire                                     us2irs_pul;          //IRS -> US
+   wire                                     us2irs_psh_ctag;     //upper stack cell tag
+   wire [15:0]                              us2irs_psh_cell;     //upper stack cell
 
    //ALU
    //---
    N1_alu
-     #(.SP_WIDTH  (`SP_WIDTH),                                   //width of the stack pointer
-       .IPS_DEPTH (`IPS_DEPTH),                                  //depth of the intermediate parameter stack
-       .IRS_DEPTH (`IRS_DEPTH))                                  //depth of the intermediate return stack
-   DUT
+     #(.SP_WIDTH  (SP_WIDTH),                                    //width of the stack pointer
+       .IPS_DEPTH (IPS_DEPTH),                                   //depth of the intermediate parameter stack
+       .IRS_DEPTH (IRS_DEPTH))                                   //depth of the intermediate return stack
+   alu
    (//DSP cell interface
     .alu2dsp_sub_add_b_o        (alu2dsp_sub_add_b),             //1:op1 - op0, 0:op1 + op0
     .alu2dsp_smul_umul_b_o      (alu2dsp_smul_umul_b),           //1:signed, 0:unsigned
@@ -346,23 +390,172 @@ module N1
 
    //IPS
    //---
+   N1_is
+     #(.SP_WIDTH (SP_WIDTH),                                     //width of the stack pointer
+       .IS_DEPTH (IPS_DEPTH),                                    //depth of the intermediate stack
+       .LS_START ({SP_WIDTH{1'b1}}))                             //stack pointer value of the empty lower stack
+   ips
+     (//Clock and reset
+      .clk_i                    (clk_i),                         //module clock
+      .async_rst_i              (async_rst_i),                   //asynchronous reset
+      .sync_rst_i               (sync_rst_i),                    //synchronous reset
+
+      //ALU interface
+      .is2alu_tags_o            (ips2alu_tags),                  //cell tags
+      .is2alu_lsp_o             (ips2alu_lsp),                   //lower stack pointer
+
+      //DSP partition interface
+      .dsp2is_lsp_i             (dsp2ips_lsp),                   //lower stack pointer
+      .is2dsp_psh_o             (ips2dsp_psh),                   //push (decrement address)
+      .is2dsp_pul_o             (ips2dsp_pul),                   //pull (increment address)
+      .is2dsp_rst_o             (ips2dsp_rst),                   //reset AGU
+
+      //Exception aggregator interface
+      .is2excpt_buserr_o        (ips2excpt_buserr),              //bus error
+
+      //Stack bus arbiter interface
+      .is2sarb_cyc_o            (ips2sarb_cyc),                  //bus cycle indicator       +-
+      .is2sarb_stb_o            (ips2sarb_stb),                  //access request            | initiator
+      .is2sarb_we_o             (ips2sarb_we),                   //write enable              | to
+      .is2sarb_adr_o            (ips2sarb_adr),                  //address bus               | target
+      .is2sarb_dat_o            (ips2sarb_dat),                  //write data bus            +-
+      .sarb2is_ack_i            (sarb2ips_ack),                  //bus cycle acknowledge     +-
+      .sarb2is_err_i            (sarb2ips_err),                  //error indicator           | target
+      .sarb2is_rty_i            (sarb2ips_rty),                  //retry request             | to
+      .sarb2is_stall_i          (sarb2ips_stall),                //access delay              | initiator
+      .sarb2is_dat_i            (sarb2ips_dat),                  //read data bus             +-
+
+      //Upper stack interface
+      .us2is_rst_i              (us2ips_rst),                    //reset stack
+      .us2is_psh_i              (us2ips_psh),                    //US -> IS
+      .us2is_pul_i              (us2ips_pul),                    //IS -> US
+      .us2is_psh_ctag_i         (us2ips_psh_ctag),               //upper stack cell tag
+      .us2is_psh_cell_i         (us2ips_psh_cell),               //upper stack cell
+      .is2us_busy_o             (ips2us_busy),                   //intermediate stack is busy
+      .is2us_pul_ctag_o         (ips2us_pul_ctag),               //intermediate stack cell tag
+      .is2us_pul_cell_o         (ips2us_pul_cell),               //intermediate stack cell
+
+      //Probe signals
+      .prb_is_tags_o            (prb_ips_tags_o),                //intermediate stack cell tags
+      .prb_is_cells_o           (prb_ips_cells_o),               //intermediate stack cells
+      .prb_is_lsp_o             (prb_ips_lsp_o),                 //lower stack pointer
+      .prb_is_state_o           (prb_ips_state_o));              //FSM state
+
+   //IR
+   //--
 
 
 
    //IRS
    //---
+   N1_is
+     #(.SP_WIDTH (SP_WIDTH),                                     //width of the stack pointer
+       .IS_DEPTH (IRS_DEPTH),                                    //depth of the intermediate stack
+       .LS_START ({SP_WIDTH{1'b0}}))                             //stack pointer value of the empty lower stack
+   irs
+     (//Clock and reset
+      .clk_i                    (clk_i),                         //module clock
+      .async_rst_i              (async_rst_i),                   //asynchronous reset
+      .sync_rst_i               (sync_rst_i),                    //synchronous reset
 
+      //ALU interface
+      .is2alu_tags_o            (irs2alu_tags),                  //cell tags
+      .is2alu_lsp_o             (irs2alu_lsp),                   //lower stack pointer
+
+      //DSP partition interface
+      .dsp2is_lsp_i             (dsp2irs_lsp),                   //lower stack pointer
+      .is2dsp_psh_o             (irs2dsp_psh),                   //push (decrement address)
+      .is2dsp_pul_o             (irs2dsp_pul),                   //pull (increment address)
+      .is2dsp_rst_o             (irs2dsp_rst),                   //reset AGU
+
+      //Exception aggregator interface
+      .is2excpt_buserr_o        (irs2excpt_buserr),              //bus error
+
+      //Stack bus arbiter interface
+      .is2sarb_cyc_o            (irs2sarb_cyc),                  //bus cycle indicator       +-
+      .is2sarb_stb_o            (irs2sarb_stb),                  //access request            | initiator
+      .is2sarb_we_o             (irs2sarb_we),                   //write enable              | to
+      .is2sarb_adr_o            (irs2sarb_adr),                  //address bus               | target
+      .is2sarb_dat_o            (irs2sarb_dat),                  //write data bus            +-
+      .sarb2is_ack_i            (sarb2irs_ack),                  //bus cycle acknowledge     +-
+      .sarb2is_err_i            (sarb2irs_err),                  //error indicator           | target
+      .sarb2is_rty_i            (sarb2irs_rty),                  //retry request             | to
+      .sarb2is_stall_i          (sarb2irs_stall),                //access delay              | initiator
+      .sarb2is_dat_i            (sarb2irs_dat),                  //read data bus             +-
+
+      //Upper stack interface
+      .us2is_rst_i              (us2irs_rst),                    //reset stack
+      .us2is_psh_i              (us2irs_psh),                    //US -> IS
+      .us2is_pul_i              (us2irs_pul),                    //IS -> US
+      .us2is_psh_ctag_i         (us2irs_psh_ctag),               //upper stack cell tag
+      .us2is_psh_cell_i         (us2irs_psh_cell),               //upper stack cell
+      .is2us_busy_o             (irs2us_busy),                   //intermediate stack is busy
+      .is2us_pul_ctag_o         (irs2us_pul_ctag),               //intermediate stack cell tag
+      .is2us_pul_cell_o         (irs2us_pul_cell),               //intermediate stack cell
+
+      //Probe signals
+      .prb_is_tags_o            (prb_irs_tags_o),                //intermediate stack cell tags
+      .prb_is_cells_o           (prb_irs_cells_o),               //intermediate stack cells
+      .prb_is_lsp_o             (prb_irs_lsp_o),                 //lower stack pointer
+      .prb_is_state_o           (prb_irs_state_o));              //FSM state
 
    //SARB
    //----
+   N1_sarb
+     #(.SP_WIDTH (SP_WIDTH))
+   sarb
+     (//Clock and reset
+      .clk_i                    (clk_i),                         //module clock
+      .async_rst_i              (async_rst_i),                   //asynchronous reset
+      .sync_rst_i               (sync_rst_i),                    //synchronous reset
 
+      //Merged stack bus (wishbone)
+      .sbus_cyc_o               (sbus_cyc_o),                    //bus cycle indicator       +-
+      .sbus_stb_o               (sbus_stb_o),                    //access request            |
+      .sbus_we_o                (sbus_we_o),                     //write enable              | initiator
+      .sbus_adr_o               (sbus_adr_o),                    //address bus               | to
+      .sbus_dat_o               (sbus_dat_o),                    //write data bus            | target
+      .sbus_tga_ps_o            (sbus_tga_ps_o),                 //parameter stack access    |
+      .sbus_tga_rs_o            (sbus_tga_rs_o),                 //return stack access       +-
+      .sbus_ack_i               (sbus_ack_i),                    //bus cycle acknowledge     +-
+      .sbus_err_i               (sbus_err_i),                    //error indicator           | target
+      .sbus_rty_i               (sbus_rty_i),                    //retry request             | to
+      .sbus_stall_i             (sbus_stall_i),                  //access delay              | initiator
+      .sbus_dat_i               (sbus_dat_i),                    //read data bus             +-
+
+      //Parameter stack bus (wishbone)
+      .ips2sarb_cyc_i           (ips2sarb_cyc),                  //bus cycle indicator       +-
+      .ips2sarb_stb_i           (ips2sarb_stb),                  //access request            | initiator
+      .ips2sarb_we_i            (ips2sarb_we),                   //write enable              | to
+      .ips2sarb_adr_i           (ips2sarb_adr),                  //address bus               | target
+      .ips2sarb_dat_i           (ips2sarb_dat),                  //write data bus            +-
+      .sarb2ips_ack_o           (sarb2ips_ack),                  //bus cycle acknowledge     +-
+      .sarb2ips_err_o           (sarb2ips_err),                  //error indicator           | target
+      .sarb2ips_rty_o           (sarb2ips_rty),                  //retry request             | to
+      .sarb2ips_stall_o         (sarb2ips_stall),                //access delay              | initiator
+      .sarb2ips_dat_o           (sarb2ips_dat),                  //read data bus             +-
+
+      //Return stack bus (wishbone)
+      .irs2sarb_cyc_i           (irs2sarb_cyc),                  //bus cycle indicator       +-
+      .irs2sarb_stb_i           (irs2sarb_stb),                  //access request            | initiator
+      .irs2sarb_we_i            (irs2sarb_we),                   //write enable              | to
+      .irs2sarb_adr_i           (irs2sarb_adr),                  //address bus               | target
+      .irs2sarb_dat_i           (irs2sarb_dat),                  //write data bus            +-
+      .sarb2irs_ack_o           (sarb2irs_ack),                  //bus cycle acknowledge     +-
+      .sarb2irs_err_o           (sarb2irs_err),                  //error indicator           | target
+      .sarb2irs_rty_o           (sarb2irs_rty),                  //retry request             | to
+      .sarb2irs_stall_o         (sarb2irs_stall),                //access delay              | initiator
+      .sarb2irs_dat_o           (sarb2irs_dat),                  //read data bus             +-
+
+      //Probe signals
+      .prb_sarb_state_o         (prb_sarb_state_o));             //FSM state
 
    //US
    //---
 
 
 
-   
 
-  
+
+
 endmodule // N1

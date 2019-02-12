@@ -80,7 +80,6 @@ module N1_flowctrl
     output wire                      pbus_cyc_o,             //bus cycle indicator       +-
     output wire                      pbus_stb_o,             //access request            |
     output wire                      pbus_we_o,              //write enable              |
-    output wire [(CELL_WIDTH/8)-1:0] pbus_sel_o,             //write data selects        |
     output wire                      pbus_tga_rst_o,         //reset                     |
     output wire                      pbus_tga_excpt_o,       //exception                 |
     output wire                      pbus_tga_irq_o,         //interrupt request         | initiator
@@ -97,10 +96,13 @@ module N1_flowctrl
     input  wire                      pbus_rty_i,             //retry request             | to initiator
     input  wire                      pbus_stall_i,           //access delay              +-
    
+    //Interrupt interface
+    output wire                      irq_ack_o,              //interrupt acknowledge
+    input  wire [15:0]               irq_req_adr_i,          //requested interrupt vector
+
     //Exception interface
-    output wire                      excpt_throw_pbus_o;     //throw pbus error 
-    output wire 		     excpt_ack_o,            //exception acknowledge          
-    input  wire [PC_WIDTH-1:0]       excpt_vec_i,            //requested interrupt vector
+    output wire                      fc2excpt_buserr;        //bus error 
+    input  wire [PC_WIDTH-1:0]       excpt2fc_throw,         //requested interrupt vector
 				     
     //Interrupt interface	     
     output wire 		     irq_block_o,            //block interrupts        
