@@ -44,8 +44,8 @@ module N1_ir
 
     //Flow control interface
     input  wire                   fc2ir_capture_i,                                //capture current IR
-    input  wire                   fc2ir_hoard_i,                                  //capture hoarded IR
-    input  wire                   fc2ir_expend_i,                                 //hoarded IR -> current IR
+    input  wire                   fc2ir_stash_i,                                  //capture stashed IR
+    input  wire                   fc2ir_expend_i,                                 //stashed IR -> current IR
 
     output wire                   ir_eow_o,                                       //end of word
 
@@ -103,13 +103,13 @@ module N1_ir
 
     //Probe signals
     output wire [15:0]            prb_ir_cur_o,                                   //current instruction register
-    output wire [15:0]            prb_ir_hoard_o);                                //hoarded instruction register
+    output wire [15:0]            prb_ir_stash_o);                                //stashed instruction register
 
    //Internal signals
    //----------------
    //Instruction registers
    reg  [15:0]                    ir_cur_reg;                                     //current instruction register
-   reg  [15:0]                    ir_hoard_reg;                                   //hoarded instruction register
+   reg  [15:0]                    ir_stash_reg;                                   //stashed instruction register
 
    //Flip flops
    //----------
@@ -122,18 +122,18 @@ module N1_ir
           ir_cur_reg  <= {16{1'b0}};
         else if (fc2ir_capture_i | fc2ir_expend_i)                                //update IR
           ir_cur_reg  <= (({16{fc2ir_capture_i}} &  pbus_dat_i) |
-                          ({16{fc2ir_expend_i}}  &  ir_hoard_reg));
+                          ({16{fc2ir_expend_i}}  &  ir_stash_reg));
       end // always @ (posedge async_rst_i or posedge clk_i)
 
-   //Hoarded instruction register
+   //Stashed instruction register
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                                          //asynchronous reset
-          ir_hoard_reg  <= {16{1'b0}};
+          ir_stash_reg  <= {16{1'b0}};
         else if (sync_rst_i)                                                      //synchronous reset
-          ir_hoard_reg  <= {16{1'b0}};
-        else if (fc2ir_hoard_i)                                                   //capture opcode
-          ir_hoard_reg  <= pbus_dat_i;
+          ir_stash_reg  <= {16{1'b0}};
+        else if (fc2ir_stash_i)                                                   //capture opcode
+          ir_stash_reg  <= pbus_dat_i;
       end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Instruction decoder
@@ -192,6 +192,6 @@ module N1_ir
    //Probe signals
    //-------------
    assign prb_ir_cur_o          = ir_cur_reg;                                     //current instruction register
-   assign prb_ir_hoard_o        = ir_hoard_reg;                                   //hoarded instruction register
+   assign prb_ir_stash_o        = ir_stash_reg;                                   //stashed instruction register
 
 endmodule // N1_ir

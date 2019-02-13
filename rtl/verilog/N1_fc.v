@@ -104,12 +104,6 @@ module N1_flowctrl
     output wire                      fc2excpt_buserr;        //bus error 
     input  wire [PC_WIDTH-1:0]       excpt2fc_throw,         //requested interrupt vector
 				     
-    //Interrupt interface	     
-    output wire 		     irq_block_o,            //block interrupts        
-    output wire 		     irq_unblock_o,          //unblock interrupts        
-    output wire 		     irq_ack_o,              //interrupt acknowledge           
-    input wire [PC_WIDTH-1:0] 	     irq_vec_i,              //requested interrupt vector 
-				     
     //IR interface		     
     output  wire                     ir_capture_i,           //capture current IR   
     output  wire                     ir_hoard_i,             //capture hoarded IR

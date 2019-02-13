@@ -52,7 +52,7 @@ module N1_us
     input  wire [15:0]                     pbus_dat_i,        //read data bus
 
     //Instruction decoder output
-    input  wire                            ir_eow_i,          //end of word
+    input  wire             `               ir_eow_i,          //end of word
     input  wire                            ir_jmp_i,          //jump instruction (any)
     input  wire                            ir_jmp_ind_i,      //jump instruction (indirect addressing)
     input  wire                            ir_jmp_dir_i,      //jump instruction (direct addressing)

@@ -150,7 +150,7 @@ module N1
 
     //Interrupt interface
     output wire                              irq_ack_o,          //interrupt acknowledge
-    input wire [15:0]                        irq_req_adr_i,      //requested interrupt vector
+    input  wire [15:0]                       irq_req_adr_i,      //requested interrupt vector
 
     //Probe signals
     //Exception aggregator
