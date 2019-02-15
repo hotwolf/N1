@@ -464,7 +464,7 @@ of the instructuion encoding.
            \begin{minipage}[l]{14em}
               \large{
                 Memory write \\
-                ( addr -- x )
+                ( x addr -- )
               }
           \end{minipage}};
         \end{scope}
@@ -501,7 +501,7 @@ of the instructuion encoding.
             }
            \end{minipage}};
        
-        %Control instruction
+        %Control command
         \begin{scope}[shift={(1,2.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -513,7 +513,7 @@ of the instructuion encoding.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
           \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)     {\LARGE{Instruction}};
+          \node         at (12,0.45)     {\LARGE{Control bits}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
@@ -523,7 +523,17 @@ of the instructuion encoding.
           \end{minipage}};
         \end{scope}
 
-        %Reserved
+        %Complex instructions
+        \draw [thick] (21.5,1.5) -- (22.5,1.5) -- (22.5,0.5) -- (21.5,0.5);
+        \node [right] at (23,0.5) {
+          \begin{minipage}[l]{12em}
+            \Huge{
+              Complex \\
+              Instructions
+            }
+           \end{minipage}};
+       
+        %
         \begin{scope}[shift={(1,0.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -535,11 +545,12 @@ of the instructuion encoding.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
           \node         at (7.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (12,0.45)    {\LARGE{Reserved}};
+          \node         at (12,0.45)    {\LARGE{Instruction}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Reserved
+                Complex \\
+                instruction
               }
           \end{minipage}};
         \end{scope}
@@ -826,29 +837,22 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
     %Reserved                          
       \texttt{11011}                       &
       \multicolumn{3}{c|}{Reserved}        \\ \hline
-    %---------------------------------
-   
-    %Status information            
-    %---------------------------------
-    %Processor status
+
+    %Reserved                          
       \texttt{11100}                       &
-      Processor status                     &
-      \multicolumn{2}{c|}{status word}     \\ \hline
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
 
-    %Exception code
+    %Reserved                          
       \texttt{11101}                       &
-      Current exception                    &
-      \multicolumn{2}{c|}{throw code}      \\ \hline
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
 
-    %PS status
+    %Reserved                          
       \texttt{11110}                       &
-      \Gls{ps} status                      &
-      \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
 
-    %RS status
+    %Reserved                          
       \texttt{11111}                       &
-      \Gls{rs} status                      &
-      \multicolumn{2}{c|}{IPS:UPS}         \\ \hline
+      \multicolumn{3}{c|}{Reserved}        \\ \hline
     %---------------------------------
     
   \end{longtable}
@@ -2536,10 +2540,10 @@ addressing. This will offer faster access to frequently used system variables.
 \subsection{Control Instructions}
 \label{opcodes:ctrl}
 
-The N1 implements of set of instrictions to controls some of its internal components. None of these
+The N1 implements of set of instrictions to control some of its internal components. None of these
 instructions consume input arguments from the \gls{ps}, nor do they produce a return value.
-The encoding of these instructions is shown in \tabref{opcodes:ctrl:instr}. Multiple control
-instructions can be combined to one.
+Control instructions contain an eight bit wide field to trigger several actions. The encoding of these
+control bits is shown in \tabref{opcodes:ctrl:bits}. Multiple control bits can be set within one instruction.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2548,8 +2552,58 @@ instructions can be combined to one.
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Control instructions}
-    \label{opcodes:ctrl:instr} \\
+    \caption{Control bits}
+    \label{opcodes:ctrl:bits} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Encoding}}     &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Action}}\\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{2}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %Enable interrupts
+    \texttt{xxxxxxx1}          &
+    Enable interrupts          \\ \hline
+
+    %Disable interrupts
+    \texttt{xxxxxx10}          &
+    Disable interrupts         \\ \hline
+    
+    %Enable exceptions
+    \texttt{xxxxx1xx}          &
+    Enable exceptions          \\ \hline
+
+    %Disable exceptions
+    \texttt{xxxx10xx}          &
+    Disable exceptions         \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
+
+\subsection{Complex Instructions}
+\label{opcodes:complex}
+
+Complex instructions trigger an internal sequence of actions. Their execution time spans multiple 
+clock cycles. \tabref{opcodes:complex:instr} lists the available instructions of this category.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Complex instruction encoding}
+    \label{opcodes:complex:instr} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2565,22 +2619,37 @@ instructions can be combined to one.
     \hline
     \endlastfoot
 
-    %Enable interrupts
-    \texttt{xxxxxx11}          &
-    Enable interrupts          \\ \hline
+    %Read PSP
+    \texttt{00000000}          &    
+    \multicolumn{1}{m{22em}|}{
+    \makecell[l]{ 
+      Fetch parameter stack pointer
+      (= number of cells) \\
+      ( -- +n )}} \\ \hline
 
-    %Disable interrupts
-    \texttt{xxxxxx10}          &
-    Disable interrupts         \\ \hline
+    %Write PSP
+    \texttt{00000001}          &
+    \multicolumn{1}{m{22em}|}{
+    \makecell[l]{ 
+       Store parameter stack pointer\\
+       ( +n -- )}} \\ \hline
+    
+    %Read RSP
+    \texttt{00000010}          &
+    \multicolumn{1}{m{22em}|}{
+    \makecell[l]{ 
+       Fetch return stack pointer
+       (= number of cells) \\
+       ( -- +n )}} \\ \hline
 
-    %Reset parameter stack
-    \texttt{xxxxx1xx}          &
-    Reset \gls{ps}             \\ \hline
-
-    %Reset return stack
-    \texttt{xxxx1xxx}          &
-    Reset \gls{rs}             \\ \hline
+    %Write RSP
+    \texttt{00000011}          &
+    \multicolumn{1}{m{22em}|}{
+    \makecell[l]{ 
+       Store return stack pointer\\
+       ( +n -- )}} \\ \hline
     
   \end{longtable}
 \end{center}  
 \endgroup
+
