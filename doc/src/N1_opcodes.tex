@@ -32,7 +32,7 @@ of the instructuion encoding.
 \begin{figure}[!htb]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.475} {
+    \scalebox{0.5125} {
       \begin{tikzpicture}
       
         %Instruction
@@ -59,8 +59,8 @@ of the instructuion encoding.
         };
 
         %Return bit
-        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,36.2);
-        \node [above] at (1.4,36.2) {
+        \draw [thick, fill=gray!15] (0.8,0.3) rectangle (2,34.2);
+        \node [above] at (1.4,34.2) {
           \begin{minipage}[c]{10em}
             \begin{center}
               End of\\
@@ -69,8 +69,8 @@ of the instructuion encoding.
           \end{minipage}};
 
         %Change of flow instructions
-        \draw [thick] (21.5,35.5) -- (22.5,35.5) -- (22.5,24.5) -- (21.5,24.5);
-        \node [right] at (23,29.5) {
+        \draw [thick] (21.5,33.5) -- (22.5,33.5) -- (22.5,24.5) -- (21.5,24.5);
+        \node [right] at (23,28.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               Change \\
@@ -80,7 +80,7 @@ of the instructuion encoding.
            \end{minipage}};
 
         %Jump
-        \begin{scope}[shift={(1,34.5)}]
+        \begin{scope}[shift={(1,32.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{1}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -109,7 +109,7 @@ of the instructuion encoding.
         \end{scope}
 
         %Jump
-        \begin{scope}[shift={(1,32.5)}]
+        \begin{scope}[shift={(1,30.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{1}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -125,7 +125,7 @@ of the instructuion encoding.
         \end{scope}
 
         %Call
-        \begin{scope}[shift={(1,30.5)}]
+        \begin{scope}[shift={(1,28.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{0}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -154,7 +154,7 @@ of the instructuion encoding.
         \end{scope}
 
         %Call
-        \begin{scope}[shift={(1,28.5)}]
+        \begin{scope}[shift={(1,26.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{0}}};
           \draw [thick] (1,0) rectangle  (2,1);
@@ -169,34 +169,34 @@ of the instructuion encoding.
           \end{minipage}};
         \end{scope}
 
-        %Conditional Branch
-        \begin{scope}[shift={(1,26.5)}]
-          \node at (0,0) {\usebox{\instruction}};
-          \node         at (0.5,0.5)     {\huge{\texttt{;}}};
-          \draw [thick] (1,0) rectangle  (3,1);
-          \node         at (1.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (2.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (3.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (4.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (5.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (6.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (8.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (10.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (11.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (12.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (13.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (14.5,0.5)    {\huge{\texttt{1}}};
-          \node         at (15.5,0.5)    {\huge{\texttt{1}}};
-          \node [right] at (16.2,0.5) {
-            \begin{minipage}[l]{14em}
-              \large{
-                Conditional branch \\
-                ( flag addr -- )
-              }
-          \end{minipage}};
-        \end{scope}
+        %%Conditional Branch
+        %\begin{scope}[shift={(1,26.5)}]
+        %  \node at (0,0) {\usebox{\instruction}};
+        %  \node         at (0.5,0.5)     {\huge{\texttt{;}}};
+        %  \draw [thick] (1,0) rectangle  (3,1);
+        %  \node         at (1.5,0.5)     {\huge{\texttt{0}}};
+        %  \node         at (2.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (3.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (4.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (5.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (6.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (7.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (8.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (9.5,0.5)     {\huge{\texttt{1}}};
+        %  \node         at (10.5,0.5)    {\huge{\texttt{1}}};
+        %  \node         at (11.5,0.5)    {\huge{\texttt{1}}};
+        %  \node         at (12.5,0.5)    {\huge{\texttt{1}}};
+        %  \node         at (13.5,0.5)    {\huge{\texttt{1}}};
+        %  \node         at (14.5,0.5)    {\huge{\texttt{1}}};
+        %  \node         at (15.5,0.5)    {\huge{\texttt{1}}};
+        %  \node [right] at (16.2,0.5) {
+        %    \begin{minipage}[l]{14em}
+        %      \large{
+        %        Conditional branch \\
+        %        ( flag addr -- )
+        %      }
+        %  \end{minipage}};
+        %\end{scope}
         
         %Conditional Branch
         \begin{scope}[shift={(1,24.5)}]
@@ -205,7 +205,7 @@ of the instructuion encoding.
           \draw [thick] (1,0) rectangle  (3,1);
           \node         at (1.5,0.5)     {\huge{\texttt{0}}};
           \node         at (2.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (9.5,0.45)    {\LARGE{13-bit relative address $<$ 0x1FFF}};
+          \node         at (9.5,0.45)    {\LARGE{13-bit signed relative address}};
           \node [right] at (16.2,0.5) {
             \begin{minipage}[l]{14em}
               \large{
@@ -492,8 +492,8 @@ of the instructuion encoding.
         \end{scope}
 
         %Control instructions
-        \draw [thick] (21.5,3.5) -- (22.5,3.5) -- (22.5,2.5) -- (21.5,2.5);
-        \node [right] at (23,2.5) {
+        \draw [thick] (21.5,3.5) -- (22.5,3.5) -- (22.5,0.5) -- (21.5,0.5);
+        \node [right] at (23,1.5) {
           \begin{minipage}[l]{12em}
             \Huge{
               Control \\
@@ -513,26 +513,16 @@ of the instructuion encoding.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
           \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)     {\LARGE{Control bits}};
+          \node         at (12,0.45)     {\LARGE{Set of instructions}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Control instruction \\
+                Control instructions \\
                 ( -- )
               }
           \end{minipage}};
         \end{scope}
 
-        %Complex instructions
-        \draw [thick] (21.5,1.5) -- (22.5,1.5) -- (22.5,0.5) -- (21.5,0.5);
-        \node [right] at (23,0.5) {
-          \begin{minipage}[l]{12em}
-            \Huge{
-              Complex \\
-              Instructions
-            }
-           \end{minipage}};
-       
         %
         \begin{scope}[shift={(1,0.5)}]
           \node at (0,0) {\usebox{\instruction}};
@@ -549,7 +539,7 @@ of the instructuion encoding.
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
-                Complex \\
+                Control \\
                 instruction
               }
           \end{minipage}};
@@ -2419,8 +2409,8 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x06AB} \\ 
+      \texttt{0x06AB}
     }} \\ \hline
 
     %2R@
@@ -2470,8 +2460,8 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x0755} \\ 
+      \texttt{0x0757}
     }} \\ \hline
 
     %2R>
@@ -2522,8 +2512,8 @@ Two options are selectable:
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0000} \\ 
-      \texttt{0x0000}
+      \texttt{0x0755} \\ 
+      \texttt{0x0755}
     }} \\ \hline
   \end{longtable}
 \end{center}  
@@ -2540,20 +2530,21 @@ addressing. This will offer faster access to frequently used system variables.
 \subsection{Control Instructions}
 \label{opcodes:ctrl}
 
-The N1 implements of set of instrictions to control some of its internal components. None of these
-instructions consume input arguments from the \gls{ps}, nor do they produce a return value.
-Control instructions contain an eight bit wide field to trigger several actions. The encoding of these
-control bits is shown in \tabref{opcodes:ctrl:bits}. Multiple control bits can be set within one instruction.
+The N1 implements two types of control instructions to manipulate the internal state of the CPU.
+The first type are simple control instructions. These don't consume input from the stacks nor do
+they produce a return value. These instructions can be executed concurrently and combined into a
+single CPU instruction. \tabref{opcodes:ctrl:smpl} shows the set of simple control instructions
+and thir encoding.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
 \setlength{\LTright}{\LTleft}
 \begin{center}
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
+  \begin{longtable}{|c|l|}
     \rowcolor{white}
-    \caption{Control bits}
-    \label{opcodes:ctrl:bits} \\
+    \caption{Simple Control Instructions}
+    \label{opcodes:ctrl:smpl} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2570,40 +2561,45 @@ control bits is shown in \tabref{opcodes:ctrl:bits}. Multiple control bits can b
     \endlastfoot
 
     %Enable interrupts
-    \texttt{xxxxxxx1}          &
+    \texttt{0b0000001xxxxxxx1}          &
     Enable interrupts          \\ \hline
 
     %Disable interrupts
-    \texttt{xxxxxx10}          &
+    \texttt{0b0000001xxxxxx10}          &
     Disable interrupts         \\ \hline
     
     %Enable exceptions
-    \texttt{xxxxx1xx}          &
+    \texttt{0b0000001xxxxx1xx}          &
     Enable exceptions          \\ \hline
 
     %Disable exceptions
-    \texttt{xxxx10xx}          &
+    \texttt{0b0000001xxxx10xx}          &
     Disable exceptions         \\ \hline
+    
+    %Reset parameter stack
+    \texttt{0b0000001xxx1xxxx}          &
+    Reset parameter stack      \\ \hline
+    
+    %Reset return stack
+    \texttt{0b0000001xx1xxxxx}          &
+    Reset return stack         \\ \hline
     
   \end{longtable}
 \end{center}  
 \endgroup
 
-\subsection{Complex Instructions}
-\label{opcodes:complex}
-
-Complex instructions trigger an internal sequence of actions. Their execution time spans multiple 
-clock cycles. \tabref{opcodes:complex:instr} lists the available instructions of this category.
+The second type of control instructions,  trigger an internal sequence of actions and consume multiple clock cycles 
+of execution time. \tabref{opcodes:ctrl:cmplx} lists the encoding of these complex control instructions.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
 \setlength{\LTright}{\LTleft}
 \begin{center}
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
+  \begin{longtable}{|c|l|}
     \rowcolor{white}
-    \caption{Complex instruction encoding}
-    \label{opcodes:complex:instr} \\
+    \caption{Nonconcurrent control instruction encoding}
+    \label{opcodes:ctrl:cmplx} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2619,32 +2615,39 @@ clock cycles. \tabref{opcodes:complex:instr} lists the available instructions of
     \hline
     \endlastfoot
 
-    %Read PSP
-    \texttt{00000000}          &    
-    \multicolumn{1}{m{22em}|}{
+    %NOP
+    \texttt{0x0000000000000000}          &    
+    \multicolumn{1}{m{13em}|}{
     \makecell[l]{ 
-      Fetch parameter stack pointer
+      No operation \\
+      ( -- )}} \\ \hline
+
+    %Read PSP
+    \texttt{0x0000000000000001}          &    
+    \multicolumn{1}{m{13em}|}{
+    \makecell[l]{ 
+      Fetch parameter stack pointer \\
       (= number of cells) \\
       ( -- +n )}} \\ \hline
 
     %Write PSP
-    \texttt{00000001}          &
-    \multicolumn{1}{m{22em}|}{
+    \texttt{0x0000000000000010}          &
+    \multicolumn{1}{m{13em}|}{
     \makecell[l]{ 
        Store parameter stack pointer\\
        ( +n -- )}} \\ \hline
     
     %Read RSP
-    \texttt{00000010}          &
-    \multicolumn{1}{m{22em}|}{
+    \texttt{0x0000000000000011}          &
+    \multicolumn{1}{m{13em}|}{
     \makecell[l]{ 
-       Fetch return stack pointer
+       Fetch return stack pointer \\
        (= number of cells) \\
        ( -- +n )}} \\ \hline
 
     %Write RSP
-    \texttt{00000011}          &
-    \multicolumn{1}{m{22em}|}{
+    \texttt{0x0000000000000100}          &
+    \multicolumn{1}{m{13em}|}{
     \makecell[l]{ 
        Store return stack pointer\\
        ( +n -- )}} \\ \hline

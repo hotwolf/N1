@@ -58,284 +58,284 @@ which map to single hardware instructions of the N1 processor.
       \texttt{!}                              &
       ( x a-addr -- )                         &
       Store a cell                            &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %*                                        
       \texttt{*}                              &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
       Multiply two cells                      &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %+                                        
       \texttt{+}                              &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
       Add two cells                           &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %-                                        
       \texttt{-}                              &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3)  &
       Subtract a cell from another            &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %0<                                        
       \texttt{0<}                             &
       ( n -- flag)                            &
       Check if cell is negative               &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %0<>                                        
       \texttt{0<>}                            &
       ( x -- flag )                           &
       Check if cell is not zero               &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %0>                                        
       \texttt{0>}                             &
       ( n -- flag )                           &
       Check if cell is greater than zero      &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
      %0=                                        
       \texttt{0=}                             &
       ( x -- flag)                            &
       Check if cell is zero                   &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
      %1+                                        
       \texttt{1+}                             &
       ( n1$\mid$u1 -- n2$\mid$u2)             &
       Increment cell                          &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
      %1-                                        
       \texttt{1-}                             &
       ( n1$\mid$u1 -- n2$\mid$u2)             &
       Decrement cell                          &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
      %2*                                        
       \texttt{2*}                             &
       ( x1 -- x2)                             &
       Shift cell one bit towards the \gls{msb} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
      %2/                                        
       \texttt{2/}                             &
       ( x1 -- x2)                             &
       Shift cell one bit towards the \gls{lsb} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
      %;                                        
       \texttt{;}                              &
       ( -- ) (R: nest-sys -- )                &
       Return to the calling word              &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %<                                        
       \texttt{<}                              &
       ( n1 n2 -- flag)                        &
       Compare two signed numbers              &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
    %<>                                        
       \texttt{<>}                             &
       ( x1 x2 -- flag )                       &
       Compare two cells for inequality        &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %=                                        
       \texttt{=}                              &
       ( x1 x2 -- flag)                        &
       Compare two cells for equality          &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %>                                        
       \texttt{>}                              &
       ( n1 n2 -- flag)                        &
       Compare two signed numbers              &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %>R                                        
       \texttt{>R}                             &
       ( x -- ) (R: -- x)                      &
       Move a cell from the \gls{ps} to the \gls{rs} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                                          
     %@
       \texttt{@}                              &
       ( a-addr -- x )                         &
       Fetch a cell                            &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %AND
       \texttt{AND}                            &
       ( x1 x2 -- x3 )                         &
       Bitwise logic AND                       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %BL
       \texttt{BL}                             &
       ( -- char )                             &
       Space character                         &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %CELL+
       \texttt{CELL+}                          &
       ( a-addr1 -- a-addr2 )                  &
       Increment address                       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %%CELLS
     %  \texttt{CELLS}                          &
     %  ( n1 -- n2 )                            &
     %  Has no effect                           &
-    %  \texttt{0000}                           \\ \hline
+    %  \texttt{0x0000}                           \\ \hline
                                               
     %CHAR+
       \texttt{CHAR+}                          &
       ( a-addr1 -- a-addr2 )                  &
       Increment address                       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %%CHARS
     %  \texttt{CHARS+}                         &
     %  ( n1 -- n2 )                            &
     %  Has no effect                           &
-    %  \texttt{0000}                           \\ \hline
+    %  \texttt{0x0000}                           \\ \hline
 
     %DEPTH
       \texttt{DEPTH}                          &
       ( -- +n )                               &
       Number of cells on the \gls{ps}         &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %DROP
       \texttt{DROP}                           &
       ( x -- )                                &
       Remove a cell from the \gls{ps}         &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %DUP
       \texttt{DUP}                            &
       ( x -- )                                &
       Duplicate a cell on the \gls{ps}        &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                               
     %EXIT                                        
       \texttt{EXIT}                           &
       ( -- ) (R: nest-sys -- )                &
       Return to the calling word              &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %FALSE                                        
       \texttt{FALSE}                          &
       ( -- false )                            &
       Return FALSE value                      &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %INVERT                                        
       \texttt{INVERT}                         &
       ( x1 -- x2 )                            &
       Bitwise invert                          &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %LSHIFT                                        
       \texttt{LSHIFT}                         &
       ( x1 u -- x2 )                          &
       Shift cell multiple bits towards the \gls{msb} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %M*                                        
       \texttt{M*}                             &
       ( n1 n2 -- d )                          &
       Signed multiplication                   &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %NEGATE                                        
       \texttt{NEGATE}                         &
       ( n1 -- n2 )                            &
       Two's complement                        &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %NIP                                        
       \texttt{NIP}                            &
       ( x1 x2 -- x2 )                         &
       Drop the cell below the \gls{tos}       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
      %OR
       \texttt{OR}                            &
       ( x1 x2 -- x3 )                        &
       Bitwise logic OR                       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                          
      %OVER
       \texttt{OVER}                          &
       ( x1 x2 -- x1 x2 x1 )                  &
       Copy second \gls{ps} entry to the \gls{tos} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                          
                                               
     %R>                                        
       \texttt{R>}                             &
       ( -- x ) (R: x -- )                     &
       Move a cell from the \gls{rs} to the \gls{ps} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                                          
     %R@                                        
       \texttt{R@}                             &
       ( -- x ) (R: x -- x )                   &
       Copy a cell from the \gls{rs} to the \gls{ps} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                                          
     %RSHIFT                                        
       \texttt{RSHIFT}                         &
       ( x1 u -- x2 )                          &
       Shift cell multiple bits towards the \gls{lsb} &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %S>D                                        
       \texttt{S>D}                            &
       ( n -- d )                              &
       Sign-extend cell                        &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %SWAP                                        
       \texttt{SWAP}                           &
       ( x1 x2 -- x2 x1 )                      &
       Swap two cells on the \gls{ps}          &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %TRUE                                        
       \texttt{TRUE}                           &
       ( -- true )                             &
       Return TRUE value                       &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %U<                                        
       \texttt{U<}                             &
       ( u1 u2 -- flag)                        &
       Compare two unsigned numbers            &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                               
     %U>                                        
       \texttt{U>}                             &
       ( u1 u2 -- flag)                        &
       Compare two unsigned numbers            &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
     %UM*                                        
       \texttt{UM*}                            &
       ( u1 u2 -- d )                          &
       Unsigned multiplication                 &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
 
      %XOR
       \texttt{XOR}                            &
       ( x1 x2 -- x3 )                         &
       Bitwise exclusive-OR                    &
-      \texttt{0000}                           \\ \hline
+      \texttt{0x0000}                           \\ \hline
                                   
   \end{longtable}
 \end{center}  

@@ -63,7 +63,7 @@
 //#         revision of the N1 processor. The signal naming convention is       #
 //#         "prb_<originating subblock>_<register base name>_o"                 #
 //#                                                                             #
-//#    The N1 consists of nine subblocks:                                       #
+//#    The N1 consists of five subblocks:                                       #
 //#       ALU -> Arithmetic Logic Unit                                          #
 //#         This block performs arithmetic and logic operations. The            #
 //#         implementation of multipliers and adders has been moved to the DSP  #
@@ -72,26 +72,15 @@
 //#         This block gathers logic from ALU, FC, IPS, and IRS, which can be   #
 //#         directly mapped to FPGA DSP cells. The implementation of this block #
 //#         is specific to the targeted FPGA architecture.                      #
-//#       EXCPT -> Exception Aggregator                                         #
-//#         This block tracks internal exceptions (stack over/underflows or bus #
-//#         errors) and provides information.                                   #
 //#       FC -> Flow Control                                                    #
 //#         This block implements the main finite state machine of the N1       #
 //#         processor, which controls the program execution.                    #
-//#       IPS -> Intermediate (and Lower) Parameter Stack                       #
-//#         This block implements the intermediate and the lower parameter      #
-//#         stack.                                                              #
 //#       IR -> Instruction Register and Decoder                                #
 //#         This block captures the current instructions ond performs basic     #
 //#         decoding.                                                           #
-//#       IRS -> Intermediate (and Lower) Return Stack                          #
-//#         This block implements the intermediate and the lower return stack.  #
-//#       SARB -> Stack Bus Arbiter                                             #
-//#         This block merges bus transactions of the lower parameter and       #
-//#         return stacks on to one common stack bus (sbus).                    #
-//#       US -> Upper Stacks                                                    #
-//#         This block implemnts both the upper parameter stack and the upper   #
-//#         return stack.                                                       #
+//#       PRS -> Parameter and Return Stack                                     #
+//#         This block implements all levels (upper, intermediate, and lower)   #
+//#         of the parameter and the return stack.                              #
 //#                                                                             #
 //#    Internal interfaces, interconnecting the subblocks of the N1 processor,  #
 //#    abide the following signal naming convention:                            #
@@ -118,16 +107,15 @@ module N1
     output wire                              pbus_cyc_o,         //bus cycle indicator       +-
     output wire                              pbus_stb_o,         //access request            |
     output wire                              pbus_we_o,          //write enable              |
-    output wire [15:0]                       pbus_adr_o,         //address bus               |
+    output wire [15:0]                       pbus_adr_o,         //address bus               | 
     output wire [15:0]                       pbus_dat_o,         //write data bus            |
-    output wire                              pbus_tga_jmp_dir_o, //direct jump               | initiator
-    output wire                              pbus_tga_jmp_ind_o, //indirect jump             | to
-    output wire                              pbus_tga_cal_dir_o, //direct call               | target
-    output wire                              pbus_tga_cal_ind_o, //indirect call             |
-    output wire                              pbus_tga_bra_dir_o, //direct branch             |
-    output wire                              pbus_tga_bra_ind_o, //indirect branch           |
-    output wire                              pbus_tga_dat_dir_o, //direct data access        |
-    output wire                              pbus_tga_dat_ind_o, //indirect data access      +-
+    output wire                              pbus_tga_cof_jmp_o, //COF jump                  | initiator
+    output wire                              pbus_tga_cof_cal_o, //COF call                  | to	
+    output wire                              pbus_tga_cof_bra_o, //COF conditional branch    | target   
+    output wire                              pbus_tga_cof_ret_o, //COF return from call      |	    	
+    output wire                              pbus_tga_dat_o,     //data access               | 
+    output wire                              pbus_tga_dir_adr_o, //direct addressing         |
+    output wire                              pbus_tga_imm_adr_o, //immediate addressing      |
     input  wire                              pbus_ack_i,         //bus cycle                 +-
     input  wire                              pbus_err_i,         //error indicator           | target
     input  wire                              pbus_rty_i,         //retry request             | to

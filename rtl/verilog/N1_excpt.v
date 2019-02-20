@@ -1,5 +1,5 @@
 //###############################################################################
-//# N1 - Flow control                                                           #
+//# N1 - Exception and Interrupt Aggregator                                     #
 //###############################################################################
 //#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
@@ -18,140 +18,45 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This module implements the N1's program counter (PC) and the program bus #
-//#    (Pbus).                                                                  #
-//#                                                                             #
-//#    Linear program flow:                                                     #
-//#                                                                             #
-//#                     +----+----+----+----+----+----+                         #
-//#    Program Counter  |PC0 |PC1 |PC2 |PC3 |PC4 |PC5 |                         #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Address bus | A0 | A1 | A2 | A3 | A4 | A5 |                              #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Data bus         | D0 | D1 | D2 | D3 | D4 | D5 |                         #
-//#                     +----+----+----+----+----+----+----+                    #
-//#    Instruction decoding  | I0 | I1 | I2 | I3 | I4 | I5 |                    #
-//#                          +----+----+----+----+----+----+                    #
-//#                                                                             #
-//#                                                                             #
-//#    Change of flow:                                                          #
-//#                                                                             #
-//#                     +----+----+----+----+----+----+                         #
-//#    Program Counter  |PC0 |PC1 |PC2 |PC3 |PC4 |PC5 |                         #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Address bus | A0 | A1 |*A2 | A3 | A4 | A5 |                              #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Data bus         | D0 | D1 | D2 | D3 | D4 | D5 |                         #
-//#                     +----+----+----+----+----+----+----+                    #
-//#    Instruction decoding  |COF |    | D2 | I3 | I4 | I5 |                    #
-//#                          +----+    +----+----+----+----+                    #
-//#                                                                             #
-//#                                                                             #
-//#    Refetch opcode:                                                          #
-//#                                                                             #
-//#                     +----+----+----+----+----+----+                         #
-//#    Program Counter  |PC0 |PC1 |PC1 |PC1 |PC2 |PC3 |                         #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Address bus | A0 | A1 | A2 | A1 | A2 | A3 |                              #
-//#                +----+----+----+----+----+----+----+                         #
-//#    Data bus         | D0 |RTY | D1 | D1 | D2 | D3 |                         #
-//#                     +----+----+----+----+----+----+----+                    #
-//#    Instruction decoding  | I0 |         | I1 | I2 | I3 |                    #
-//#                          +----+         +----+----+----+                    #
+//#    This module captures and masks exceptions and interrupts.                #
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
-//#   December 4, 2018                                                          #
+//#   February 20, 2019                                                         #
 //#      - Initial release                                                      #
 //###############################################################################
 `default_nettype none
 
-module N1_fc
-  #(parameter   TC_PSUF   = 12,                                 //width of a stack pointer
-    parameter   TC_PSOF  =  8,                                 //depth of the intermediate parameter stack
-    parameter   TC_RSUF  =  8)                                 //depth of the intermediate return stack
-
-
+module N1_excpt
    (//Clock and reset
     input wire 			     clk_i,                  //module clock
     input wire 			     async_rst_i,            //asynchronous reset
     input wire 			     sync_rst_i,             //synchronous reset
 				     
-    //Program bus		     	     
-    output wire                      pbus_cyc_o,             //bus cycle indicator       +-
-    output wire                      pbus_stb_o,             //access request            |
-    output wire                      pbus_we_o,              //write enable              |
-    output wire [15:0]               pbus_adr_o,             //address bus               | 
-    output wire                      pbus_tga_cof_jmp_o,     //COF jump                  | initiator
-    output wire                      pbus_tga_cof_cal_o,     //COF call                  | to	
-    output wire                      pbus_tga_cof_bra_o,     //COF conditional branch    | target   
-    output wire                      pbus_tga_cof_ret_o,     //COF return from call      |	    	
-    output wire                      pbus_tga_dat_o,         //data access               | 
-    output wire                      pbus_tga_dir_adr_o,     //direct addressing         |
-    output wire                      pbus_tga_imm_adr_o,     //immediate addressing      |
-    input  wire                      pbus_ack_i,             //bus acknowledge           +-
-    input  wire                      pbus_err_i,             //error indicator           | target to
-    input  wire                      pbus_rty_i,             //retry request             | initiator
-    input  wire                      pbus_stall_i,           //access delay              +-
-  
     //Interrupt interface
     output wire                      irq_ack_o,              //interrupt acknowledge
     input  wire [15:0]               irq_req_adr_i,          //requested interrupt vector
 
     //Internal interfaces
     //-------------------
-    //DSP interface
-    output wire                      fc2dsp_abs_rel_b_o,     //1:absolute COF, 0:relative COF
-    output wire                      fc2dsp_hold_o,          //maintain PC 
-    output wire [15:0]               fc2dsp_rel_adr_o,       //relative COF address
-    output wire [15:0]               fc2dsp_abs_adr_o,       //absolute COF address
-    input  wire [15:0]               dsp2fc_pc_next_i,       //next program counter
+    //FC interface
+    output wire                      excpt2fc_excpt_o,       //exception to be handled
+    output wire                      excpt2fc_irq_o,         //exception to be handled
+    input  wire                      excpt2fc_excpt_dis_i,   //disable exceptions
+    input  wire                      excpt2fc_buserr_i,      //pbus error
 
     //IR interface
-    output wire                      fc2ir_capture_o,        //capture current IR
-    output wire                      fc2ir_stash_o,          //capture stashed IR
-    output wire                      fc2ir_expend_o,         //stashed IR -> current IR
-    output wire                      fc2ir_load_nop_o,       //load NOP instruction 
-    output wire                      fc2ir_load_eow_o,       //load EOW instruction
-    input  wire                      ir2fc_eow_conflict_i,   //EOW conflict detected
-    input  wire                      ir2fc_jmp_or_cal_i,     //jump or call instruction
-    //input  wire                      ir2fc_jmp_i,            //jump instruction
-    //input  wire                      ir2fc_cal_i,            //call instruction
-    input  wire                      ir2fc_bra_i,            //conditional branch
-    input  wire                      ir2fc_lit_i,            //literal
-    input  wire                      ir2fc_alu_i,            //ALU instruction
-    input  wire                      ir2fc_stk_i,            //stack instruction
-    input  wire                      ir2fc_mem_i,            //memory I/O
-    input  wire                      ir2fc_ctrl_i,           //control instruction
-    input  wire                      ir2fc_eow_i,            //end of word
-    input  wire                      ir2fc_sel_adir_i,       //select absolute direct address
-    input  wire [15:0]               ir2fc_adir_adr_i,       //absolute direct address
-    input  wire [15:0]               ir2fc_rdir_adr_i,       //relative direct address
-    input  wire                      ir2fc_sel_imm_i,        //select immediate address
-    input  wire [15:0]               ir2fc_imm_i,            //immediate address
+    input  wire                      ir2excpt_except_en_i,   //enable exceptions
+    input  wire                      ir2excpt_irq_en_i,      //enable interrupts
+    input  wire                      ir2excpt_irq_dis_i,     //disable interrupts
 
     //PRS interface
+    output wire [15:0]               excpt2prs_tc_o,         //throw code
+    input  wire                      prs2excpt_psof_i,       //PS overflow    
+    input  wire                      prs2excpt_psuf_i,       //PS underflow   
+    input  wire                      prs2excpt_rsof_i,       //RS overflow    
+    input  wire                      prs2excpt_rsuf_i,       //RS underflow   
 
-    output wire                      fc2prs_hold_o,          //hold any state tran
-
-    output wire [11:0]               fc2prs_stp_o,           //stack transition pattern
-    output wire [15:0]               fc2prs_rs0_next_o,      //RS0 output
-
-    //output wire                      fc2prs_step0_o,         //force inactivity
-    //output wire                      fc2prs_step1_o,         //force inactivity
-    //output wire                      fc2prs_stall_o,         //force inactivity
-    //output wire                      fc2prs_rst_o,           //reset 
-    //output wire                      fc2prs_pspsh_o,         
-    //output wire                      fc2prs_pspsh_o,
-
-    input  wire                      prs2fc_hold_i,          //parameter stack not ready
-    input  wire [15:0]               prs2fc_ps0_i,           //PS0
-    //input  wire [15:0]               prs2fc_ps1_i,           //PS1
-    input  wire                      prs2fc_psof_i,          //PS overflow    
-    input  wire                      prs2fc_psuf_i,          //PS underflow   
-    input  wire                      prs2fc_rsof_i,          //RS overflow    
-    input  wire                      prs2fc_rsuf_i,          //RS underflow   
-    input  wire                      prs2fc_buserr_i,        //stack bus error
 
 
     
