@@ -36,7 +36,7 @@ module N1_ir
 
     //Program bus (wishbone)
     output wire                   pbus_tga_cof_jmp_o,                             //COF jump              
-    output wire                   pbus_tga_cof_cal_o,                             //COF call              
+    output wire                   pbus_tga_cof_call_o,                            //COF call              
     output wire                   pbus_tga_cof_bra_o,                             //COF conditional branch
     output wire                   pbus_tga_cof_ret_o,                             //COF return from call  
     output wire                   pbus_tga_dat_o,                                 //data access           
@@ -52,27 +52,19 @@ module N1_ir
     input  wire                   fc2ir_capture_i,                                //capture current IR
     input  wire                   fc2ir_stash_i,                                  //capture stashed IR
     input  wire                   fc2ir_expend_i,                                 //stashed IR -> current IR
-    input  wire                   fc2ir_force_nop_i,                              //load NOP instruction
-    input  wire                   fc2ir_force_fetch_i,                            //load FETCH instruction
-    input  wire                   fc2ir_force_drop_i,                             //load DROP instruction
     input  wire                   fc2ir_force_eow_i,                              //load EOW bit
-    input  wire                   fc2ir_force_0cal_i,                             //load 0 CALL instruction
-    input  wire                   fc2ir_force_0cal_i,                             //load CALL instruction
+    input  wire                   fc2ir_force_nop_i,                              //load NOP instruction
+    input  wire                   fc2ir_force_0call_i,                            //load 0 CALL instruction
+    input  wire                   fc2ir_force_call_i,                             //load CALL instruction
+    input  wire                   fc2ir_force_drop_i,                             //load DROP instruction
+    input  wire                   fc2ir_force_fetch_i,                            //load FETCH instruction
+    output wire                   ir2fc_bra_o,                                    //conditional branch
     output wire                   ir2fc_eow_o,                                    //end of word (EOW bit set)
     output wire                   ir2fc_eow_postpone_o,                           //EOW conflict detected
-    output wire                   ir2fc_jmp_or_cal_o,                             //jump or call instruction
-    output wire                   ir2fc_bra_o,                                    //conditional branch
-    output wire                   ir2fc_scyc_o,                                   //single cycle instruction
+    output wire                   ir2fc_jmp_or_call_o,                            //jump or call instruction
     output wire                   ir2fc_mem_o,                                    //memory I/O
     output wire                   ir2fc_memrd_o,                                  //mreory read
-
-
-
-
-
-    output wire [13:0]            ir_dir_abs_adr_o,                               //direct absolute COF address
-    output wire [12:0]            ir_dir_rel_adr_o,                               //direct relative COF address
-    output wire [7:0]             ir_dir_mem_adr_o,                               //direct absolute data address
+    output wire                   ir2fc_scyc_o,                                   //single cycle instruction
 
     //Stack interface
 
@@ -82,53 +74,71 @@ module N1_ir
 
 
     //Probe signals
-    output wire [15:0]            prb_ir_cur_o,                                   //current instruction register
+    output wire [15:0]            prb_ir_o,                                       //current instruction register
     output wire [15:0]            prb_ir_stash_o);                                //stashed instruction register
 
    //Internal signals
    //----------------
-   //Instruction registers
-   reg  [15:0]                    ir_cur_reg;                                     //current instruction register
-   wire [15:0]                    ir_cur_next;                                    //next instruction register
+   //Instruction register
+   reg  [15:0]                    ir_reg;                                         //current instruction register
+   wire [15:0]                    ir_next;                                        //next instruction register
+   wire                           ir_we;                                          //write enable
+   //Stashed nstruction register
+   reg  [15:0]                    ir_stash_reg;                                   //current instruction register
  
-
-
-
-   reg  [15:0]                    ir_stash_reg;                                   //stashed instruction register
-
-
-
-
-
-
-
-
+   //Opcodes
+   //-------
+   localparam OPC_EOW   = 16'h8000;                                               //EOW bit
+   localparam OPC_0CALL = 16'h;							  //CALL to address 0
+   localparam OPC_0JMP  = OPC_EOW | OPC_0CALL;					  //JUMP to address 0
+   localparam OPC_CALL  = 16'h;							  //indirect CALL
+   localparam OPC_DROP  = 16'h;							  //drop PS0
+   localparam OPC_FETCH = 16'h;							  //fetch data from Dbus
+   localparam OPC_NOP   = 16'h;                                                   //no operation 
    
-   //Flip flops
-   //----------
-   //Current instruction register
+   //Instruction register
+   //--------------------
+   assign ir_next = ({16{fc2ir_capture_i}}     & pbus_dat_i)   |                  //capture current IR
+                    ({16{fc2ir_expend_i}}      & ir_stash_reg) |                  //stashed IR -> current IR
+                    ({16{fc2ir_force_eow_i}}   & OPC_EOW)      |                  //load EOW bit
+                    ({16{fc2ir_force_0call_i}} & OPC_0CALL)    |                  //load 0 CALL instruction
+                    ({16{fc2ir_force_call_i}}  & OPC_CALL)     |                  //load CALL instruction
+                    ({16{fc2ir_force_drop_i}}  & OPC_DROP)     |                  //load DROP instruction
+                    ({16{fc2ir_force_fetch_i}} & OPC_FETCH)    |                  //load FETCH instruction
+                    ({16{fc2ir_force_nop_i}}   & OPC_NOP);                        //load NOP instruction
+   
+   assign ir_we   = fc2ir_capture_i     |                                         //capture current IR
+                    fc2ir_expend_i      |                                         //stashed IR -> current IR
+                  //fc2ir_force_eow_i   |                                         //load EOW bit
+                    fc2ir_force_0call_i |                                         //load 0 CALL instruction
+                    fc2ir_force_call_i  |                                         //load CALL instruction
+                    fc2ir_force_drop_i  |                                         //load DROP instruction
+                    fc2ir_force_fetch_i |                                         //load FETCH instruction
+                    fc2ir_force_nop_i;                                            //load NOP instruction
+   
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                                          //asynchronous reset
-          ir_cur_reg  <= {16{1'b0}};
+          ir_reg  <= OPC_0JMP;
         else if (sync_rst_i)                                                      //synchronous reset
-          ir_cur_reg  <= {16{1'b0}};
-        else if (fc2ir_capture_i | fc2ir_expend_i)                                //update IR
-          ir_cur_reg  <= (({16{fc2ir_capture_i}} &  pbus_dat_i) |
-                          ({16{fc2ir_expend_i}}  &  ir_stash_reg));
+          ir_reg  <= OPC_0JMP;
+        else if (ir_we)                                                           //update IR
+          ir_reg  <= ir_next;
       end // always @ (posedge async_rst_i or posedge clk_i)
-
+ 
    //Stashed instruction register
+   //----------------------------
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                                          //asynchronous reset
-          ir_stash_reg  <= {16{1'b0}};
+          ir_stash_reg  <= 16'h0000;
         else if (sync_rst_i)                                                      //synchronous reset
-          ir_stash_reg  <= {16{1'b0}};
-        else if (fc2ir_stash_i)                                                   //capture opcode
+          ir_stash_reg  <= 16'h0000;
+        else if (fc2ir_stash_i)                                                   //update stashed IR
           ir_stash_reg  <= pbus_dat_i;
       end // always @ (posedge async_rst_i or posedge clk_i)
 
+   
    //Instruction decoder
    //-------------------
    assign ir_eow_o              = ~|(2'b10 ^ ir_cur_reg[15:14]);                  //end of word

@@ -96,27 +96,31 @@ module N1_fc
     output reg                       fc2ir_capture_o,                                        //capture current IR
     output reg                       fc2ir_stash_o,                                          //capture stashed IR
     output reg                       fc2ir_expend_o,                                         //stashed IR -> current IR
-    output reg                       fc2ir_force_nop_o,                                      //load NOP instruction
+    output reg                       fc2ir_force_eow_o,                                      //load EOW bit
+    output reg                       fc2ir_force_0call_o,                                    //load 0 CALL instruction
+    output reg                       fc2ir_force_call_o,                                     //load CALL instruction
     output reg                       fc2ir_force_fetch_o,                                    //load FETCH instruction
     output reg                       fc2ir_force_drop_o,                                     //load DROP instruction
-    output reg                       fc2ir_force_eow_o,                                      //load EOW bit
-    output reg                       fc2ir_force_0cal_o,                                     //load 0 CALL instruction
-    output reg                       fc2ir_force_0cal_o,                                     //load CALL instruction
+    output reg                       fc2ir_force_nop_o,                                      //load NOP instruction
     input  wire                      ir2fc_eow_i,                                            //end of word (EOW bit set)
     input  wire                      ir2fc_eow_postpone_i,                                   //EOW conflict detected
-    input  wire                      ir2fc_jmp_or_cal_i,                                     //jump or call instruction
     input  wire                      ir2fc_bra_i,                                            //conditional branch
-    input  wire                      ir2fc_scyc_i,                                           //single cycle instruction
+    input  wire                      ir2fc_jmp_or_call_i,                                    //jump or call instruction
     input  wire                      ir2fc_mem_i,                                            //memory I/O
     input  wire                      ir2fc_memrd_i,                                          //mreory read
+    input  wire                      ir2fc_scyc_i,                                           //single cycle instruction
 
     //PRS interface
     output reg                       fc2prs_hold_o,                                          //hold any state tran
     input  wire                      prs2fc_hold_i,                                          //stacks not ready
-    input  wire [15:0]               prs2fc_ps0_true_i,                                      //PS0 in non-zero
+    input  wire                      prs2fc_ps0_true_i,                                      //PS0 in non-zero
 
     //EXCPT interface
+    output wire                      fc2excpt_excpt_dis_o,                                   //disable exceptions
+    output wire                      fc2excpt_irq_dis_o,                                     //disable interrupts
     output wire                      fc2excpt_buserr_o,                                      //invalid pbus access
+    input  wire                      excpt2fc_excpt_i,                                       //exception to be handled
+    input  wire                      excpt2fc_irq_i,                                         //exception to be handled
 
      //Probe signals
     output wire [2:0]                prb_fc_state_o);                                        //state variable
@@ -127,7 +131,7 @@ module N1_fc
    reg  [2:0]                        state_reg;                                              //state variable
    reg  [2:0]                        state_next;                                             //next state
 
-   //Finite state machine
+   //Finite state machine <-TBD (remove INIT0)
    //--------------------
    localparam STATE_INIT_0         = 3'b000;
    localparam STATE_INIT_1         = 3'b001;
@@ -143,55 +147,48 @@ module N1_fc
         //Default outputs
         pbus_cyc_o              = 1'b0;                                                      //bus cycle indicator
         pbus_stb_o              = 1'b0;                                                      //access request
-        pbus_we_o               = 1'b0;                                                      //write enable
-        pbus_adr_o              = 16'h0000;                                                  //address bus
-        pbus_tga_cof_jmp_o      = 1'b0;                                                      //COF jump
-        pbus_tga_cof_cal_o      = 1'b0;                                                      //COF call
-        pbus_tga_cof_bra_o      = 1'b0;                                                      //COF conditional branch
-        pbus_tga_cof_ret_o      = 1'b0;                                                      //COF return from call
-        pbus_tga_dat_o          = 1'b0;                                                      //data access
-        pbus_tga_dir_adr_o      = 1'b0;                                                      //direct addressing
-        pbus_tga_imm_adr_o      = 1'b0;                                                      //immediate addressing
 
+        irq_ack_o               = 1'b0;                                                      //interrupt acknowledge
 
-        fc2dsp_abs_rel_b_o      = 1'b0;                                                      //relative address
         fc2dsp_hold_o           = 1'b0;                                                      //maintain PC
-        fc2dsp_rel_adr_o        = 16'h0000;                                                  //relative COF address
-        fc2dsp_abs_adr_o        = 16'h0000;                                                  //absolute COF address
 
         fc2ir_capture_o         = 1'b0;                                                      //capture current IR
         fc2ir_stash_o           = 1'b0;                                                      //capture stashed IR
         fc2ir_expend_o          = 1'b0;                                                      //stashed IR -> current IR
-        fc2ir_clr_o             = 1'b0;                                                      //clear IR
+        fc2ir_force_eow_o       = 1'b0;                                                      //load EOW bit
+        fc2ir_force_0call_o     = 1'b0;                                                      //load 0 CALL instruction
+        fc2ir_force_call_o      = 1'b0;                                                      //load CALL instruction
+        fc2ir_force_fetch_o     = 1'b0;                                                      //load FETCH instruction
+        fc2ir_force_drop_o      = 1'b0;                                                      //load DROP instruction
+        fc2ir_force_nop_o       = 1'b0;                                                      //load NOP instruction
 
-        fc2prs_stp_o            = 12'h000;                                                   //stack transition pattern
-        fc2prs_rs0_next_o       = 16'h0000;                                                  //RS0 output
+        fc2prs_hold_o           = 1'b0;                                                      //hold any state tran
+
+        fc2excpt_excpt_dis_o    = 1'b0;                                                      //disable exceptions
+        fc2excpt_irq_dis_o      = 1'b0;                                                      //disable interrupts
+        fc2excpt_buserr_o       = 1'b0;                                                      //invalid pbus access
 
         state_next              = 0;                                                         //remain in current state
-        irq_en_next             = irq_en_req;                                                //interrupt enable
-        excpt_en_next           = excpt_en_req;                                              //exception enable
-        excpt_next              = excpt_req;                                                 //exceptions
-
 
         case (state_reg)
           //Initiate jump to address zero
           STATE_INIT_0:
             begin
-               pbus_cyc_o         = 1'bo;                                                    //Keep bus idle
-               pbus_stb_o         = 1'b0;                                                    //
-               fc2ir_force_0cal_o = 1'b1;                                                    //force jump to addess zero
-               fc2ir_force_eow_o  = 1'b1;                                                    //(call + EOW)
-               state_next         = STATE_INIT1;                                             //execute jump
+               pbus_cyc_o          = 1'bo;                                                   //Keep bus idle
+               pbus_stb_o          = 1'b0;                                                   //
+               fc2ir_force_0call_o = 1'b1;                                                   //force jump to addess zero
+               fc2ir_force_eow_o   = 1'b1;                                                   //(call + EOW)
+               state_next          = STATE_INIT1;                                            //execute jump
             end
 
           //Jump to address zero
           STATE_INIT_1:
             begin
-               pbus_cyc_o         = 1'b1;                                                    //first bus request
-               pbus_stb_o         = 1'b1;                                                    //
-               fc2ir_force_nop_o  = 1'b1;                                                    //force wait cycle
-               state_next         = pbus_stall_i ? state_reg :                               //handle stall
-                                                   STATE_EXEC;                               //execute first opcode
+               pbus_cyc_o          = 1'b1;                                                   //first bus request
+               pbus_stb_o          = 1'b1;                                                   //
+               fc2ir_force_nop_o   = 1'b1;                                                   //force wait cycle
+               state_next          = pbus_stall_i ? state_reg :                              //handle stall
+                                                    STATE_EXEC;                              //execute first opcode
             end
 
           //Execute first cycle of the current instruction
@@ -203,17 +200,17 @@ module N1_fc
                    ~pbus_ack_i &                                                             //no bus acknowledge
                    ~pbus_err_i)                                                              //no error indicator
                  begin
-                    pbus_cyc_o    = 1'b1;                                                    //delay next access
-                    pbus_stb_o    = 1'b0;                                                    //
-                    fc2dsp_hold_o = 1'b1;                                                    //don't update PC
-                    fc2prs_hold_o = 1'b1;                                                    //don't update stacks
-                    state_next    = state_reg;                                               //remain in current state
+                    pbus_cyc_o     = 1'b1;                                                   //delay next access
+                    pbus_stb_o     = 1'b0;                                                   //
+                    fc2dsp_hold_o  = 1'b1;                                                   //don't update PC
+                    fc2prs_hold_o  = 1'b1;                                                   //don't update stacks
+                    state_next     = state_reg;                                              //remain in current state
                  end
                //Bus response received
                else
                  begin
                     //Trigger exception
-                    fc2excpt_buserr_o = ~|{ir2fc_jmp_or_cal_i,                               //no jump or call
+                    fc2excpt_buserr_o = ~|{ir2fc_jmp_or_call_i,                              //no jump or call
                                            (ir2fc_bra_i &                                    //no conditional branch
                                             |prs2fc_ps0_i),                                  //
                                            ir2fc_eow_i,                                      //no EOW
@@ -261,7 +258,7 @@ module N1_fc
                                 end
 
                               //Change of flow
-                              if (ir2fc_jmp_or_cal_i                                     |   //jump or call
+                              if (ir2fc_jmp_or_call_i                                    |   //jump or call
                                   (ir2fc_bra_i & prs2fc_ps0_true_i)                      |   //conditional branch
                                   (ir2fc_bra_i & ir2fc_eow_i)                            |   //conditional branch with EOW
                                   (ir2fc_scyc_i & ir2fc_eow_i & ~ir2pagu_eow_postpone_i))    //end of word
@@ -269,7 +266,7 @@ module N1_fc
                                    //Exception
                                    if (excpt2fc_excpt_i)                                     //pending exception
                                      begin
-                                        fc2ir_force_0cal_o   = 1'b1;                         //force jump to addess zero
+                                        fc2ir_force_0call_o  = 1'b1;                         //force jump to addess zero
                                         fc2ir_force_eow_o    = 1'b1;                         //(call + EOW)
                                         fc2excpt_excpt_dis_i = 1'b1;                         //inhibit further exceptions
                                         state_next           = state_next |                  //make use of onehot encoding
@@ -289,7 +286,7 @@ module N1_fc
                                         state_next          = state_next |                   //make use of onehot encoding
                                                               STATE_EXEC;                    //execute NOP
                                      end
-                                end // if (ir2fc_jmp_or_cal_i |...
+                                end // if (ir2fc_jmp_or_call_i |...
 
                               //Linear execution
                               if ((ir2fc_scyc_i & (~ir2fc_eow_i | ir2pagu_eow_postpone_i)) | //single cycle instruction
@@ -298,7 +295,7 @@ module N1_fc
                                    //Exception
                                    if (excpt2fc_excpt_i) //pending exception
                                      begin
-                                        fc2ir_force_0cal_o   = 1'b1;                         //force jump to addess zero
+                                        fc2ir_force_0call_o  = 1'b1;                         //force jump to addess zero
                                         fc2ir_force_eow_o    = 1'b1;                         //(call + EOW)
                                         fc2excpt_excpt_dis_i = 1'b1;                         //inhibit further exceptions
                                         state_next           = state_next |                  //make use of onehot encoding
@@ -372,7 +369,7 @@ module N1_fc
                     //Exception
                     else if (excpt2fc_excpt_i)                                               //pending exception
                       begin
-                         fc2ir_force_0cal_o   = 1'b1;                                        //force jump to addess zero
+                         fc2ir_force_0call_o  = 1'b1;                                        //force jump to addess zero
                          fc2ir_force_eow_o    = 1'b1;                                        //(call + EOW)
                          fc2excpt_excpt_dis_i = 1'b1;                                        //inhibit further exceptions
                          state_next           = STATE_EXEC;                                  //execute jump
@@ -403,7 +400,7 @@ module N1_fc
           STATE_UNREACH:
             begin
                fc2dsp_hold_o = 1'b1;                                                         //don't update PC
-               fc2ir_force_cal_o    = 1'b1;                                                  //force CALL execution
+               fc2ir_force_call_o   = 1'b1;                                                  //force CALL execution
                state_next           = STATE_EXEC;                                            //execute CALL
             end
 
@@ -416,9 +413,9 @@ module N1_fc
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                                                     //asynchronous reset
-          state_reg <= STATE_RESET;
+          state_reg <= STATE_INIT1;
         else if (sync_rst_i)                                                                 //synchronous reset
-          state_reg <= STATE_RESET;
+          state_reg <= STATE_INIT1;
         else                                                                                 //state transition
           state_reg <= state_next;
      end // always @ (posedge async_rst_i or posedge clk_i)
