@@ -131,9 +131,7 @@ module N1
     output wire                              sbus_tga_ps_o,      //parameter stack access    |
     output wire                              sbus_tga_rs_o,      //return stack access       +-
     input  wire                              sbus_ack_i,         //bus cycle acknowledge     +-
-    input  wire                              sbus_err_i,         //error indicator           | target
-    input  wire                              sbus_rty_i,         //retry request             | to
-    input  wire                              sbus_stall_i,       //access delay              | initiator
+    input  wire                              sbus_stall_i,       //access delay              | target to initiator
     input  wire [15:0]                       sbus_dat_i,         //read data bus             +-
 
     //Interrupt interface

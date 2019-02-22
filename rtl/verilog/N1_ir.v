@@ -35,6 +35,12 @@ module N1_ir
     input wire                    sync_rst_i,                                     //synchronous reset
 
     //Program bus (wishbone)
+    output wire                   pbus_tga_cof_jmp_o,                             //COF jump              
+    output wire                   pbus_tga_cof_cal_o,                             //COF call              
+    output wire                   pbus_tga_cof_bra_o,                             //COF conditional branch
+    output wire                   pbus_tga_cof_ret_o,                             //COF return from call  
+    output wire                   pbus_tga_dat_o,                                 //data access           
+    output wire                   pbus_we_o,                                      //write enable             
     input  wire [15:0]            pbus_dat_i,                                     //read data bus
 
     //ALU interface
@@ -46,8 +52,19 @@ module N1_ir
     input  wire                   fc2ir_capture_i,                                //capture current IR
     input  wire                   fc2ir_stash_i,                                  //capture stashed IR
     input  wire                   fc2ir_expend_i,                                 //stashed IR -> current IR
-
-    output wire                   ir_eow_o,                                       //end of word
+    input  wire                   fc2ir_force_nop_i,                              //load NOP instruction
+    input  wire                   fc2ir_force_fetch_i,                            //load FETCH instruction
+    input  wire                   fc2ir_force_drop_i,                             //load DROP instruction
+    input  wire                   fc2ir_force_eow_i,                              //load EOW bit
+    input  wire                   fc2ir_force_0cal_i,                             //load 0 CALL instruction
+    input  wire                   fc2ir_force_0cal_i,                             //load CALL instruction
+    output wire                   ir2fc_eow_o,                                    //end of word (EOW bit set)
+    output wire                   ir2fc_eow_postpone_o,                           //EOW conflict detected
+    output wire                   ir2fc_jmp_or_cal_o,                             //jump or call instruction
+    output wire                   ir2fc_bra_o,                                    //conditional branch
+    output wire                   ir2fc_scyc_o,                                   //single cycle instruction
+    output wire                   ir2fc_mem_o,                                    //memory I/O
+    output wire                   ir2fc_memrd_o,                                  //mreory read
 
 
 
@@ -57,48 +74,11 @@ module N1_ir
     output wire [12:0]            ir_dir_rel_adr_o,                               //direct relative COF address
     output wire [7:0]             ir_dir_mem_adr_o,                               //direct absolute data address
 
-    //Upper stack interface
-    output wire                   ir_eow_o,                                       //end of word
-
-
-
+    //Stack interface
 
     output wire [11:0]            ir_lit_val_o,                                   //literal value
     output wire [9:0]             ir_stp_o,                                       //stack transition pattern
 
-
-
-    //Instruction decoder output
-    output wire                   ir_jmp_o,                                       //jump instruction (any)
-    output wire                   ir_jmp_ind_o,                                   //jump instruction (indirect addressing)
-    output wire                   ir_jmp_dir_o,                                   //jump instruction (direct addressing)
-    output wire                   ir_call_o,                                      //call instruction (any)
-    output wire                   ir_call_ind_o,                                  //call instruction (indirect addressing)
-    output wire                   ir_call_dir_o,                                  //call instruction (direct addressing)
-    output wire                   ir_bra_o,                                       //branch instruction (any)
-    output wire                   ir_bra_ind_o,                                   //branch instruction (indirect addressing)
-    output wire                   ir_bra_dir_o,                                   //branch instruction (direct addressing)
-    output wire                   ir_lit_o,                                       //literal instruction
-    output wire                   ir_alu_o,                                       //ALU instruction (any)
-    output wire                   ir_alu_x_x_o,                                   //ALU instruction (   x --   x )
-    output wire                   ir_alu_xx_x_o,                                  //ALU instruction ( x x --   x )
-    output wire                   ir_alu_x_xx_o,                                  //ALU instruction (   x -- x x )
-    output wire                   ir_alu_xx_xx_o,                                 //ALU instruction ( x x -- x x )
-    output wire                   ir_sop_o,                                       //stack operation
-    output wire                   ir_fetch_o,                                     //memory read (any)
-    output wire                   ir_fetch_ind_o,                                 //memory read (indirect addressing)
-    output wire                   ir_fetch_dir_o,                                 //memory read (direct addressing)
-    output wire                   ir_store_o,                                     //memory write (any)
-    output wire                   ir_store_ind_o,                                 //memory write (indirect addressing)
-    output wire                   ir_store_dir_o,                                 //memory write (direct addressing)
-    output wire                   ir_ctrl_o,                                      //Control instruction (any)
-    output wire                   ir_ctrl_ps_rst_o,                               //control instruction (reset parameter stack)
-    output wire                   ir_ctrl_rs_rst_o,                               //control instruction (reset return stack)
-    output wire                   ir_ctrl_irqen_we_o,                             //control instruction (change interrupt mask)
-    output wire                   ir_ctrl_irqen_val_o,                            //control instruction (new interrupt mask value)
-    output wire                   ir_sel_dir_abs_adr_o,                           //silect direct absolute address
-    output wire                   ir_sel_dir_rel_adr_o,                           //select direct relative address
-    output wire                   ir_sel_dir_mem_adr_o,                           //select direct data address
 
 
     //Probe signals
@@ -109,8 +89,21 @@ module N1_ir
    //----------------
    //Instruction registers
    reg  [15:0]                    ir_cur_reg;                                     //current instruction register
+   wire [15:0]                    ir_cur_next;                                    //next instruction register
+ 
+
+
+
    reg  [15:0]                    ir_stash_reg;                                   //stashed instruction register
 
+
+
+
+
+
+
+
+   
    //Flip flops
    //----------
    //Current instruction register

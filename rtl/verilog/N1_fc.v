@@ -67,472 +67,364 @@
 `default_nettype none
 
 module N1_fc
-  #(parameter   TC_PSUF   = 12,                                 //width of a stack pointer
-    parameter   TC_PSOF  =  8,                                 //depth of the intermediate parameter stack
-    parameter   TC_RSUF  =  8)                                 //depth of the intermediate return stack
+  #(parameter   TC_PSUF   = 12,                                                              //width of a stack pointer
+    parameter   TC_PSOF  =  8,                                                               //depth of the intermediate parameter stack
+    parameter   TC_RSUF  =  8)                                                               //depth of the intermediate return stack
 
 
    (//Clock and reset
-    input wire 			     clk_i,                  //module clock
-    input wire 			     async_rst_i,            //asynchronous reset
-    input wire 			     sync_rst_i,             //synchronous reset
-				     
-    //Program bus		     	     
-    output wire                      pbus_cyc_o,             //bus cycle indicator       +-
-    output wire                      pbus_stb_o,             //access request            |
-    output wire                      pbus_we_o,              //write enable              |
-    output wire [15:0]               pbus_adr_o,             //address bus               | 
-    output wire                      pbus_tga_cof_jmp_o,     //COF jump                  | initiator
-    output wire                      pbus_tga_cof_cal_o,     //COF call                  | to	
-    output wire                      pbus_tga_cof_bra_o,     //COF conditional branch    | target   
-    output wire                      pbus_tga_cof_ret_o,     //COF return from call      |	    	
-    output wire                      pbus_tga_dat_o,         //data access               | 
-    output wire                      pbus_tga_dir_adr_o,     //direct addressing         |
-    output wire                      pbus_tga_imm_adr_o,     //immediate addressing      |
-    input  wire                      pbus_ack_i,             //bus acknowledge           +-
-    input  wire                      pbus_err_i,             //error indicator           | target to
-    input  wire                      pbus_rty_i,             //retry request             | initiator
-    input  wire                      pbus_stall_i,           //access delay              +-
-  
+    input wire                       clk_i,                                                  //module clock
+    input wire                       async_rst_i,                                            //asynchronous reset
+    input wire                       sync_rst_i,                                             //synchronous reset
+
+    //Program bus
+    output reg                       pbus_cyc_o,                                             //bus cycle indicator       +-
+    output reg                       pbus_stb_o,                                             //access request            | initiator to target
+    input  wire                      pbus_ack_i,                                             //bus acknowledge           +-
+    input  wire                      pbus_err_i,                                             //error indicator           | target to initiator
+    input  wire                      pbus_stall_i,                                           //access delay              +-
+
     //Interrupt interface
-    output wire                      irq_ack_o,              //interrupt acknowledge
-    input  wire [15:0]               irq_req_adr_i,          //requested interrupt vector
+    output reg                       irq_ack_o,                                              //interrupt acknowledge
 
     //Internal interfaces
     //-------------------
     //DSP interface
-    output wire                      fc2dsp_abs_rel_b_o,     //1:absolute COF, 0:relative COF
-    output wire                      fc2dsp_hold_o,          //maintain PC 
-    output wire [15:0]               fc2dsp_rel_adr_o,       //relative COF address
-    output wire [15:0]               fc2dsp_abs_adr_o,       //absolute COF address
-    input  wire [15:0]               dsp2fc_pc_next_i,       //next program counter
+    output reg                       fc2dsp_hold_o,                                          //maintain PC
 
     //IR interface
-    output wire                      fc2ir_capture_o,        //capture current IR
-    output wire                      fc2ir_stash_o,          //capture stashed IR
-    output wire                      fc2ir_expend_o,         //stashed IR -> current IR
-    output wire                      fc2ir_load_nop_o,       //load NOP instruction 
-    output wire                      fc2ir_load_eow_o,       //load EOW instruction
-    input  wire                      ir2fc_eow_conflict_i,   //EOW conflict detected
-    input  wire                      ir2fc_jmp_or_cal_i,     //jump or call instruction
-    //input  wire                      ir2fc_jmp_i,            //jump instruction
-    //input  wire                      ir2fc_cal_i,            //call instruction
-    input  wire                      ir2fc_bra_i,            //conditional branch
-    input  wire                      ir2fc_lit_i,            //literal
-    input  wire                      ir2fc_alu_i,            //ALU instruction
-    input  wire                      ir2fc_stk_i,            //stack instruction
-    input  wire                      ir2fc_mem_i,            //memory I/O
-    input  wire                      ir2fc_ctrl_i,           //control instruction
-    input  wire                      ir2fc_eow_i,            //end of word
-    input  wire                      ir2fc_sel_adir_i,       //select absolute direct address
-    input  wire [15:0]               ir2fc_adir_adr_i,       //absolute direct address
-    input  wire [15:0]               ir2fc_rdir_adr_i,       //relative direct address
-    input  wire                      ir2fc_sel_imm_i,        //select immediate address
-    input  wire [15:0]               ir2fc_imm_i,            //immediate address
+    output reg                       fc2ir_capture_o,                                        //capture current IR
+    output reg                       fc2ir_stash_o,                                          //capture stashed IR
+    output reg                       fc2ir_expend_o,                                         //stashed IR -> current IR
+    output reg                       fc2ir_force_nop_o,                                      //load NOP instruction
+    output reg                       fc2ir_force_fetch_o,                                    //load FETCH instruction
+    output reg                       fc2ir_force_drop_o,                                     //load DROP instruction
+    output reg                       fc2ir_force_eow_o,                                      //load EOW bit
+    output reg                       fc2ir_force_0cal_o,                                     //load 0 CALL instruction
+    output reg                       fc2ir_force_0cal_o,                                     //load CALL instruction
+    input  wire                      ir2fc_eow_i,                                            //end of word (EOW bit set)
+    input  wire                      ir2fc_eow_postpone_i,                                   //EOW conflict detected
+    input  wire                      ir2fc_jmp_or_cal_i,                                     //jump or call instruction
+    input  wire                      ir2fc_bra_i,                                            //conditional branch
+    input  wire                      ir2fc_scyc_i,                                           //single cycle instruction
+    input  wire                      ir2fc_mem_i,                                            //memory I/O
+    input  wire                      ir2fc_memrd_i,                                          //mreory read
 
     //PRS interface
+    output reg                       fc2prs_hold_o,                                          //hold any state tran
+    input  wire                      prs2fc_hold_i,                                          //stacks not ready
+    input  wire [15:0]               prs2fc_ps0_true_i,                                      //PS0 in non-zero
 
-    output wire                      fc2prs_hold_o,          //hold any state tran
+    //EXCPT interface
+    output wire                      fc2excpt_buserr_o,                                      //invalid pbus access
 
-    output wire [11:0]               fc2prs_stp_o,           //stack transition pattern
-    output wire [15:0]               fc2prs_rs0_next_o,      //RS0 output
-
-    //output wire                      fc2prs_step0_o,         //force inactivity
-    //output wire                      fc2prs_step1_o,         //force inactivity
-    //output wire                      fc2prs_stall_o,         //force inactivity
-    //output wire                      fc2prs_rst_o,           //reset 
-    //output wire                      fc2prs_pspsh_o,         
-    //output wire                      fc2prs_pspsh_o,
-
-    input  wire                      prs2fc_hold_i,          //parameter stack not ready
-    input  wire [15:0]               prs2fc_ps0_i,           //PS0
-    //input  wire [15:0]               prs2fc_ps1_i,           //PS1
-    input  wire                      prs2fc_psof_i,          //PS overflow    
-    input  wire                      prs2fc_psuf_i,          //PS underflow   
-    input  wire                      prs2fc_rsof_i,          //RS overflow    
-    input  wire                      prs2fc_rsuf_i,          //RS underflow   
-    input  wire                      prs2fc_buserr_i,        //stack bus error
-
-
-    
-
-);
-
-
+     //Probe signals
+    output wire [2:0]                prb_fc_state_o);                                        //state variable
 
    //Internal signals
-   //----------------  
-   
-   //Interrupts
-   reg 				     irq_en_req;             //current interrupt enable
-   reg 				     irq_en_next;            //next interrupt enable
- 				     
-   //Exceptions
-   reg 				     excpt_en_req;           //current exception enable
-   reg 				     excpt_en_next;          //next exception enable
-   reg [4:0] 			     excpt_reg;              //current exceptions
-   reg [4:0]			     excpt_next;             //next exceptions
-   
+   //----------------
    //State variable
-   reg  [2:0] 			     state_reg;              //state variable
-   reg  [2:0] 			     state_next;             //next state
-   				
-	                       
-  
-
-
-
-
-
-
-
-
-
-
-   
-
-
+   reg  [2:0]                        state_reg;                                              //state variable
+   reg  [2:0]                        state_next;                                             //next state
 
    //Finite state machine
    //--------------------
-   localparam STATE_COF0   = 'b00;
-   localparam STATE_COF1   = 'b00;
-   localparam STATE_EXEC0  = 'b00;
-   			   
-   always @*		   
-     begin		   
+   localparam STATE_INIT_0         = 3'b000;
+   localparam STATE_INIT_1         = 3'b001;
+   localparam STATE_EXEC           = 3'b010;
+   localparam STATE_EXEC_STASH     = 3'b011;
+   localparam STATE_EXEC_MEM       = 3'b100;
+   localparam STATE_EXEC_MEM_CAPT  = 3'b101;
+   localparam STATE_EXEC_ISR       = 3'b110;
+   localparam STATE_UNREACH        = 3'b111;
+
+   always @*
+     begin
         //Default outputs
-        pbus_cyc_o		= 1'b1;                      //bus cycle indicator    
-        pbus_stb_o		= 1'b1;                      //access request         
-        pbus_we_o		= 1'b0;                      //write enable           
-        pbus_adr_o		= 16'h0000;                  //address bus            
-        pbus_tga_cof_jmp_o	= 1'b0;                      //COF jump               
-        pbus_tga_cof_cal_o	= 1'b0;                      //COF call               
-        pbus_tga_cof_bra_o	= 1'b0;                      //COF conditional branch  
-        pbus_tga_cof_ret_o	= 1'b0;                      //COF return from call    	
-        pbus_tga_dat_o	        = 1'b0;                      //data access         
-        pbus_tga_dir_adr_o	= 1'b0;                      //direct addressing   
-        pbus_tga_imm_adr_o	= 1'b0;                      //immediate addressing
-        
-        
-        fc2dsp_abs_rel_b_o	= 1'b0;                      //relative address
-        fc2dsp_hold_o	        = 1'b0;                      //maintain PC 
-        fc2dsp_rel_adr_o	= 16'h0000;                  //relative COF address
-        fc2dsp_abs_adr_o	= 16'h0000;                  //absolute COF address
-        
-        fc2ir_capture_o	        = 1'b0;                      //capture current IR
-        fc2ir_stash_o	        = 1'b0;                      //capture stashed IR
-        fc2ir_expend_o	        = 1'b0;                      //stashed IR -> current IR
-        fc2ir_clr_o	        = 1'b0;                      //clear IR
-
-	fc2prs_stp_o            = 12'h000;                   //stack transition pattern
-	fc2prs_rs0_next_o       = 16'h0000;                  //RS0 output
-	
-	state_next              = 0;                         //remain in current state  
-	irq_en_next             = irq_en_req;                //interrupt enable
-	excpt_en_next           = excpt_en_req;              //exception enable
-	excpt_next              = excpt_req;                 //exceptions
-	
-	//Capture exceptions
-	if (~|excpt_tc_reg)
-	  begin
-	     excpt_tc_next = {prs2fc_psof_i,                 //PS overflow    
-			      prs2fc_psuf_i,                 //PS underflow   
-			      prs2fc_rsof_i,                 //RS overflow    
-			      prs2fc_rsuf_i,                 //RS underflow   
-			      prs2fc_buserr_i};              //stack bus error
-	  end
-
-	//Default AGU configuration
-	//Jump or Call
-	if (ir2fc_jmp_i | 
-	    ir2fc_cal_i)			           
-	  begin				           
-	     fc2dsp_abs_rel_b_o = 1'b1;                      //drive absolute address  
-	     fc2dsp_abs_adr_o   = fc2dsp_abs_adr_o    |      //         
-				  (ir2fc_sel_absdir_i ?      //direct or indirect addressing
-				   ir2fc_absdir_i     :      //direct address
-				   prs2fc_ps0_i);            //indirect address
-	  end
-	//Conditional branch
-	if (ir2fc_bra_i)
-	  begin
-	     fc2dsp_rel_adr_o   = fc2dsp_rel_adr_o    |      //
-				  (ir2fc_sel_reldir_i ?      //direct or indirect addressing
-				   (|prs2fc_ps0_i    ?       //flag in PS0
-				    ir2fc_reldir_i   :       //direct address
-				    16'h0001)         :      //increment
-				   (|prs2fc_ps1_i    ?       //flag in PS1
-				    prs2fc_ps0_i     :       //indirect address
-				    16'h0000));              //increment
-	  end
-	//Memory IO	
-	if (ir2fc_mem_i)			           
-	  begin				           
-	     fc2dsp_abs_rel_b_o = 1'b1;                      //drive absolute address  
-	     fc2dsp_abs_adr_o   = fc2dsp_abs_adr_o  |        //         
-				  (ir2fc_sel_imm_i  ?        //immediate or indirect addressing
-				   ir2fc_imm_i     :         //immediate address
-				   prs2fc_ps0_i);            //indirect address
-	  end
-	//Single cycle instruction
-	if (ir2fc_lit_i | 
-	    ir2fc_alu_i | 
-	    ir2fc_stk_i | 
-	    ir2fc_ctrl_i)
-	  begin
-	     fc2dsp_abs_adr_o   = fc2dsp_abs_adr_o  |        //
-				  16'h0001);                 //increment
-	  end
-		  			   
-	case (state_reg)
-
-	  
+        pbus_cyc_o              = 1'b0;                                                      //bus cycle indicator
+        pbus_stb_o              = 1'b0;                                                      //access request
+        pbus_we_o               = 1'b0;                                                      //write enable
+        pbus_adr_o              = 16'h0000;                                                  //address bus
+        pbus_tga_cof_jmp_o      = 1'b0;                                                      //COF jump
+        pbus_tga_cof_cal_o      = 1'b0;                                                      //COF call
+        pbus_tga_cof_bra_o      = 1'b0;                                                      //COF conditional branch
+        pbus_tga_cof_ret_o      = 1'b0;                                                      //COF return from call
+        pbus_tga_dat_o          = 1'b0;                                                      //data access
+        pbus_tga_dir_adr_o      = 1'b0;                                                      //direct addressing
+        pbus_tga_imm_adr_o      = 1'b0;                                                      //immediate addressing
 
 
+        fc2dsp_abs_rel_b_o      = 1'b0;                                                      //relative address
+        fc2dsp_hold_o           = 1'b0;                                                      //maintain PC
+        fc2dsp_rel_adr_o        = 16'h0000;                                                  //relative COF address
+        fc2dsp_abs_adr_o        = 16'h0000;                                                  //absolute COF address
 
-		    
-		    
-	  STATE_EXEC:
-	    begin
-	       //Wait for bus response (stay in sync with memory)
-	       if (~pbus_ack_i &                                   //no bus acknowledge    
-		   ~pbus_err_i &                                   //no error indicator
-	           ~pbus_rty_i)                                    //no retry request
-		 begin					           
-                    pbus_cyc_o    = 1'b0;                          //delay next access		    
-		    fc2dsp_hold_o = 1'b1;                          //don't update PC
-		    fc2prs_hold_o = 1'b1;                          //don't update stacks 		    
-		    state_next    = state_reg;                     //remain in current state
-		 end					           
-	       //Wait for stacks		           
-	       else if (prs2fc_hold_i)                             //stacks are busy
-		 begin
-		    fc2ir_stash_o   = 1'b1;                        //stash next instruction
-		    if (pbus_ack_i)                                   //acknowledge received
-		      begin					   
-			 state_next = state_next |                 //remember ACK
-				      STATE_EXEC_ACK;		   
-		      end	    	    			   
-		    if (pbus_err_i)                                //acknowledge received
-		      begin					   
-			 state_next = state_next |                 //remember ERR
-				      STATE_EXEC_ERR;		   
-		      end					   
-		    if (pbus_rty_i)                                //acknowledge received
-		      begin					   
-			 state_next = state_next |                 //remember RTY
-				       STATE_EXEC_RTY;
-		      end
-		 end
-	       //Execute instruction
-	       if (ir2fc_mem_i)
-		//Memory I/O
-		 begin
-		    fc2dsp_hold_o = 1'b1;                          //don't update PC
-		    
+        fc2ir_capture_o         = 1'b0;                                                      //capture current IR
+        fc2ir_stash_o           = 1'b0;                                                      //capture stashed IR
+        fc2ir_expend_o          = 1'b0;                                                      //stashed IR -> current IR
+        fc2ir_clr_o             = 1'b0;                                                      //clear IR
+
+        fc2prs_stp_o            = 12'h000;                                                   //stack transition pattern
+        fc2prs_rs0_next_o       = 16'h0000;                                                  //RS0 output
+
+        state_next              = 0;                                                         //remain in current state
+        irq_en_next             = irq_en_req;                                                //interrupt enable
+        excpt_en_next           = excpt_en_req;                                              //exception enable
+        excpt_next              = excpt_req;                                                 //exceptions
 
 
-		 end
-	       else
-		 //Single cycle instruction
-		 begin
-		    //Enforce NOP after COF
-		    if (ir2fc_jmp_or_cal_i | (ir2fc_bra_i & prs2fc_ps0_i)) //COF
-		      begin
-			      fc2ir_load_nop_o = 1'b1;             //NOP -> IR
-		      end
-		    //Enforce separated EOW
-		    if (ir2fc_eow_conflict_i)
-		      begin
-			      fc2ir_load_eow_o = 1'b1;             //EOW -> IR
-		      end
-	 	    //determine next state
-		    
+        case (state_reg)
+          //Initiate jump to address zero
+          STATE_INIT_0:
+            begin
+               pbus_cyc_o         = 1'bo;                                                    //Keep bus idle
+               pbus_stb_o         = 1'b0;                                                    //
+               fc2ir_force_0cal_o = 1'b1;                                                    //force jump to addess zero
+               fc2ir_force_eow_o  = 1'b1;                                                    //(call + EOW)
+               state_next         = STATE_INIT1;                                             //execute jump
+            end
 
+          //Jump to address zero
+          STATE_INIT_1:
+            begin
+               pbus_cyc_o         = 1'b1;                                                    //first bus request
+               pbus_stb_o         = 1'b1;                                                    //
+               fc2ir_force_nop_o  = 1'b1;                                                    //force wait cycle
+               state_next         = pbus_stall_i ? state_reg :                               //handle stall
+                                                   STATE_EXEC;                               //execute first opcode
+            end
 
+          //Execute first cycle of the current instruction
+          STATE_EXEC,
+          STATE_EXEC_STASH:
+            begin
+               //Wait for bus response (stay in sync with memory)
+               if (~|{state_reg ^ STATE_EXEC} &                                              //only valid for STATE_EXEC
+                   ~pbus_ack_i &                                                             //no bus acknowledge
+                   ~pbus_err_i)                                                              //no error indicator
+                 begin
+                    pbus_cyc_o    = 1'b1;                                                    //delay next access
+                    pbus_stb_o    = 1'b0;                                                    //
+                    fc2dsp_hold_o = 1'b1;                                                    //don't update PC
+                    fc2prs_hold_o = 1'b1;                                                    //don't update stacks
+                    state_next    = state_reg;                                               //remain in current state
+                 end
+               //Bus response received
+               else
+                 begin
+                    //Trigger exception
+                    fc2excpt_buserr_o = ~|{ir2fc_jmp_or_cal_i,                               //no jump or call
+                                           (ir2fc_bra_i &                                    //no conditional branch
+                                            |prs2fc_ps0_i),                                  //
+                                           ir2fc_eow_i,                                      //no EOW
+                                           ~pbus_err_i};                                     //bus error
+                    //Wait for stacks
+                    if (prs2fc_hold_i)                                                       //stacks are busy
+                      begin
+                         fc2ir_stash_o = ~|{state_reg ^ STATE_EXEC};                         //stash next instruction
+                         pbus_cyc_o    = ~|{state_reg ^ STATE_EXEC};                         //delay next access
+                         pbus_stb_o    = 1'b0;                                               //
+                         fc2dsp_hold_o = 1'b1;                                               //don't update PC
+                         fc2prs_hold_o = 1'b1;                                               //don't update stacks
+                         state_next    = STATE_EXEC_STASH;                                   //track stashed opcode
+                      end
+                    //Initiate next bus access
+                    else
+                      begin
+                         pbus_cyc_o    = 1'b1;                                               //bus access
+                         pbus_stb_o    = 1'b1;                                               //
+                         //Wait while Pbus is stalled
+                         if (pbus_stall_i)
+                           begin
+                              fc2ir_stash_o = ~|{state_reg ^ STATE_EXEC};                    //stash next instruction
+                              fc2dsp_hold_o = 1'b1;                                          //don't update PC
+                              fc2prs_hold_o = 1'b1;                                          //don't update stacks
+                              state_next    = STATE_EXEC_STASH;                              //track stashed opcode
+                           end
+                         //Execute
+                         else
+                           begin
+                              //Memory I/O
+                              if (ir2fc_mem_i)
+                                begin
+                                   fc2dsp_hold_o       = 1'b1;                               //don't update PC
+                                   fc2ir_stash_o       = fc2ir_stash_o  |                    //make use of onehot encoding
+                                                         ~|{state_reg ^ STATE_EXEC);         //stash next instruction
+                                   fc2ir_force_drop_o  = fc2ir_force_drop_o |                //make use of onehot encoding
+                                                         ~ir2fc_memrd_i;                     //force DROP opcode
+                                   fc2ir_force_fetch_o = fc2ir_force_fetch_o                 //make use of onehot encoding
+                                                         ir2fc_memrd_i;                      //force FETCH opcode
+                                   fc2ir_force_eow_o   = fc2ir_force_eow_o |                 //make use of onehot encoding
+                                                         ir2fc_eow_i;                        //postpone EOW
+                                   state_next          = state_next |                        //make use of onehot encoding
+                                                         STATE_EXEC_MEM;                     //handle 2nd memory I/O cycle
+                                end
 
+                              //Change of flow
+                              if (ir2fc_jmp_or_cal_i                                     |   //jump or call
+                                  (ir2fc_bra_i & prs2fc_ps0_true_i)                      |   //conditional branch
+                                  (ir2fc_bra_i & ir2fc_eow_i)                            |   //conditional branch with EOW
+                                  (ir2fc_scyc_i & ir2fc_eow_i & ~ir2pagu_eow_postpone_i))    //end of word
+                                begin
+                                   //Exception
+                                   if (excpt2fc_excpt_i)                                     //pending exception
+                                     begin
+                                        fc2ir_force_0cal_o   = 1'b1;                         //force jump to addess zero
+                                        fc2ir_force_eow_o    = 1'b1;                         //(call + EOW)
+                                        fc2excpt_excpt_dis_i = 1'b1;                         //inhibit further exceptions
+                                        state_next           = state_next |                  //make use of onehot encoding
+                                                               STATE_EXEC;                   //execute jump
+                                     end
+                                   //Interrupt
+                                   else if (excpt2fc_irq_i)                                   //pending interrupt
+                                     begin
+                                        fc2ir_force_ivec_o = 1'b1;                            //force IVEC instruction
+                                        state_next         = state_next |                     //make use of onehot encoding
+                                                             STATE_ISR;                       //service interrupt
+                                     end
+                                   //Resume program flow
+                                   else
+                                     begin
+                                        fc2ir_force_nop_o   = 1'b1;                          //force NOP opcode
+                                        state_next          = state_next |                   //make use of onehot encoding
+                                                              STATE_EXEC;                    //execute NOP
+                                     end
+                                end // if (ir2fc_jmp_or_cal_i |...
 
+                              //Linear execution
+                              if ((ir2fc_scyc_i & (~ir2fc_eow_i | ir2pagu_eow_postpone_i)) | //single cycle instruction
+                                  (ir2fc_bra_i  & ~ir2fc_eow_i & ~prs2fc_ps0_true_i))        //conditional branch
+                                begin
+                                   //Exception
+                                   if (excpt2fc_excpt_i) //pending exception
+                                     begin
+                                        fc2ir_force_0cal_o   = 1'b1;                         //force jump to addess zero
+                                        fc2ir_force_eow_o    = 1'b1;                         //(call + EOW)
+                                        fc2excpt_excpt_dis_i = 1'b1;                         //inhibit further exceptions
+                                        state_next           = state_next |                  //make use of onehot encoding
+                                                               STATE_EXEC;                   //execute jump
+                                     end
+                                   //Interrupt
+                                   else if (excpt2fc_irq_i)                                  //pending interrupt
+                                     begin
+                                        fc2dsp_hold_o        = 1'b1;                         //don't update PC
+                                        fc2ir_force_ivec_o   = 1'b1;                         //force IVEC instruction
+                                        state_next           = state_next |                  //make use of onehot encoding
+                                                               STATE_ISR;                    //service interrupt
+                                     end
+                                   //Postpone EOW
+                                   else if (ir2fc_scyc_i & ir2fc_eow_i &                     //single cycle instruction with EOW bit set
+                                            ir2pagu_eow_postpone_i)                          //postpone EOW
+                                     begin
+                                        fc2dsp_hold_o        = 1'b1;                         //don't update PC
+                                        fc2ir_force_nop_o    = 1'b1;                         //force NOP execution
+                                        fc2ir_force_eow_o    = 1'b1;                         //force EOW bit
+                                        state_next           = state_next |                  //make use of onehot encoding
+                                                               STATE_EXEC;                   //execute NOP
 
-		    state_next    = state_reg;                     //remain in current state
-	       	 end // else: !if(ir2fc_mem_i)
-	    end // case: STATE_EXEC
-	  
+                                     end
+                                   //Continue program flow
+                                   else
+                                     begin
+                                        fc2ir_expend_o  = fc2ir_expend_o |                   //make use of onehot encoding
+                                                          ~|{state_reg ^ STATE_EXEC_STASH);  //use stashed upcode next
+                                        fc2ir_capture_o = fc2ir_capture_o |                  //make use of onehot encoding
+                                                          ~|{state_reg ^ STATE_EXEC);        //capture opcode
+                                        state_next      = state_next |                       //make use of onehot encoding
+                                                          STATE_EXEC;                        //execute next opcode
+                                     end // else: !if(ir2fc_scyc_i & (~ir2fc_eow_i | ir2pagu_eow_postpone_i))
+                                end // if ((ir2fc_scyc_i & (~ir2fc_eow_i | ir2pagu_eow_postpone_i)) |...
+                           end // else: !if(pbus_stall_i)
+                      end // else: !if(prs2fc_hold_i)
+                 end // else: !if(~|{state_reg ^ STATE_EXEC)
+            end // case: STATE_EXEC,...
 
+          //Execute the second cycle of a memory I/O instruction
+          STATE_EXEC_MEM,
+          STATE_EXEC_MEM_CAPT:
+            begin
+               //Wait for bus response (stay in sync with memory)
+               if (~pbus_ack_i &                                                             //no bus acknowledge
+                   ~pbus_err_i)                                                              //no error indicator
+                 begin
+                    pbus_cyc_o    = 1'b1;                                                    //delay next access
+                    pbus_stb_o    = 1'b0;                                                    //
+                    fc2dsp_hold_o = 1'b1;                                                    //don't update PC
+                    fc2prs_hold_o = 1'b1;                                                    //don't update stacks
+                    state_next    = state_reg;                                               //remain in current state
+                 end
+               //Bus response received
+               else
+                 begin
+                    //Fetch read data
+                    fc2prs_hold_o = ~|{state_reg ^ STATE_MEM_CAPT};                          //don't update stacks
+                    //Trigger exception
+                    fc2excpt_buserr_o = pbus_err_i;                                          //bus error
+                    //Initiate next bus access
+                    pbus_cyc_o    = 1'b1;                                                    //bus access
+                    pbus_stb_o    = 1'b1;                                                    //
+                    //Wait while Pbus is stalled
+                    if (pbus_stall_i)
+                      begin
+                         fc2dsp_hold_o = 1'b1;                                               //don't update PC
+                         state_next    = STATE_MEM_CAPT;                                     //remember captured data
+                      end
+                    //Exception
+                    else if (excpt2fc_excpt_i)                                               //pending exception
+                      begin
+                         fc2ir_force_0cal_o   = 1'b1;                                        //force jump to addess zero
+                         fc2ir_force_eow_o    = 1'b1;                                        //(call + EOW)
+                         fc2excpt_excpt_dis_i = 1'b1;                                        //inhibit further exceptions
+                         state_next           = STATE_EXEC;                                  //execute jump
+                      end
+                    //Interrupt
+                    else if (excpt2fc_irq_i)                                                 //pending interrupt
+                      begin
+                         fc2ir_force_ivec_o = 1'b1;                                          //force IVEC instruction
+                         state_next         = STATE_ISR;                                     //service interrupt
+                      end
+                    //Execute EOW
+                    else if (ir2fc_eow_i)                                                    //EOW captured
+                      begin
+                         fc2ir_force_nop_o    = 1'b1;                                        //force NOP execution
+                         state_next           = STATE_EXEC;                                  //execute NOP
+                      end
+                    //Expend stashed instruction
+                    else
+                      begin
+                         fc2ir_expend_o = 1'b1                                               //stashed IR -> current IR
+                         state_next     = STATE_EXEC;                                        //execute stashed i
+                      end // else: !if(ir2fc_eow_i)
+                 end // else: !if(~pbus_ack_i &...
+            end // case: STATE_EXEC_MEM,...
 
-	endcase // case (state_reg)
-	
+          //ISR launcher
+          STATE_ISR,
+          STATE_UNREACH:
+            begin
+               fc2dsp_hold_o = 1'b1;                                                         //don't update PC
+               fc2ir_force_cal_o    = 1'b1;                                                  //force CALL execution
+               state_next           = STATE_EXEC;                                            //execute CALL
+            end
 
+        endcase // case (state_reg)
+     end // always @ *
 
-	  
-	  
    //Flip flops
    //----------
    //State variable
    always @(posedge async_rst_i or posedge clk_i)
      begin
-	if (async_rst_i)
-	  state_reg <= STATE_RESET;
-	else if (sync_rst_i)
-	  state_reg <= STATE_RESET;
-	else
-	  state_reg <= state_next;
+        if (async_rst_i)                                                                     //asynchronous reset
+          state_reg <= STATE_RESET;
+        else if (sync_rst_i)                                                                 //synchronous reset
+          state_reg <= STATE_RESET;
+        else                                                                                 //state transition
+          state_reg <= state_next;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
+   //Probe signals
+   //-------------
+   assign  prb_fc_state_o = state_reg;   //state variable
 
-
-
-
-   
-
-
-   
-
-   //AGU
-   //---
-   assign agu_rel_adr = ({{16{agu_drv_rel}} & ir_rel_adr_i});
-   
-   assign agu_abs_adr = ({16{agu_drv_rst}} & RESET_ADR)                                   |
-			({16{agu_drv_irq}} & irq_vec_i)                                   |
-			({16{agu_drv_ir}}  & ir_abs_adr_i)                                |
-			({16{agu_drv_ps}}  & ust_ps0_i[CELL_WIDTH-1:CELL_WIDTH-16]) |
-			({16{agu_drv_rs}}  & ust_ps0_i[CELL_WIDTH-1:CELL_WIDTH-16]);
-   
-`ifdef SB_MAC16
-   //Use Lattice DSP hard macco if available
-   SB_MAC16
-     #(.B_SIGNED                 (1'b0 ), //C24        -> unused multiplier
-       .A_SIGNED                 (1`b0 ), //C23	       -> unused multiplier
-       .MODE_8x8                 (1'b1 ), //C22	       -> unused multiplier
-       .BOTADDSUB_CARRYSELECT    (2'b11), //C21,C20    -> incrementer
-       .BOTADDSUB_UPPERINPUT     (1'b0 ), //C19	       -> PC
-       .BOTADDSUB_LOWERINPUT     (2'b00), //C18,C17    -> relative address
-       .BOTOUTPUT_SELECT         (2'b00), //C16,C15    -> output from adder
-       .TOPADDSUB_CARRYSELECT    (2'b00), //C14,C13    -> unused adder
-       .TOPADDSUB_UPPERINPUT     (1'b1 ), //C12	       -> unused adder
-       .TOPADDSUB_LOWERINPUT     (2'b00), //C11,C10    -> unused adder
-       .TOPOUTPUT_SELECT         (2'b01), //C9,C8      -> unused output
-       .PIPELINE_16x16_MULT_REG2 (1'b1 ), //C7	       -> no pipeline FFs
-       .PIPELINE_16x16_MULT_REG1 (1'b1 ), //C6	       -> no pipeline FFs
-       .BOT_8x8_MULT_REG         (1'b1 ), //C5	       -> no pipeline FFs 
-       .TOP_8x8_MULT_REGv        (1'b1 ), //C4	       -> no pipeline FFs
-       .D_REG                    (1'b0 ), //C3	       -> unregistered input
-       .B_REG                    (1'b0 ), //C2	       -> unregistered input
-       .A_REG                    (1'b1 ), //C1	       -> unused input
-       .C_REG                    (1'b1 ), //C0	       -> unused input 
-       .NEG_TRIGGER              (1'b0 )) //clock edge -> posedge
-   agu
-     (
-      .A          (16'h0000),             //unused input
-      .B          (agu_rel_adr),          //relative address
-      .C          (16'h0000),             //unused input
-      .D          (agu_abs_adr),          //absolute address
-      .O          (agu_out),              //address output
-      .CLK        (clk_i),                //clock input
-      .CE         (1'b1),                 //always clocked
-      .IRSTTOP    (1'b1),                 //keep unused FFs in reset state
-      .IRSTBOT    (1'b1),                 //keep unused FFs in reset state
-      .ORSTTOP    (1'b1),                 //keep unused FFs in reset state
-      .ORSTBOT    (async_rst_i),          //asynchronous reset
-      .AHOLD      (1'b1),                 //unused FF
-      .BHOLD      (1'b0),                 //unused FF
-      .CHOLD      (1'b1),                 //unused FF
-      .DHOLD      (1'b0),                 //unused FF
-      .OHOLDTOP   (1'b1),                 //unused FF
-      .OHOLDBOT   (1'b0),                 //always update PC
-      .OLOADTOP   (1'b0),                 //unused FF
-      .OLOADBOT   (|{agu_drv_rst,         //load absolute address
-		     agu_drv_irq,
-		     agu_drv_ir,
-		     agu_drv_ps,
-		     agu_drv_rs}),        
-      .ADDSUBTOP  (1'b0),                 //unused adder
-      .ADDSUBBOT  (1'b0),                 //use adder
-      .CO         (),                     //unused carry output
-      .CI         (agu_drv_inc),          //increment PC
-      .ACCUMCI    (1'b0),                 //unused carry input
-      .ACCUMCO    (),                     //unused carry output
-      .SIGNEXTIN  (1'b0),                 //unused sign extension input
-      .SIGNEXTOUT ());                    //unused sign extension output
-
-
-
-
-
-
-
-`else
-			 //Program counter				             
-   //reg [15:0] 			   pc_reg;           //program counter
-   //reg [15:0] 			   pc_next;          //next program counter
-   //reg 					   pc_we;            //write enable
-						             
-
-   
-
-
-
-
-   //Program counter
-   always @(posedge async_rst_i or posedge clk_i)
-     begin
-	if (async_rst_i)
-	  pc_req <= rst_adr;
-	else if (sync_rst_i)
-	  pc_req <= rst_adr;
-        else if (pc_we)
-	  pc_reg <= pc_next;
-     end // always @ (posedge async_rst_i or posedge clk_i)
-
-`endif   
-
-  //Address generation unit (AGU)
-  //-----------------------------
-   assign agu_abs_adr = {16{ir_cof_abs}} & ir_abs_adr;
-
-   assign agu_rel_adr = ({16{ir_abs_bra}} &  {{PCWIDTH-1{1'b0}}, 1,b0})) | //increment address
-
-
-
-                        {16{ir_abs_bra}} & 
-			(|ust_ps_top ? {{16-BRANCH_WIDTH{ir_rel_adr[BRANCH_WIDTH-1]}}, ir_rel_adr} :
-			               {{PCWIDTH-1{1'b0}}, 1,b0});
-   
-   
-
-
-
-   assign agu_opr = ({REL_ADR_WIDTH{agu_inc}} & {{REL_ADR_WIDTH-1{1'b0}},1'b1}) |
-		    ({REL_ADR_WIDTH{agu_dec}} &  {REL_ADR_WIDTH-1{1'b1}})       |
-		    ({REL_ADR_WIDTH{agu_rel}} &  ir_rel_adr_i);
-
-
-
-   assign pbus_adr_o = agu_abs_adr | (pc_reg + agu_rel_adr);
-   
-
-
-
-
-
-
-   
-   //Program bus outputs
-   //-------------------
-   assign pbus_cyc_o      = 1'b1;                            //bus cycle indicator 
-   assign pbus_stb_o      = 1'b1;                            //access request
-   assign pbus_adr_o      = ({16{agu_abs}} & ir_abs_adr_i)  |                               //address bus
-			    ({16{agu_ret}} & ust_ret_adr_i) |  
-			    ({16{~agu_abs & ~agu_ret}} & agu_res) |  
-			    
-
-
-
-
-
-
-   
-   
-   
-endmodule // N1_flowctrl
-		 
+endmodule // N1_fc

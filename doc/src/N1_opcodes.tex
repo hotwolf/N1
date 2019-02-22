@@ -2615,39 +2615,68 @@ of execution time. \tabref{opcodes:ctrl:cmplx} lists the encoding of these compl
     \hline
     \endlastfoot
 
-    %NOP
+    %Refetch opcode
     \texttt{0x0000000000000000}          &    
-    \multicolumn{1}{m{13em}|}{
+    \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
-      No operation \\
-      ( -- )}} \\ \hline
+      2 cycle NOP \\
+      ( -- )}}    \\ \hline
 
-    %Read PSP
+    %Capture PC+1
     \texttt{0x0000000000000001}          &    
-    \multicolumn{1}{m{13em}|}{
+    \multicolumn{1}{m{15em}|}{
+    \makecell[l]{ 
+      Capture program couter (PC+1) \\
+      ( -- pc+1 )}}                 \\ \hline
+
+    %Refetch opcode
+    \texttt{0x0000000000000010}          &    
+    \multicolumn{1}{m{15em}|}{
+    \makecell[l]{ 
+      Single cycle NOP \\
+      ( -- )}}         \\ \hline
+
+    %Capture PC+2
+    \texttt{0x0000000000000001}          &    
+    \multicolumn{1}{m{15em}|}{
+    \makecell[l]{ 
+      Capture program couter (PC+2) \\
+      ( -- pc+2 )}}                 \\ \hline
+
+    %Fetch data bus
+    \texttt{0x0000000000000100}          &    
+    \multicolumn{1}{m{15em}|}{
+    \makecell[l]{ 
+      Capture next opcode \\
+      ( -- opcode )}}     \\ \hline
+
+    
+    %Read PSP
+    \texttt{0x0000000000001000}          &    
+    \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
       Fetch parameter stack pointer \\
-      (= number of cells) \\
-      ( -- +n )}} \\ \hline
+      (= number of cells)           \\
+      ( -- +n )}}                   \\ \hline
 
     %Write PSP
-    \texttt{0x0000000000000010}          &
-    \multicolumn{1}{m{13em}|}{
+    \texttt{0x0000000000001001}          &
+    \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
        Store parameter stack pointer\\
-       ( +n -- )}} \\ \hline
+       ( +n -- )}}                  \\ \hline
     
     %Read RSP
-    \texttt{0x0000000000000011}          &
-    \multicolumn{1}{m{13em}|}{
+    \texttt{0x0000000000001010}          &
+    \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
        Fetch return stack pointer \\
-       (= number of cells) \\
-       ( -- +n )}} \\ \hline
+       (= number of cells)        \\
+       ( -- +n )}}                \\ \hline
 
     %Write RSP
-    \texttt{0x0000000000000100}          &
-    \multicolumn{1}{m{13em}|}{
+    \texttt{0x0000000000001011}          &
+    \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
        Store return stack pointer\\
        ( +n -- )}} \\ \hline
