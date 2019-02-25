@@ -49,9 +49,12 @@ module N1_pagu
     input  wire                      ir2pagu_scyc_i,            //single cycle instruction
     input  wire                      ir2pagu_mem_i,             //memory I/O
 
-    input  wire                      ir2pagu_sel_dadr_i,        //select absolute direct address
-    input  wire [15:0]               ir2pagu_dadr_i,            //absolute direct address
-    input  wire [15:0]               ir2pagu_radr_i,            //relative direct address
+    input  wire [15:0]               ir2pagu_dadr_i,            //direct absolute address
+    input  wire [15:0]               ir2pagu_radr_i,            //direct relative address
+    input  wire [15:0]               ir2pagu_madr_i,            //direct memory address
+    input  wire                      ir2pagu_dadr_sel_i,        //select absolute direct address
+    input  wire                      ir2pagu_madr_sel_i,        //select absolute direct address
+
     input  wire                      ir2pagu_sel_iadr_i,        //select immediate address
     input  wire [15:0]               ir2pagu_iadr_i,            //immediate address
 
