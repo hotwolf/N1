@@ -31,28 +31,28 @@
 module N1_ir
   #(parameter PBUS_DADR_OFFSET = 16'h0000,                                           //offset for direct program address
     parameter PBUS_MADR_OFFSET = 16'h0000)                                           //offset for direct memory address
-   (//Clock and reset								     
+   (//Clock and reset
     input wire                    clk_i,                                             //module clock
     input wire                    async_rst_i,                                       //asynchronous reset
     input wire                    sync_rst_i,                                        //synchronous reset
-										     
-    //Program bus (wishbone)							     
-    output wire                   pbus_tga_cof_jmp_o,                                //COF jump              
-    output wire                   pbus_tga_cof_call_o,                               //COF call              
+
+    //Program bus (wishbone)
+    output wire                   pbus_tga_cof_jmp_o,                                //COF jump
+    output wire                   pbus_tga_cof_cal_o,                                //COF call
     output wire                   pbus_tga_cof_bra_o,                                //COF conditional branch
-    output wire                   pbus_tga_cof_ret_o,                                //COF return from call  
-    output wire                   pbus_tga_dat_o,                                    //data access           
-    output wire                   pbus_we_o,                                         //write enable             
+    output wire                   pbus_tga_cof_eow_o,                                //COF return from call
+    output wire                   pbus_tga_dat_o,                                    //data access
+    output wire                   pbus_we_o,                                         //write enable
     input  wire [15:0]            pbus_dat_i,                                        //read data bus
 
     //Internal interfaces
     //-------------------
     //ALU interface
     output wire [4:0]             ir2alu_opr_o,                                      //ALU operator
-    output wire [4:0]             ir2alu_imm_op_o,                                   //immediate operand
-    output wire                   ir2alu_imm_op_sel_o,                               //select immediate operand
-										     
-    //Flow control interface							     
+    output wire [4:0]             ir2alu_opd_o,                                      //immediate operand
+    output wire                   ir2alu_opd_sel_o,                                  //select immediate operand
+
+    //Flow control interface
     input  wire                   fc2ir_capture_i,                                   //capture current IR
     input  wire                   fc2ir_stash_i,                                     //capture stashed IR
     input  wire                   fc2ir_expend_i,                                    //stashed IR -> current IR
@@ -61,85 +61,128 @@ module N1_ir
     input  wire                   fc2ir_force_0call_i,                               //load 0 CALL instruction
     input  wire                   fc2ir_force_call_i,                                //load CALL instruction
     input  wire                   fc2ir_force_drop_i,                                //load DROP instruction
-    input  wire                   fc2ir_force_fetch_i,                               //load FETCH instruction
+    input  wire                   fc2ir_force_rdpsh_i,                               //load FETCH instruction (push to TOS)
+    input  wire                   fc2ir_force_rdrpl_i,                               //load FETCH instruction (replace TOS)
+    input  wire                   fc2ir_force_ivec_i,                                //get interrupt vector
     output wire                   ir2fc_bra_o,                                       //conditional branch
     output wire                   ir2fc_eow_o,                                       //end of word (EOW bit set)
     output wire                   ir2fc_eow_postpone_o,                              //EOW conflict detected
     output wire                   ir2fc_jmp_or_call_o,                               //jump or call instruction
     output wire                   ir2fc_mem_o,                                       //memory I/O
-    output wire                   ir2fc_memrd_o,                                     //mreory read
+    output wire                   ir2fc_mem_rd_o,                                     //mreory read
+    output wire                   ir2fc_mem_dir_o,                                    //direct memory address
     output wire                   ir2fc_scyc_o,                                      //single cycle instruction
 
     //Program bus AGU
-    output wire [15:0]            ir2pagu_pagu_dadr_o,                               //direct absolute address              
-    output wire [15:0]            ir2pagu_pagu_radr_o,                               //direct relative address             
-    output wire [15:0]            ir2pagu_pagu_madr_o,                               //direct memory address              
-    output wire                   ir2pagu_pagu_dadr_sel_o,                           //select direct absolute address              
-    output wire                   ir2pagu_pagu_madr_sel_o,                           //select direct memory address              
-										     
-    //Parameter and return stack						     										     
+    output wire [15:0]            ir2pagu_pagu_aadr_o,                               //direct absolute address
+    output wire [15:0]            ir2pagu_pagu_radr_o,                               //direct relative address
+    output wire [15:0]            ir2pagu_pagu_madr_o,                               //direct memory address
+    output wire                   ir2pagu_pagu_sel_aadr_o,                           //select direct absolute address
+    output wire                   ir2pagu_pagu_sel_madr_o,                           //select direct memory address
+
+    //Parameter and return stack
     output wire [15:0]            ir2prs_lit_val_o,                                  //literal value
     output wire [7:0]             ir2prs_ups_tp_o,                                   //upper stack transition pattern
     output wire [1:0]             ir2prs_ips_tp_o,                                   //intermediate parameter stack transition pattern
     output wire [1:0]             ir2prs_irs_tp_o,                                   //intermediate return stack transition pattern
-    output wire                   ir2prs_alu2ps0_o,                                  //ALU output -> PS0
-    output wire                   ir2prs_alu2ps1_o,				     //ALU output -> PS1
-    output wire                   ir2prs_dat2ps0_o,				     //read data  -> PS0
-    output wire                   ir2prs_lit2ps0_o,				     //literal    -> PS0
-    output wire                   ir2prs_pc2ps0_o,                                   //next PC    -> RS0       
-    output wire                   ir2prs_ps_rst_o,                                   //reset parameter stack      
-    output wire                   ir2prs_rs_rst_o,                                   //reset return stack   
-    output wire                   ir2prs_psp_rd_o,                                   //read parameter stack pointer     
-    output wire                   ir2prs_psp_wr_o,                                   //write parameter stack pointer     
-    output wire                   ir2prs_rsp_rd_o,                                   //read return stack pointer     
-    output wire                   ir2prs_rsp_wr_o,                                   //write return stack pointer     
+    output wire                   ir2prs_alu2ps0_o,                                  //ALU output       -> PS0
+    output wire                   ir2prs_alu2ps1_o,                                  //ALU output       -> PS1
+    output wire                   ir2prs_dat2ps0_o,                                  //read data        -> PS0
+    output wire                   ir2prs_lit2ps0_o,                                  //literal          -> PS0
+    output wire                   ir2prs_ivec2ps0_o,                                 //interrupt vector -> PS0
+    output wire                   ir2prs_ps_rst_o,                                   //reset parameter stack
+    output wire                   ir2prs_rs_rst_o,                                   //reset return stack
+    output wire                   ir2prs_psp_rd_o,                                   //read parameter stack pointer
+    output wire                   ir2prs_psp_wr_o,                                   //write parameter stack pointer
+    output wire                   ir2prs_rsp_rd_o,                                   //read return stack pointer
+    output wire                   ir2prs_rsp_wr_o,                                   //write return stack pointer
 
     //Probe signals
     output wire [15:0]            prb_ir_o,                                          //current instruction register
     output wire [15:0]            prb_ir_stash_o);                                   //stashed instruction register
-										     
-   //Internal signals								     
-   //----------------								     
-   //Instruction register							     
+
+   //Internal signals
+   //----------------
+   //Instruction register
    reg  [15:0]                    ir_reg;                                            //current instruction register
    wire [15:0]                    ir_next;                                           //next instruction register
    wire                           ir_we;                                             //write enable
-   //Stashed nstruction register						     
+   //Stashed nstruction register
    reg  [15:0]                    ir_stash_reg;                                      //current instruction register
-   //Common decoder signals							     
-   wire                           jmp_or_call;                                       //jump or call instruction
-   wire                           pagu_indadr_sel;                                   //select direct absolute address              
-   wire                           bra;                                               //conditional branch
-   wire                           lit;                                               //literal
-   wire                           alu_single;                                        //ALU with single cell result
-   wire                           alu_double;                                        //ALU with double cell result
-   wire                           imm_op_sel;                                        //select immediate operand
-   wire                           stack_instr;                                       //stack instructions
-   wire                           mem_instr;                                         //memory I/O instruction
-   wire                           memrd;                                             //memory read
-   wire                           madr_sel;                                          //select direct memory address              
-   										     
-   //Opcodes									     
-   //-------									     
+   //Instruction types
+   wire                           instr_eow;                                         //end of word
+   wire                           instr_jump;                                        //JUMP instruction
+   wire                           instr_call;                                        //CALL instruction
+   wire                           instr_jump_or_call;                                //either JUMP or CALL
+   wire                           instr_bra;                                         //conditonal BRANCG instruction
+   wire                           instr_lit;                                         //LITERAL instruction
+   wire                           instr_alu;                                         //ALU instruction
+   wire                           instr_alu_1cell;                                   //ALU instruction with single cell result
+   wire                           instr_alu_2cell;                                   //ALU instruction with double cell result
+   wire                           instr_stack;                                       //stack instruction
+   wire                           instr_mem;                                         //memory I/O
+   wire                           instr_mem_rd;                                      //memory read
+   wire                           instr_mem_wr;                                      //memory wrute
+   wire                           instr_ctrl_conc;                                   //concurrent control instruction
+   wire                           instr_ctrl_psp;                                    //sequential control instruction (PSP operation)
+   wire                           instr_ctrl_psp_rd;                                 //sequential control instruction (PSP read)
+   wire                           instr_ctrl_psp_wr;                                 //sequential control instruction (PSP write)
+   wire                           instr_ctrl_rsp;                                    //sequential control instruction (RSP operation)
+   wire                           instr_ctrl_rsp_rd;                                 //sequential control instruction (RSP read)
+   wire                           instr_ctrl_rsp_wr;                                 //sequential control instruction (RSP WRITE)
+   wire                           instr_ctrl_rdat;                                   //sequential control instruction (read data bus operation)
+   wire                           instr_ctrl_rdat_psh;                               //sequential control instruction (push read data bus)
+   wire                           instr_ctrl_rdar_rpl;                               //sequential control instruction (replace TOS with read data bus)
+   wire                           instr_ivec;                                        //sequential control instruction (get interrupt vector)
+   wire                           instr_scyc;                                        //single cycle instruction
+   //Embedded arguments
+   wire [13:0]                    arg_aadr;                                          //absolute address
+   wire [12:0]                    arg_radr;                                          //relative address
+   wire [11:0]                    arg_lit;                                           //literal value
+   wire [4:0]                     arg_opr;                                           //ALU operator
+   wire [4:0]                     arg_opd;                                           //ALU operand
+   wire [9:0]                     arg_stp;                                           //stack transition pattern
+   wire [7:0]                     arg_madr;                                          //memory address
+   wire [7:0]                     arg_act;                                           //concurrent control action
+   //Indirect argument selection
+   wire                           sel_aadr;                                          //use absolute address from TOS
+   wire                           sel_opd;                                           //use ALU operand from TOS
+   wire                           sel_madr;                                          //use memory address from TOS
+   //Concurrent actions
+   wire                           act_irq_en;                                        //enable interrupts
+   wire                           act_irq_dis;                                       //disable interrupts
+   wire                           act_excpt_en;                                      //enable exceptions
+   wire                           act_excpt_dis;                                     //disable exceptions
+   wire                           act_ps_rst;                                        //reset parameter stack
+   wire                           act_rs_rst;                                        //reset return stack
+   //End of word
+   wire                           eow_postpone;                                      //postpone execution of EOW
+
+   //Opcodes
+   //-------
    localparam OPC_EOW   = 16'h8000;                                                  //EOW bit
-   localparam OPC_0CALL = 16'h;							     //CALL to address 0
-   localparam OPC_0JMP  = OPC_EOW | OPC_0CALL;					     //JUMP to address 0
-   localparam OPC_CALL  = 16'h;							     //indirect CALL
-   localparam OPC_DROP  = 16'h;							     //drop PS0
-   localparam OPC_FETCH = 16'h;							     //fetch data from Dbus
-   localparam OPC_NOP   = 16'h;                                                      //no operation 
-   										     
-   //Instruction register							     
-   //--------------------							     
+   localparam OPC_0CALL = 16'h4000;                                                  //CALL to address 0
+   localparam OPC_0JMP  = OPC_EOW | OPC_0CALL;                                       //JUMP to address 0
+   localparam OPC_CALL  = 16'7FFF;                                                   //indirect CALL
+   localparam OPC_DROP  = 16'h06A0;                                                  //drop PS0
+   localparam OPC_NOP   = 16'h0400;                                                  //no operation
+   localparam OPC_RDPSH = 16'h00FB;                                                  //fetch data from Dbus (push to TOS)
+   localparam OPC_RDRPL = 16'h00FA;                                                  //fetch data from Dbus (replace TOS)
+   localparam OPC_IVEC  = 16'h00F9;                                                  //fetch data from Dbus (replace TOS)
+
+   //Instruction register
+   //--------------------
    assign ir_next = ({16{fc2ir_capture_i}}     & pbus_dat_i)   |                     //capture current IR
                     ({16{fc2ir_expend_i}}      & ir_stash_reg) |                     //stashed IR -> current IR
                     ({16{fc2ir_force_eow_i}}   & OPC_EOW)      |                     //load EOW bit
                     ({16{fc2ir_force_0call_i}} & OPC_0CALL)    |                     //load 0 CALL instruction
                     ({16{fc2ir_force_call_i}}  & OPC_CALL)     |                     //load CALL instruction
                     ({16{fc2ir_force_drop_i}}  & OPC_DROP)     |                     //load DROP instruction
-                    ({16{fc2ir_force_fetch_i}} & OPC_FETCH)    |                     //load FETCH instruction
-                    ({16{fc2ir_force_nop_i}}   & OPC_NOP);                           //load NOP instruction
-   
+                    ({16{fc2ir_force_nop_i}}   & OPC_NOP)      |                     //load NOP instruction
+                    ({16{fc2ir_force_rdpsh_i}} & OPC_RDPSH)    |                     //load FETCH instruction (push to TOS)
+                    ({16{fc2ir_force_rdrpl_i}} & OPC_RDRPL)    |                     //load FETCH instruction (replace TOS)
+                    ({16{fc2ir_force_ivec_i}}  & OPC_IVEC);                          //load IVEC
+
    assign ir_we   = fc2ir_capture_i     |                                            //capture current IR
                     fc2ir_expend_i      |                                            //stashed IR -> current IR
                   //fc2ir_force_eow_i   |                                            //load EOW bit
@@ -148,94 +191,158 @@ module N1_ir
                     fc2ir_force_drop_i  |                                            //load DROP instruction
                     fc2ir_force_fetch_i |                                            //load FETCH instruction
                     fc2ir_force_nop_i;                                               //load NOP instruction
-   										     
-   always @(posedge async_rst_i or posedge clk_i)				     
-     begin									     
+
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
         if (async_rst_i)                                                             //asynchronous reset
-          ir_reg  <= OPC_0JMP;							     
+          ir_reg  <= OPC_0JMP;
         else if (sync_rst_i)                                                         //synchronous reset
-          ir_reg  <= OPC_0JMP;							     
+          ir_reg  <= OPC_0JMP;
         else if (ir_we)                                                              //update IR
-          ir_reg  <= ir_next;							     
-      end // always @ (posedge async_rst_i or posedge clk_i)			     
- 										     
-   //Stashed instruction register						     
-   //----------------------------						     
-   always @(posedge async_rst_i or posedge clk_i)				     
-     begin									     
+          ir_reg  <= ir_next;
+      end // always @ (posedge async_rst_i or posedge clk_i)
+
+   //Stashed instruction register
+   //----------------------------
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
         if (async_rst_i)                                                             //asynchronous reset
-          ir_stash_reg  <= 16'h0000;						     
+          ir_stash_reg  <= 16'h0000;
         else if (sync_rst_i)                                                         //synchronous reset
-          ir_stash_reg  <= 16'h0000;						     
+          ir_stash_reg  <= 16'h0000;
         else if (fc2ir_stash_i)                                                      //update stashed IR
           ir_stash_reg  <= pbus_dat_i;
       end // always @ (posedge async_rst_i or posedge clk_i)
- 
+
    //Instruction decoder
    //-------------------
-   //Common decoder signals							     
-   assign jmp_or_call             =     ir_reg[14];                                  //jump or call instruction
-   assign pagu_indadr_sel         =    &ir_reg[13:0];                                //select direct absolute address              
-   assign bra  	                  =  ~|{ir_reg[14:13] ^ 2'b01};                      //conditional branch
-   assign lit  	                  =  ~|{ir_reg[14:12] ^ 3'b001};                     //literal
-   assign alu_single  	          =  ~|{ir_reg[14:10] ^ 5'b00011};                   //ALU with single cell result
-   assign alu_double  	          =  ~|{ir_reg[14:10] ^ 5'b00010};                   //ALU with double cell result
-   assign imm_op_sel              =    |ir_reg[4:0];                                 //select immediate operand
-   assign stack_instr             =  ~|{ir_reg[14:10] ^ 5'b00001};                   //stack instructions
-   assign mem_instr	          =  ~|{ir_reg[14:9] ^ 6'b000001};                   //memory I/O instruction
-   assign memrd  	          =     ir_reg[8];                                   //memory read
-   assign madr_sel                =   ~&ir_reg[7:0];                                 //select direct memory address              
-										     
+   //Instruction types
+   assign instr_eow                =    ir_reg[15];                                  //end of word
+   assign instr_jump               = ~|{ir_reg[15:14] ^ 2'b11};                      //JUMP instruction
+   assign instr_call               = ~|{ir_reg[15:14] ^ 2'b01};                      //CALL instruction
+   assign instr_jump_or_call       =    ir_reg[14];                                  //either JUMP or CALL
+   assign instr_bra                = ~|{ir_reg[14:13] ^  2'b01};                     //conditonal BRANCG instruction
+   assign instr_lit                = ~|{ir_reg[14:12] ^  3'b001};                    //LITERAL instruction
+   assign instr_alu                = ~|{ir_reg[14:11] ^  4'b0001};                   //ALU instruction
+   assign instr_alu_1cell          = ~|{ir_reg[14:10] ^  5'b00011};                  //ALU instruction with single cell result
+   assign instr_alu_2cell          = ~|{ir_reg[14:10] ^  5'b00010};                  //ALU instruction with double cell result
+   assign instr_stack              = ~|{ir_reg[14:10] ^  5'b00001};                  //stack instruction
+   assign instr_mem                = ~|{ir_reg[14:9]  ^  6'b000001};                 //memory I/O
+   assign instr_mem_rd             = ~|{ir_reg[14:8]  ^  7'b0000011};                //memory read
+   assign instr_mem_wr             = ~|{ir_reg[14:8]  ^  7'b0000010};                //memory wrute
+   assign instr_ctrl_conc          = ~|{ir_reg[14:8]  ^  7'b0000001};                //concurrent control instruction
+   assign instr_ctrl_psp           =  ~|ir_reg[14:8] & ~|{ir_reg[2:1] ^ 2'b11};      //sequential control instruction (PSP operation)
+   assign instr_ctrl_psp_rd        =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b111};     //sequential control instruction (PSP read)
+   assign instr_ctrl_psp_wr        =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b110};     //sequential control instruction (PSP write)
+   assign instr_ctrl_rsp           =  ~|ir_reg[14:8] & ~|{ir_reg[2:1] ^ 2'b10};      //sequential control instruction (RSP operation)
+   assign instr_ctrl_rsp_rd        =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b101};     //sequential control instruction (RSP read)
+   assign instr_ctrl_rsp_wr        =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b100};     //sequential control instruction (RSP WRITE)
+   assign instr_ctrl_rdat          =  ~|ir_reg[14:8] & ~|{ir_reg[2:1] ^ 2'b01};      //sequential control instruction (read data bus operation)
+   assign instr_ctrl_rdat_psh      =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b011};     //sequential control instruction (push read data bus)
+   assign instr_ctrl_rdat_rpl      =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b010};     //sequential control instruction (replace read data bus)
+   assign instr_ctrl_ivec          =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b001};     //sequential control instruction (get interrupt vector)
+   assign instr_scyc               =  ~instr_jump_or_call & ~instr_bra & ~instr_mem; //single cycle instruction
+   //Embedded arguments
+   assign instr_ctrl_rdar_rpl      =  ~|ir_reg[14:8] & ~|{ir_reg[2:0] ^ 3'b010};     //sequential control instruction (replace TOS with read data bus)
+   assign arg_aadr                 = ir_reg[13:0];                                   //absolute address
+   assign arg_radr                 = ir_reg[12:0];                                   //relative address
+   assign arg_lit                  = ir_reg[11:0];                                   //literal value
+   assign arg_opr                  = ir_reg[9:5];                                    //ALU operator
+   assign arg_opd                  = ir_reg[4:0];                                    //ALU operand
+   assign arg_stp                  = ir_reg[9:0];                                    //stack transition pattern
+   assign arg_madr                 = ir_reg[7:0];                                    //memory address
+   assign arg_act                  = ir_reg[7:0];                                    //concurrent control action
+   //Indirect argument selection
+   assign sel_aadr                 = &arg_aadr;                                      //use absolute address from TOS
+   assign sel_opd                  = ~|arg_opd;                                      //use ALU operand from TOS
+   assign sel_madr                 = &arg_madr;                                      //use memory address from TOS
+   //Concurrent actions
+   assign act_irq_en               = ir_reg[0];                                      //enable interrupts
+   assign act_irq_dis              = ir_reg[1];                                      //disable interrupts
+   assign act_excpt_en             = ir_reg[2];                                      //enable exceptions
+   assign act_excpt_dis            = ir_reg[3];                                      //disable exceptions
+   assign act_ps_rst               = ir_reg[4];                                      //reset parameter stack
+   assign act_rs_rst               = ir_reg[5];                                      //reset return stack
+   //End of word
+   assign eow_postpone             = (instr_stack     & |ir_reg[2:0]) |              //postpone execution of EOW
+                                     (instr_ctrl_conc & act_rs_rst)   |              //
+                                      instr_ctrl_rsp;                                //
+
    //Program bus
-   assign pbus_tga_cof_jmp_o      = ~|{ir_reg[15:14] ^ 2'b11};                       //COF jump              
-   assign pbus_tga_cof_call_o     = ~|{ir_reg[15:14] ^ 2'b01};                       //COF call              
-   assign pbus_tga_cof_bra_o      = ~|{ir_reg[15:13] ^ 3'b001};;                     //COF conditional branch
-   assign pbus_tga_cof_ret_o      = ~|{ir_reg[15:14] ^ 2'b10};                       //COF return from call  
-   assign pbus_tga_dat_o          = ~|{ir_reg[14:9]  ^ 6'b000001};                   //data access           
-   assign pbus_we_o	          = ~|{ir_reg[14:8]  ^ 7'b0000010};                  //write enable             
-			          
-   //ALU		          
-   assign ir2alu_opr_o	          =   ir_reg[9:5];                                   //ALU operator
-   assign ir2alu_imm_op_o         =   ir_reg[4:0];                                   //immediate operand
-   assign ir2alu_imm_op_sel_o     = imm_op_sel;                                      //select immediate operand
-			          
-   //FC			          
-   assign ir2fc_eow_o	          =     ir_reg[15];                                  //end of word (EOW bit set)
-   assign ir2fc_eow_postpone_o    = (~|(ir_reg[14:10] ^ 5'b00001) & |ir_reg[2:0]) |  //stack instruction
-			            (~|(ir_reg[14:8]  ^ 7'b0000001) &  ir_reg[5]) |  //return stack reset
-			            (~|(ir_reg[14:0]  ^ 15'b0000000_00001011)     |  //set return stack pounter
-			            (~|(ir_reg[14:0]  ^ 15'b0000000_00001010));      //determine return srack pointer
-   assign ir2fc_bra_o	          = bra;                                             //conditional branch
-   assign ir2fc_jmp_or_call_o     = jmp_or_call;                                     //jump or call instruction
-   assign ir2fc_mem_o	          = mem_instr ;                                      //memory I/O
-   assign ir2fc_memrd_o	          = memrd;                                           //memory read
-   assign ir2fc_scyc_o	          =  ~|{ir_reg[14:13] ^ 2'b00} &                     //single cycle instruction
-			              |{ir_reg[12:9] ^ 4'b0001};                     //
+   assign pbus_tga_cof_jmp_o      = instr_jump;                                      //COF jump
+   assign pbus_tga_cof_cal_o      = instr_call;                                      //COF call
+   assign pbus_tga_cof_bra_o      = instr_bra;                                       //COF conditional branch
+   assign pbus_tga_cof_eow_o      = instr_eow & ~instr_jump_or_call & ~eow_postpone; //COF return from call
+   assign pbus_tga_dat_o          = instr_mem;                                       //data access
+   assign pbus_we_o               = instr_mem_wr;                                    //write enable
+
+   //ALU
+   assign ir2alu_opr_o            = arg_opr;                                         //ALU operator
+   assign ir2alu_opd_o            = arg_opd;                                         //immediate operand
+   assign ir2alu_opd_sel_o        = sel_opd;                                         //select immediate operand
+
+   //FC
+   assign ir2fc_eow_o             = instr_eow;                                       //end of word (EOW bit set)
+   assign ir2fc_eow_postpone_o    = eow_postpone;                                    //postpone EOW execution
+   assign ir2fc_bra_o             = instr_bra;                                       //conditional BRANCH
+   assign ir2fc_jmp_or_call_o     = instr_jump_or_call;                              //JUMP or CALL instruction
+   assign ir2fc_mem_o             = instr_mem;                                       //memory I/O
+   assign ir2fc_mem_rd_o          = ir_reg[8];                                       //memory read
+   assign ir2fc_mem_dir_o         = sel_madr;                                        //direct memory addressing
+   assign ir2fc_scyc_o            = instr_scyc;                                      //single cycle instruction
 
    //PAGU
-   assign ir2pagu_pagu_dadr_o	  = {PBUS_DADR_OFFSET[15:14], ir_reg[13:0]};         //direct absolute address              
-   assign ir2pagu_pagu_radr_o	  = {{2{ir_reg[12]}}, ir_reg[12:0]};                 //direct relative address             
-   assign ir2pagu_pagu_madr_o	  = {PBUS_MADR_OFFSET[15:8], ir_reg[7:0]};           //direct memory address              
-   assign ir2pagu_pagu_dadr_sel_o = ~pagu_indadr_sel&;                               //select direct absolute address              
-   assign ir2pagu_pagu_madr_sel_o = madr_sel;                                        //select direct memory address              
-   
+   assign ir2pagu_pagu_aadr_o     = arg_aadr;                                        //direct absolute address
+   assign ir2pagu_pagu_radr_o     = arg_radr;                                        //direct relative address
+   assign ir2pagu_pagu_madr_o     = arg_madr;                                        //direct memory address
+   assign ir2pagu_pagu_aadr_sel_o = sel_aadr;                                        //select direct absolute address
+   assign ir2pagu_pagu_madr_sel_o = sel_madr;                                        //select direct memory address
+
    //PRS
-   assign ir2prs_lit_val_o        = {{4{ir_reg[11]}}, ir_reg[11:0]};                 //literal value
-   assign ir2prs_ups_tp_o         = ;                                                //upper stack transition pattern
-   assign ir2prs_ips_tp_o         = ;                                   //push=10, pull=01
-   assign ir2prs_irs_tp_o         = ;                                   //push=01, pull=10
-   assign ir2prs_alu2ps0_o	  = ;                                  //ALU output -> PS0
-   assign ir2prs_alu2ps1_o	  = ;				     //ALU output -> PS1
-   assign ir2prs_dat2ps0_o	  = ;				     //read data  -> PS0
-   assign ir2prs_lit2ps0_o	  = ;				     //literal    -> PS0
-   assign ir2prs_pc2ps0_o	  = ;                                   //next PC    -> RS0       
-   assign ir2prs_ps_rst_o	  = ;                                   //reset parameter stack      
-   assign ir2prs_rs_rst_o	  = ;                                   //reset return stack   
-   assign ir2prs_psp_rd_o         = ;                                 //read parameter stack pointer     
-   assign ir2prs_psp_wr_o         = ;                                 //write parameter stack pointer     
-   assign ir2prs_rsp_rd_o         = ;                                 //read return stack pointer     
-   assign ir2prs_rsp_wr_o         = ;                                 //write return stack pointer     
-   
+   assign ir2prs_lit_val_o        = arg_lit;                                         //literal value
+   assign ir2prs_ups_tp_o         = (((instr_jump_or_call &  sel_aadr) |             //JUMP or CALL with indirect addressing
+                                       instr_bra                       |             //single cell ALU instruction with stacked operands
+                                      (instr_alu_1cell    &  sel_opd)  |             //single cell ALU instruction with stacked operands
+                                      (instr_mem_wr       &  sel_madr)) ?            //write with indirect addressing
+                                                              8'b01010100 : 8'h00) | //pull from PS
+                                    (( instr_lit                       |             //literal
+                                      (instr_alu_2cell    & ~sel_opd)  |             //double cell ALU instruction with embedded operands
+                                       instr_ctrl_rdat_psh             |             //fetch pbus read data
+                                       instr_ctrl_ivec) ?                            //get interrupt vector
+                                                              8'b10101000 : 8'h00) | //push to PS
+                                    (( instr_stack ?         arg_stp[8:1] : 8'h00);  //STACK instruction
+   assign ir2prs_ips_tp_o         =  ((instr_jump_or_call &  sel_aadr) |             //JUMP or CALL with indirect addressing
+                                       instr_bra                       |             //single cell ALU instruction with stacked operands
+                                      (instr_alu_1cell    &  sel_opd)  |             //single cell ALU instruction with stacked operands
+                                      (instr_mem_wr       &  sel_madr)) ?            //write with indirect addressing
+                                                                    2'b01 : 2'b00) | //pull from PS
+                                    (( instr_lit                       |             //literal
+                                      (instr_alu_2cell    & ~sel_opd)  |             //double cell ALU instruction with embedded operands
+                                       instr_ctrl_rdat_psh             |             //fetch pbus read data
+                                       instr_ctrl_ivec) ?                            //get interrupt vector
+                                                                    2'b10 : 2'b00) | //push to PS
+                                    ( instr_stack ?                                  //STACK instruction
+                                               {arg_stp[9] &  arg_stp[8],            //stack transition pattern
+                                                arg_stp[9] & ~arg_stp[8]} : 2'b00);  //
+   assign ir2prs_irs_tp_o         = ((instr_eow & instr_scyc & ~eow_postpone) ?      //end of word
+                                                                    2'b10 : 2'b00) | //pull from RS
+                                    ( instr_call ?                                   //CALL instruction
+                                                                    2'b01 : 2'b00) | //push to RS
+                                    ( instr_stack ?                                  //STACK instruction
+                                               {~arg_stp[1] & arg_stp[0],            //stack transition pattern
+                                                 arg_stp[1] & arg_stp[0]} : 2'b00);  //
+   assign ir2prs_alu2ps0_o        = instr_alu;                                       //ALU output -> PS0
+   assign ir2prs_alu2ps1_o        = instr_alu_2cell;                                 //ALU output -> PS1
+   assign ir2prs_dat2ps0_o        = instr_ctrl_rdat;                                 //read data  -> PS0
+   assign ir2prs_lit2ps0_o        = instr_lit;                                       //literal    -> PS0
+   assign ir2prs_ivec2ps0_o       = instr_ctrl_ivec;                                 //next PC    -> RS0
+   assign ir2prs_ps_rst_o         = instr_ctrl_conc & act_ps_rst;                    //reset parameter stack
+   assign ir2prs_rs_rst_o         = instr_ctrl_conc & act_rs_rst;                    //reset return stack
+   assign ir2prs_psp_rd_o         = instr_ctrl_psp_rd;                               //read parameter stack pointer
+   assign ir2prs_psp_wr_o         = instr_ctrl_psp_wr;                               //write parameter stack pointer
+   assign ir2prs_rsp_rd_o         = instr_ctrl_rsp_rd;                               //read return stack pointer
+   assign ir2prs_rsp_wr_o         = instr_ctrl_rsp_wr;                               //write return stack pointer
+
    //Probe signals
    //-------------
    assign prb_ir_cur_o          = ir_cur_reg;                                        //current instruction register
