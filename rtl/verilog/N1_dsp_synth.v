@@ -37,15 +37,29 @@ module N1_dsp
     input  wire                             async_rst_i,           //asynchronous reset
     input  wire                             sync_rst_i,            //synchronous reset
 
+
+
+
+
+
+
+
+    //Internal interfaces
+    //-------------------
     //ALU interface
+    output wire [31:0]                      dsp2alu_add_res_o,     //result from adder
+    output wire [31:0]                      dsp2alu_mul_res_o,     //result from multiplier
     input  wire                             alu2dsp_sub_add_b_i,   //1:op1 - op0, 0:op1 + op0
     input  wire                             alu2dsp_smul_umul_b_i, //1:signed, 0:unsigned
     input  wire [15:0]                      alu2dsp_add_op0_i,     //first operand for adder/subtractor
     input  wire [15:0]                      alu2dsp_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
     input  wire [15:0]                      alu2dsp_mul_op0_i,     //first operand for multipliers
     input  wire [15:0]                      alu2dsp_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
-    output wire [31:0]                      dsp2alu_add_res_o,     //result from adder
-    output wire [31:0]                      dsp2alu_mul_res_o,     //result from multiplier
+
+    //FC interface
+    input reg                               fc2dsp_pc_hold_i,      //maintain PC
+
+
 
     //Flow control interface (program counter)
     input  wire                             fc2dsp_abs_rel_b_i,    //1:absolute COF, 0:relative COF

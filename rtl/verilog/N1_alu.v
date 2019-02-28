@@ -27,13 +27,12 @@
 //###############################################################################
 `default_nettype none
 
+//TBD: update implementation
+
 module N1_alu
-  #(parameter   SP_WIDTH  = 12,                                      //width of the stack pointer
-    parameter   IPS_DEPTH =  8,                                      //depth of the intermediate parameter stack
-    parameter   IRS_DEPTH =  8)                                      //depth of the intermediate return stack
-   (//DSP cell interface
-    output wire                   alu2dsp_sub_add_b_o,               //1:op1 - op0, 0:op1 + op0
-    output wire                   alu2dsp_smul_umul_b_o,             //1:signed, 0:unsigned
+   (//DSP interface
+    output wire                   alu2dsp_add_sel_o,                 //1:sub, 0:add
+    output wire                   alu2dsp_mul_sel_o,                 //1:smul, 0:umul
     output wire [15:0]            alu2dsp_add_op0_o,                 //first operand for adder/subtractor
     output wire [15:0]            alu2dsp_add_op1_o,                 //second operand for adder/subtractor (zero if no operator selected)
     output wire [15:0]            alu2dsp_mul_op0_o,                 //first operand for multipliers
@@ -41,29 +40,16 @@ module N1_alu
     input  wire [31:0]            dsp2alu_add_res_i,                 //result from adder
     input  wire [31:0]            dsp2alu_mul_res_i,                 //result from multiplier
 
-    //Exception interface
-    input  wire [15:0]            excpt2alu_tc_i,                    //throw code
-
-    //Intermediate parameter stack interface
-    input  wire [IPS_DEPTH-1:0]   ips2alu_tags_i,                    //cell tags
-    input  wire [SP_WIDTH-1:0]    ips2alu_lsp_i,                     //lower stack pointer
-
     //IR interface
     input  wire [4:0]             ir2alu_opr_i,                      //ALU operator
-    input  wire [4:0]             ir2alu_imm_op_i,                   //immediate operand
-    input  wire                   ir2alu_sel_imm_op_i,               //select immediate operand
+    input  wire [4:0]             ir2alu_opd_i,                      //immediate operand
+    input  wire                   ir2alu_opd_sel_i,                  //select (stacked)  operand
 
-   //Intermediate return stack interface
-    input  wire [IRS_DEPTH-1:0]   irs2alu_tags_i,                    //cell tags
-    input  wire [SP_WIDTH-1:0]    irs2alu_lsp_i,                     //lower stack pointer
-
-    //Upper stack interface
-    output wire [15:0]            alu2us_ps0_next_o,                 //new PS0 (TOS)
-    output wire [15:0]            alu2us_ps1_next_o,                 //new PS1 (TOS+1)
-    input  wire [15:0]            us2alu_ps0_cur_i,                  //current PS0 (TOS)
-    input  wire [15:0]            us2alu_ps1_cur_i,                  //current PS1 (TOS+1)
-    input  wire [3:0]             us2alu_ptags_i,                    //UPS tags
-    input  wire                   us2alu_rtags_i);                   //URS tags
+    //PRS interface
+    output wire [15:0]            alu2prs_ps0_next_o,                //new PS0 (TOS)
+    output wire [15:0]            alu2prs_ps1_next_o,                //new PS1 (TOS+1)
+    input  wire [15:0]            prs2alu_ps0_i,                     //current PS0 (TOS)
+    input  wire [15:0]            prs2alu_ps1_i);                    //current PS1 (TOS+1)
 
    //Internal signals
    //----------------

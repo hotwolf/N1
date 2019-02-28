@@ -27,6 +27,8 @@
 //###############################################################################
 `default_nettype none
 
+//TBD: update implementation
+
 module N1_excpt
    (//Clock and reset
     input wire                       clk_i,                  //module clock
@@ -60,7 +62,7 @@ module N1_excpt
     //Probe signals
     output wire [2:0]                prb_excpt_o,            //exception tracker
     output wire                      prb_excpt_en_o,         //exception enable
-    output wire                      prb_irq_en_o);           //interrupt enable
+    output wire                      prb_irq_en_o);          //interrupt enable
 
    //ANS Forth throw codes:
    //----------------------

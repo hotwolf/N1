@@ -2645,27 +2645,13 @@ of execution time. \tabref{opcodes:ctrl:cmplx} lists the encoding of these compl
        Store return stack pointer   \\
        ( +n -- )}}                  \\ \hline
 
-    %Read data bus (push)
+    %Execute ISR
     \texttt{0x00FB}                  &    
     \multicolumn{1}{m{15em}|}{
     \makecell[l]{ 
-      Capture next opcode           \\
-      ( -- opcode )}}               \\ \hline
-    
-    %Read data bus (replace)
-    \texttt{0x00FA}                  &    
-    \multicolumn{1}{m{15em}|}{
-    \makecell[l]{ 
-      Capture next opcode           \\
-      (replace TOS)                 \\
-      ( x -- opcode )}}             \\ \hline
-    
-    %Get interrupt vector
-    \texttt{0x00FA9}                &    
-    \multicolumn{1}{m{15em}|}{
-    \makecell[l]{ 
-      Get interrupt vector          \\
-      ( -- ivec )}}                 \\ \hline
+      Execute pending ISR, even if    \\
+      interrupt requests are disabled \\ 
+      ( -- )}}                      \\ \hline
     
   \end{longtable}
 \end{center}  
