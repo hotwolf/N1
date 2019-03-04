@@ -27,8 +27,6 @@
 //###############################################################################
 `default_nettype none
 
-//TBD: update implementation
-
 module N1_excpt
    (//Clock and reset
     input wire                       clk_i,                  //module clock
@@ -36,7 +34,7 @@ module N1_excpt
     input wire                       sync_rst_i,             //synchronous reset
 
     //Interrupt interface
-    input  wire [15:0]               irq_req_adr_i,          //requested interrupt vector
+    input  wire [15:0]               irq_req_adr_i,          //requested ISR
 
     //Internal interfaces
     //-------------------
@@ -48,16 +46,16 @@ module N1_excpt
     input  wire                      fc2excpt_buserr_i,      //pbus error
 
     //IR interface
-    input  wire                      ir2excpt_except_en_i,   //enable exceptions
+    input  wire                      ir2excpt_excpt_en_i,    //enable exceptions
     input  wire                      ir2excpt_irq_en_i,      //enable interrupts
     input  wire                      ir2excpt_irq_dis_i,     //disable interrupts
 
     //PRS interface
     output wire [15:0]               excpt2prs_tc_o,         //throw code
-    input  wire                      prs2excpt_psof_i,       //PS overflow
-    input  wire                      prs2excpt_psuf_i,       //PS underflow
-    input  wire                      prs2excpt_rsof_i,       //RS overflow
-    input  wire                      prs2excpt_rsuf_i,       //RS underflow
+    input  wire                      sagu2excpt_psof_i,       //PS overflow
+    input  wire                      sagu2excpt_psuf_i,       //PS underflow
+    input  wire                      sagu2excpt_rsof_i,       //RS overflow
+    input  wire                      sagu2excpt_rsuf_i,       //RS underflow
 
     //Probe signals
     output wire [2:0]                prb_excpt_o,            //exception tracker
@@ -94,13 +92,13 @@ module N1_excpt
         else if (sync_rst_i)                                 //synchronous reset
           excpt_reg <= 3'b000;
         else if (~|{excpt_reg, ~excpt_en_reg})               //write condition
-          excpt_reg <= ic2excpt_excpt_en_i  ? 2'b000       : //clear old exceptions
-                       prs2excpt_psof_i     ? TC_PSOF[2:0] : //PS overflow
-                       prs2excpt_psuf_i     ? TC_PSUF[2:0] : //PS underflow
-                       prs2excpt_rsof,      ? TC_RSOF[2:0] : //RS overflow
-                       prs2excpt_rsuf_i     ? TC_RSUF[2:0] : //RS underflow
+          excpt_reg <= ir2excpt_excpt_en_i  ? 3'b000       : //clear old exceptions
+                       sagu2excpt_psof_i    ? TC_PSOF[2:0] : //PS overflow
+                       sagu2excpt_psuf_i    ? TC_PSUF[2:0] : //PS underflow
+                       sagu2excpt_rsof_i    ? TC_RSOF[2:0] : //RS overflow
+                       sagu2excpt_rsuf_i    ? TC_RSUF[2:0] : //RS underflow
                        fc2excpt_buserr_i    ? TC_IMEM[2:0] : //pbus error
-                                              2'b000;        //no exception
+                                              3'b000;        //no exception
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Exception enable
@@ -111,8 +109,8 @@ module N1_excpt
           excpt_en_reg <= 1'b0;
         else if (sync_rst_i)                                 //synchronous reset
           excpt_en_reg <= 1'b0;
-        else if (ir2excpt_except_en_i | fc2excpt_excpt_dis_i)//write condition
-          excpt_en_reg <= ir2excpt_except_en_i;
+        else if (ir2excpt_excpt_en_i | fc2excpt_excpt_dis_i) //write condition
+          excpt_en_reg <= ir2excpt_excpt_en_i;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Interrupt enable
@@ -133,14 +131,14 @@ module N1_excpt
    assign excpt2fc_irq_o   = |irq_req_adr_i & irq_en_reg;    //interrupt indicator
    assign excpt2prs_tc_o   = {{12{|excpt_reg}},              //throw code
                               ^excpt_reg[2:1],
-                              excpt_reg};
+                               excpt_reg};
 
    //Probe signals
    //-------------
    //Exception tracker
-   reg [2:0]                         excpt_reg;              //current exception
+   assign prb_excpt_o    = excpt_reg;                        //current exception
    //Interrupt/exception enable
-   reg                               excpt_en_reg;           //exception enable
-   reg                               irq_en_reg;             //interrupt enable
+   assign prb_excpt_en_o = excpt_en_reg;                     //exception enable
+   assign prb_irq_en_o   = irq_en_reg;                       //interrupt enable
 
 endmodule // N1_excpt

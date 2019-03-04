@@ -18,8 +18,8 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This module implements the N1's program counter (PC) and the program bus #
-//#    (Pbus).                                                                  #
+//#    This module implements the finite state machine of the N1 CPU, which     #
+//#    contols the execution flow.                                              #
 //#                                                                             #
 //#    Linear program flow:                                                     #
 //#                                                                             #
@@ -54,11 +54,6 @@
 `default_nettype none
 
 module N1_fc
-  #(parameter   TC_PSUF   = 12,                                                                //width of a stack pointer
-    parameter   TC_PSOF  =  8,                                                                 //depth of the intermediate parameter stack
-    parameter   TC_RSUF  =  8)                                                                 //depth of the intermediate return stack
-
-
    (//Clock and reset
     input wire                       clk_i,                                                    //module clock
     input wire                       async_rst_i,                                              //asynchronous reset
@@ -91,13 +86,13 @@ module N1_fc
     output reg                       fc2ir_force_isr_o,                                        //load ISR instruction
     input  wire                      ir2fc_eow_i,                                              //end of word (EOW bit set)
     input  wire                      ir2fc_eow_postpone_i,                                     //EOW conflict detected
-    input  wire                      ir2fc_jump_or_call_i;                                     //either JUMP or CALL
-    input  wire                      ir2fc_bra_i;                                              //conditonal BRANCG instruction
+    input  wire                      ir2fc_jump_or_call_i,                                     //either JUMP or CALL
+    input  wire                      ir2fc_bra_i,                                              //conditonal BRANCG instruction
     input  wire                      ir2fc_isr_i,                                              //ISR launcher
     input  wire                      ir2fc_scyc_i,                                             //linear flow
     input  wire                      ir2fc_mem_i,                                              //memory I/O
     input  wire                      ir2fc_mem_rd_i,                                           //memory read
-    input  wire                      ir2fc_sel_madr_i,                                         //direct memory address
+    input  wire                      ir2fc_madr_sel_i,                                         //direct memory address
 
     //PRS interface
     output reg                       fc2prs_hold_o,                                            //hold any state tran
@@ -114,7 +109,7 @@ module N1_fc
 
     //Probe signals
     output wire [1:0]                prb_fc_state_o,                                           //state variable
-    output wire [1:0]                prb_fc_pbus_acc_o);                                       //ongoing bus access
+    output wire                      prb_fc_pbus_acc_o);                                       //ongoing bus access
 
    //Internal signals
    //----------------

@@ -27,16 +27,14 @@
 //###############################################################################
 `default_nettype none
 
-//TBD: update implementation
-
 module N1_alu
    (//DSP interface
     output wire                   alu2dsp_add_sel_o,                 //1:sub, 0:add
     output wire                   alu2dsp_mul_sel_o,                 //1:smul, 0:umul
-    output wire [15:0]            alu2dsp_add_op0_o,                 //first operand for adder/subtractor
-    output wire [15:0]            alu2dsp_add_op1_o,                 //second operand for adder/subtractor (zero if no operator selected)
-    output wire [15:0]            alu2dsp_mul_op0_o,                 //first operand for multipliers
-    output wire [15:0]            alu2dsp_mul_op1_o,                 //second operand dor multipliers (zero if no operator selected)
+    output wire [15:0]            alu2dsp_add_opd0_o,                //first operand for adder/subtractor
+    output wire [15:0]            alu2dsp_add_opd1_o,                //second operand for adder/subtractor (zero if no operator selected)
+    output wire [15:0]            alu2dsp_mul_opd0_o,                //first operand for multipliers
+    output wire [15:0]            alu2dsp_mul_opd1_o,                //second operand dor multipliers (zero if no operator selected)
     input  wire [31:0]            dsp2alu_add_res_i,                 //result from adder
     input  wire [31:0]            dsp2alu_mul_res_i,                 //result from multiplier
 
@@ -105,18 +103,18 @@ module N1_alu
 
    //Immediate operands
    //------------------
-   assign uimm        = { 11'h000,                  ir2alu_imm_op_i};      //unsigned immediate operand (1..31)
-   assign simm        = {{12{ ir2alu_imm_op_i[4]}}, ir2alu_imm_op_i[3:0]}; //signed immediate operand   (-16..-1,1..15)
-   assign oimm        = {{12{~ir2alu_imm_op_i[4]}}, ir2alu_imm_op_i[3:0]}; //shifted immediate oprtand  (-15..15)
+   assign uimm        = { 11'h000,               ir2alu_opd_i};      //unsigned immediate operand (1..31)
+   assign simm        = {{12{ ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]}; //signed immediate operand   (-16..-1,1..15)
+   assign oimm        = {{12{~ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]}; //shifted immediate oprtand  (-15..15)
 
    //Hard IP adder
    //-------------
    //Inputs
-   assign alu2dsp_sub_add_b_o = |ir2alu_opr_i[3:1];                  //0:op1 + op0, 1:op1 + op0
-   assign alu2dsp_add_op0_o   = ir2alu_opr_i[0] ? (ir2alu_sel_imm_op_i ? oimm             : us2alu_ps0_cur_i) :
-                                                  (ir2alu_sel_imm_op_i ? us2alu_ps0_cur_i : us2alu_ps1_cur_i);
-   assign alu2dsp_add_op1_o   = ir2alu_opr_i[0] ? (ir2alu_sel_imm_op_i ? us2alu_ps0_cur_i : us2alu_ps1_cur_i) :
-                                                  (ir2alu_sel_imm_op_i ? uimm             : us2alu_ps0_cur_i);
+   assign alu2dsp_add_sel_o   = |ir2alu_opr_i[3:1];                  //0:op1 + op0, 1:op1 + op0
+   assign alu2dsp_add_opd0_o  =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm          : prs2alu_ps0_i) :
+                                                   (ir2alu_opd_sel_i ? prs2alu_ps0_i : prs2alu_ps1_i);
+   assign alu2dsp_add_opd1_o  =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? prs2alu_ps0_i : prs2alu_ps1_i) :
+                                                   (ir2alu_opd_sel_i ? uimm          : prs2alu_ps0_i);
    //Result
    assign add_out             = ~|ir2alu_opr_i[4:2] ? dsp2alu_add_res_i : 32'h00000000;
 
@@ -140,23 +138,23 @@ module N1_alu
    //Hard IP multiplier
    //------------------
    //Inputs
-   assign alu2dsp_smul_umul_b_o = ir2alu_opr_i[1];                       //0:unsigned, 1:signed
-   assign alu2dsp_mul_op0_o     = &(ir2alu_opr_i[4:2]^3'b100) ? us2alu_ps0_cur_i : 16'h0000;
-   assign alu2dsp_mul_op1_o     = ir2alu_sel_imm_op_i ? (ir2alu_opr_i[0] ?  simm : uimm) : us2alu_ps1_cur_i;
+   assign alu2dsp_mul_sel_o  = ir2alu_opr_i[1];                   //0:unsigned, 1:signed
+   assign alu2dsp_mul_opd0_o = &(ir2alu_opr_i[4:2]^3'b100) ? prs2alu_ps0_i : 16'h0000;
+   assign alu2dsp_mul_opd1_o = ir2alu_opd_sel_i ? (ir2alu_opr_i[0] ?  simm : uimm) : prs2alu_ps1_i;
    //Result
-   assign mul_out               = dsp2alu_mul_res_i;
+   assign mul_out            = dsp2alu_mul_res_i;
 
    //Bitwise logic
    //------------------
    //AND
    assign bl_and           = ~|{ir2alu_opr_i[1:0]^2'b00} ?
-                             (ir2alu_sel_imm_op_i ? (us2alu_ps0_cur_i & simm) : (us2alu_ps0_cur_i & us2alu_ps1_cur_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (prs2alu_ps0_i & simm) : (prs2alu_ps0_i & prs2alu_ps1_i)) : 16'h0000;
    //XOR
    assign bl_xor            = ~(ir2alu_opr_i[0]^1'b0) ?
-                             (ir2alu_sel_imm_op_i ? (us2alu_ps0_cur_i ^ simm) : (us2alu_ps0_cur_i ^ us2alu_ps1_cur_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (prs2alu_ps0_i ^ simm) : (prs2alu_ps0_i ^ prs2alu_ps1_i)) : 16'h0000;
    //AND
    assign bl_or            = ~|{ir2alu_opr_i[1:0]^2'b10} ?
-                             (ir2alu_sel_imm_op_i ? (us2alu_ps0_cur_i | uimm) : (us2alu_ps0_cur_i | us2alu_ps1_cur_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (prs2alu_ps0_i | uimm) : (prs2alu_ps0_i | prs2alu_ps1_i)) : 16'h0000;
    //Result
    assign bl_out           = ~|{ir2alu_opr_i[4:2]^3'b100} ?
                               {16'h0000, bl_and | bl_xor | bl_or} : 32'h00000000;
@@ -164,8 +162,8 @@ module N1_alu
    //Barrel shifter
    //--------------
    //Right shift
-   assign lsr_op0 = us2alu_ps0_cur_i;                                //first operand
-   assign lsr_op1 = ir2alu_sel_imm_op_i ? uimm : us2alu_ps1_cur_i;   //second operand
+   assign lsr_op0 = prs2alu_ps0_i;                                   //first operand
+   assign lsr_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i;         //second operand
    assign lsr_msb = ir2alu_opr_i[1] ? lsr_op0[15] : 1'b0;            //MSB of first operand
    assign lsr_sh0 = lsr_op1[0] ?                                     //shift 1 bit
                     {lsr_msb, lsr_op0[15:1]} :                       //
@@ -186,8 +184,8 @@ module N1_alu
                     {{16{lsr_msb}}, lsr_sh4} :                       //
                     32'h00000000;                                    //
    //Left shift
-   assign lsl_op0 = us2alu_ps0_cur_i;                                //first operand
-   assign lsl_op1 = ir2alu_sel_imm_op_i ? uimm : us2alu_ps1_cur_i;   //second operand
+   assign lsl_op0 = prs2alu_ps0_i;                                   //first operand
+   assign lsl_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i;         //second operand
    assign lsl_sh0 = lsl_op1[0] ?                                     //shift 1 bit
                     {15'h0000, lsl_op0, 1'b0} :                      //
                     {16'h0000, lsl_op0};                             //
@@ -215,18 +213,8 @@ module N1_alu
    //Literal value
    //-------------
    assign lit_out = ~|{ir2alu_opr_i[4:2]^3'b110} ?
-                    {{15{simm[5]}}, simm[4:0], us2alu_ps0_cur_i[11:0]} :
+                    {{15{simm[5]}}, simm[4:0], prs2alu_ps0_i[11:0]} :
                     32'h00000000;
-
-   //Processor status
-   //----------------
-   assign stat_out = ~|{ir2alu_opr_i[4:2]^3'b111} ?
-                      ({32{~|(ir2alu_opr_i[2:1]^2'b01)}} & {{16{excpt2alu_tc_i[15]}}, excpt2alu_tc_i})  |
-                      ({32{~|(ir2alu_opr_i[2:1]^2'b10)}} & {{16-SP_WIDTH{1'b0}}, ips2alu_lsp_i, 4'h0,
-                                                            ips2alu_tags_i, us2alu_ptags_i})            |
-                      ({32{~|(ir2alu_opr_i[2:1]^2'b11)}} & {{16-SP_WIDTH{1'b0}}, irs2alu_lsp_i,
-                                                            7'h00, irs2alu_tags_i, us2alu_rtags_i})  :
-                     32'h00000000;
 
    //ALU output
    //----------
@@ -235,9 +223,8 @@ module N1_alu
                      mul_out  |
                      bl_out   |
                      ls_out   |
-                     lit_out  |
-                     stat_out;
-    assign alu2us_ps1_next_o = alu_out[31:16];                       //new PS1 (TOS+1)
-    assign alu2us_ps0_next_o = alu_out[15:0];                        //new PS0 (TOS)
+                     lit_out;
+    assign alu2prs_ps1_next_o = alu_out[31:16];                      //new PS1 (TOS+1)
+    assign alu2prs_ps0_next_o = alu_out[15:0];                       //new PS0 (TOS)
 
 endmodule // N1_alu

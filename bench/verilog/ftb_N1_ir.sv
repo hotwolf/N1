@@ -39,124 +39,158 @@
 
 module ftb_N1_ir
    (//Clock and reset
-    input  wire                   clk_i,                           //module clock
-    input  wire                   async_rst_i,                     //asynchronous reset
-    input  wire                   sync_rst_i,                      //synchronous reset
+    input wire                    clk_i,                           //module clock
+    input wire                    async_rst_i,                     //asynchronous reset
+    input wire                    sync_rst_i,                      //synchronous reset
 
     //Program bus (wishbone)
+    output wire                   pbus_tga_cof_jmp_o,              //COF jump
+    output wire                   pbus_tga_cof_cal_o,              //COF call
+    output wire                   pbus_tga_cof_bra_o,              //COF conditional branch
+    output wire                   pbus_tga_cof_eow_o,              //COF return from call
+    output wire                   pbus_tga_dat_o,                  //data access
+    output wire                   pbus_we_o,                       //write enable
     input  wire [15:0]            pbus_dat_i,                      //read data bus
 
-    //Instruction decoder output
-    output wire                   ir_eow_o,                        //end of word
-    output wire                   ir_jmp_o,                        //jump instruction (any)
-    output wire                   ir_jmp_ind_o,                    //jump instruction (indirect addressing)
-    output wire                   ir_jmp_dir_o,                    //jump instruction (direct addressing)
-    output wire                   ir_call_o,                       //call instruction (any)
-    output wire                   ir_call_ind_o,                   //call instruction (indirect addressing)
-    output wire                   ir_call_dir_o,                   //call instruction (direct addressing)
-    output wire                   ir_bra_o,                        //branch instruction (any)
-    output wire                   ir_bra_ind_o,                    //branch instruction (indirect addressing)
-    output wire                   ir_bra_dir_o,                    //branch instruction (direct addressing)
-    output wire                   ir_lit_o,                        //literal instruction
-    output wire                   ir_alu_o,                        //ALU instruction (any)
-    output wire                   ir_alu_x_x_o,                    //ALU instruction (   x --   x )
-    output wire                   ir_alu_xx_x_o,                   //ALU instruction ( x x --   x )
-    output wire                   ir_alu_x_xx_o,                   //ALU instruction (   x -- x x )
-    output wire                   ir_alu_xx_xx_o,                  //ALU instruction ( x x -- x x )
-    output wire                   ir_sop_o,                        //stack operation
-    output wire                   ir_fetch_o,                      //memory read (any)
-    output wire                   ir_fetch_ind_o,                  //memory read (indirect addressing)
-    output wire                   ir_fetch_dir_o,                  //memory read (direct addressing)
-    output wire                   ir_store_o,                      //memory write (any)
-    output wire                   ir_store_ind_o,                  //memory write (indirect addressing)
-    output wire                   ir_store_dir_o,                  //memory write (direct addressing)
-    output wire                   ir_ctrl_o,                       //Control instruction (any)
-    output wire                   ir_ctrl_ps_rst_o,                //control instruction (reset parameter stack)
-    output wire                   ir_ctrl_rs_rst_o,                //control instruction (reset return stack)
-    output wire                   ir_ctrl_irqen_we_o,              //control instruction (change interrupt mask)
-    output wire                   ir_ctrl_irqen_val_o,             //control instruction (new interrupt mask value)
-    output wire [13:0]            ir_dir_abs_adr_o,                //direct absolute COF address
-    output wire [12:0]            ir_dir_rel_adr_o,                //direct relative COF address
-    output wire [11:0]            ir_lit_val_o,                    //literal value
-    output wire [4:0]             ir_opr_o,                        //ALU operator
-    output wire [4:0]             ir_imm_op_o,                     //immediate operand
-    output wire [9:0]             ir_stp_o,                        //stack transition pattern
-    output wire [7:0]             ir_dir_mem_adr_o,                //direct absolute data address
-    output wire                   ir_sel_dir_abs_adr_o,            //silect direct absolute address
-    output wire                   ir_sel_dir_rel_adr_o,            //select direct relative address
-    output wire                   ir_sel_dir_mem_adr_o,            //select direct data address
-    output wire                   ir_sel_imm_op_o,                 //select immediate operand
+    //Internal interfaces
+    //-------------------
+    //ALU interface
+    output wire [4:0]             ir2alu_opr_o,                    //ALU operator
+    output wire [4:0]             ir2alu_opd_o,                    //immediate operand
+    output wire                   ir2alu_opd_sel_o,                //select immediate operand
 
-    //Flow control interface
-    input  wire                   fc_ir_capture_i,                 //capture current IR
-    input  wire                   fc_ir_hoard_i,                   //capture hoarded IR
-    input  wire                   fc_ir_expend_i,                  //hoarded IR -> current IR
+    //FC interface
+    output wire                   ir2fc_eow_o,                     //end of word (EOW bit set)
+    output wire                   ir2fc_eow_postpone_o,            //EOW conflict detected
+    output wire                   ir2fc_jump_or_call_o,            //either JUMP or CALL
+    output wire                   ir2fc_bra_o,                     //conditonal BRANCG instruction
+    output wire                   ir2fc_isr_o,                     //ISR launcher
+    output wire                   ir2fc_scyc_o,                    //linear flow
+    output wire                   ir2fc_mem_o,                     //memory I/O
+    output wire                   ir2fc_mem_rd_o,                  //memory read
+    output wire                   ir2fc_madr_sel_o,                //select (indirect) data address
+    input  wire                   fc2ir_capture_i,                 //capture current IR
+    input  wire                   fc2ir_stash_i,                   //capture stashed IR
+    input  wire                   fc2ir_expend_i,                  //stashed IR -> current IR
+    input  wire                   fc2ir_force_eow_i,               //load EOW bit
+    input  wire                   fc2ir_force_0call_i,             //load 0 CALL instruction
+    input  wire                   fc2ir_force_call_i,              //load CALL instruction
+    input  wire                   fc2ir_force_drop_i,              //load DROP instruction
+    input  wire                   fc2ir_force_nop_i,               //load NOP instruction
+    input  wire                   fc2ir_force_isr_i,               //load ISR instruction
+
+    //PAGU interface
+    output wire                   ir2pagu_eow_o,                   //end of word (EOW bit)
+    output wire                   ir2pagu_eow_postpone_o,          //postpone EOW
+    output wire                   ir2pagu_jmp_or_cal_o,            //jump or call instruction
+    output wire                   ir2pagu_bra_o,                   //conditional branch
+    output wire                   ir2pagu_rty_o,                   //retry instruction
+    output wire                   ir2pagu_scyc_o,                  //single cycle instruction
+    output wire                   ir2pagu_mem_o,                   //memory I/O
+    output wire                   ir2pagu_aadr_sel_o,              //select (indirect) absolute address
+    output wire                   ir2pagu_madr_sel_o,              //select (indirect) memory address
+    output wire [13:0]            ir2pagu_aadr_o,                  //direct absolute address
+    output wire [12:0]            ir2pagu_radr_o,                  //direct relative address
+    output wire [7:0]             ir2pagu_madr_o,                  //direct memory address
+
+    //PRS interface
+    output wire                   ir2prs_alu2ps0_o,                //ALU output       -> PS0
+    output wire                   ir2prs_alu2ps1_o,                //ALU output       -> PS1
+    output wire                   ir2prs_lit2ps0_o,                //literal          -> PS0
+    output wire                   ir2prs_ivec2ps0_o,               //interrupt vector -> PS0
+    output wire                   ir2prs_pc2rs0_o,                 //PC               -> RS0
+    output wire                   ir2prs_ps_rst_o,                 //reset parameter stack
+    output wire                   ir2prs_rs_rst_o,                 //reset return stack
+    output wire                   ir2prs_psp_rd_o,                 //read parameter stack pointer
+    output wire                   ir2prs_psp_wr_o,                 //write parameter stack pointer
+    output wire                   ir2prs_rsp_rd_o,                 //read return stack pointer
+    output wire                   ir2prs_rsp_wr_o,                 //write return stack pointer
+    output wire [15:0]            ir2prs_lit_val_o,                //literal value
+    output wire [7:0]             ir2prs_ups_tp_o,                 //upper stack transition pattern
+    output wire [1:0]             ir2prs_ips_tp_o,                 //10:push, 01:pull
+    output wire [1:0]             ir2prs_irs_tp_o,                 //10:push, 01:pull
 
     //Probe signals
-    output wire [15:0]            prb_ir_cur_o,                    //current instruction register
-    output wire [15:0]            prb_ir_hoard_o);                 //hoarded instruction register
+    output wire [15:0]            prb_ir_o,                        //current instruction register
+    output wire [15:0]            prb_ir_stash_o);                 //stashed instruction register
 
    //Instantiation
    //=============
    N1_ir
    DUT
      (//Clock and reset
-      .clk_i                    (clk_i),                           //module clock
-      .async_rst_i              (async_rst_i),                     //asynchronous reset
-      .sync_rst_i               (sync_rst_i),                      //synchronous reset
+      .clk_i                      (clk_i),                         //module clock
+      .async_rst_i                (async_rst_i),                   //asynchronous reset
+      .sync_rst_i                 (sync_rst_i),                    //synchronous reset
 
       //Program bus (wishbone)
-      .pbus_dat_i               (pbus_dat_i),                      //read data bus
+      .pbus_tga_cof_jmp_o         (pbus_tga_cof_jmp_o),            //COF jump
+      .pbus_tga_cof_cal_o         (pbus_tga_cof_cal_o),            //COF call
+      .pbus_tga_cof_bra_o         (pbus_tga_cof_bra_o),            //COF conditional branch
+      .pbus_tga_cof_eow_o         (pbus_tga_cof_eow_o),            //COF return from call
+      .pbus_tga_dat_o             (pbus_tga_dat_o),                //data access
+      .pbus_we_o                  (pbus_we_o),                     //write enable
+      .pbus_dat_i                 (pbus_dat_i),                    //read data bus
 
-      //Instruction decoder output
-      .ir_eow_o                 (ir_eow_o),                        //end of word
-      .ir_jmp_o                 (ir_jmp_o),                        //jump instruction (any)
-      .ir_jmp_ind_o             (ir_jmp_ind_o),                    //jump instruction (indirect addressing)
-      .ir_jmp_dir_o             (ir_jmp_dir_o),                    //jump instruction (direct addressing)
-      .ir_call_o                (ir_call_o),                       //call instruction (any)
-      .ir_call_ind_o            (ir_call_ind_o),                   //call instruction (indirect addressing)
-      .ir_call_dir_o            (ir_call_dir_o),                   //call instruction (direct addressing)
-      .ir_bra_o                 (ir_bra_o),                        //branch instruction (any)
-      .ir_bra_ind_o             (ir_bra_ind_o),                    //branch instruction (indirect addressing)
-      .ir_bra_dir_o             (ir_bra_dir_o),                    //branch instruction (direct addressing)
-      .ir_lit_o                 (ir_lit_o),                        //literal instruction
-      .ir_alu_o                 (ir_alu_o),                        //ALU instruction (any)
-      .ir_alu_x_x_o             (ir_alu_x_x_o),                    //ALU instruction (   x --   x )
-      .ir_alu_xx_x_o            (ir_alu_xx_x_o),                   //ALU instruction ( x x --   x )
-      .ir_alu_x_xx_o            (ir_alu_x_xx_o),                   //ALU instruction (   x -- x x )
-      .ir_alu_xx_xx_o           (ir_alu_xx_xx_o),                  //ALU instruction ( x x -- x x )
-      .ir_sop_o                 (ir_sop_o),                        //stack operation
-      .ir_fetch_o               (ir_fetch_o),                      //memory read (any)
-      .ir_fetch_ind_o           (ir_fetch_ind_o),                  //memory read (indirect addressing)
-      .ir_fetch_dir_o           (ir_fetch_dir_o),                  //memory read (direct addressing)
-      .ir_store_o               (ir_store_o),                      //memory write (any)
-      .ir_store_ind_o           (ir_store_ind_o),                  //memory write (indirect addressing)
-      .ir_store_dir_o           (ir_store_dir_o),                  //memory write (direct addressing)
-      .ir_ctrl_o                (ir_ctrl_o),                       //Control instruction (any)
-      .ir_ctrl_ps_rst_o         (ir_ctrl_ps_rst_o),                //control instruction (reset parameter stack)
-      .ir_ctrl_rs_rst_o         (ir_ctrl_rs_rst_o),                //control instruction (reset return stack)
-      .ir_ctrl_irqen_we_o       (ir_ctrl_irqen_we_o),              //control instruction (change interrupt mask)
-      .ir_ctrl_irqen_val_o      (ir_ctrl_irqen_val_o),             //control instruction (new interrupt mask value)
-      .ir_dir_abs_adr_o         (ir_dir_abs_adr_o),                //direct absolute COF address
-      .ir_dir_rel_adr_o         (ir_dir_rel_adr_o),                //direct relative COF address
-      .ir_lit_val_o             (ir_lit_val_o),                    //literal value
-      .ir_opr_o                 (ir_opr_o),                        //ALU operator
-      .ir_imm_op_o              (ir_imm_op_o),                     //immediate operand
-      .ir_stp_o                 (ir_stp_o),                        //stack transition pattern
-      .ir_dir_mem_adr_o         (ir_dir_mem_adr_o),                //direct absolute data address
-      .ir_sel_dir_abs_adr_o     (ir_sel_dir_abs_adr_o),            //silect direct absolute address
-      .ir_sel_dir_rel_adr_o     (ir_sel_dir_rel_adr_o),            //select direct relative address
-      .ir_sel_dir_mem_adr_o     (ir_sel_dir_mem_adr_o),            //select direct data address
-      .ir_sel_imm_op_o          (ir_sel_imm_op_o),                 //select immediate operand
+      //ALU interface
+      .ir2alu_opr_o               (ir2alu_opr_o),                  //ALU operator
+      .ir2alu_opd_o               (ir2alu_opd_o),                  //immediate operand
+      .ir2alu_opd_sel_o           (ir2alu_opd_sel_o),              //select immediate operand
 
-      //Flow control interface
-      .fc_ir_capture_i          (fc_ir_capture_i),                 //capture current IR
-      .fc_ir_hoard_i            (fc_ir_hoard_i),                   //capture hoarded IR
-      .fc_ir_expend_i           (fc_ir_expend_i),                  //hoarded IR -> current IR
+      //FC interface
+      .ir2fc_eow_o                (ir2fc_eow_o),                   //end of word (EOW bit set)
+      .ir2fc_eow_postpone_o       (ir2fc_eow_postpone_o),          //EOW conflict detected
+      .ir2fc_jump_or_call_o       (ir2fc_jump_or_call_o),          //either JUMP or CALL
+      .ir2fc_bra_o                (ir2fc_bra_o),                   //conditonal BRANCG instruction
+      .ir2fc_isr_o                (ir2fc_isr_o),                   //ISR launcher
+      .ir2fc_scyc_o               (ir2fc_scyc_o),                  //linear flow
+      .ir2fc_mem_o                (ir2fc_mem_o),                   //memory I/O
+      .ir2fc_mem_rd_o             (ir2fc_mem_rd_o),                //memory read
+      .ir2fc_madr_sel_o           (ir2fc_madr_sel_o),              //select (indirect) data address
+      .fc2ir_capture_i            (fc2ir_capture_i),               //capture current IR
+      .fc2ir_stash_i              (fc2ir_stash_i),                 //capture stashed IR
+      .fc2ir_expend_i             (fc2ir_expend_i),                //stashed IR -> current IR
+      .fc2ir_force_eow_i          (fc2ir_force_eow_i),             //load EOW bit
+      .fc2ir_force_0call_i        (fc2ir_force_0call_i),           //load 0 CALL instruction
+      .fc2ir_force_call_i         (fc2ir_force_call_i),            //load CALL instruction
+      .fc2ir_force_drop_i         (fc2ir_force_drop_i),            //load DROP instruction
+      .fc2ir_force_nop_i          (fc2ir_force_nop_i),             //load NOP instruction
+      .fc2ir_force_isr_i          (fc2ir_force_isr_i),             //load ISR instruction
+
+      //PAGU interface
+      .ir2pagu_eow_o              (ir2pagu_eow_o),                 //end of word (EOW bit)
+      .ir2pagu_eow_postpone_o     (ir2pagu_eow_postpone_o),        //postpone EOW
+      .ir2pagu_jmp_or_cal_o       (ir2pagu_jmp_or_cal_o),          //jump or call instruction
+      .ir2pagu_bra_o              (ir2pagu_bra_o),                 //conditional branch
+      .ir2pagu_rty_o              (ir2pagu_rty_o),                 //retry instruction
+      .ir2pagu_scyc_o             (ir2pagu_scyc_o),                //single cycle instruction
+      .ir2pagu_mem_o              (ir2pagu_mem_o),                 //memory I/O
+      .ir2pagu_aadr_sel_o         (ir2pagu_aadr_sel_o),            //select (indirect) absolute address
+      .ir2pagu_madr_sel_o         (ir2pagu_madr_sel_o),            //select (indirect) memory address
+      .ir2pagu_aadr_o             (ir2pagu_aadr_o),                //direct absolute address
+      .ir2pagu_radr_o             (ir2pagu_radr_o),                //direct relative address
+      .ir2pagu_madr_o             (ir2pagu_madr_o),                //direct memory address
+
+      //PRS interface
+      .ir2prs_alu2ps0_o           (ir2prs_alu2ps0_o),              //ALU output       -> PS0
+      .ir2prs_alu2ps1_o           (ir2prs_alu2ps1_o),              //ALU output       -> PS1
+      .ir2prs_lit2ps0_o           (ir2prs_lit2ps0_o),              //literal          -> PS0
+      .ir2prs_ivec2ps0_o          (ir2prs_ivec2ps0_o),             //interrupt vector -> PS0
+      .ir2prs_pc2rs0_o            (ir2prs_pc2rs0_o),               //PC               -> RS0
+      .ir2prs_ps_rst_o            (ir2prs_ps_rst_o),               //reset parameter stack
+      .ir2prs_rs_rst_o            (ir2prs_rs_rst_o),               //reset return stack
+      .ir2prs_psp_rd_o            (ir2prs_psp_rd_o),               //read parameter stack pointer
+      .ir2prs_psp_wr_o            (ir2prs_psp_wr_o),               //write parameter stack pointer
+      .ir2prs_rsp_rd_o            (ir2prs_rsp_rd_o),               //read return stack pointer
+      .ir2prs_rsp_wr_o            (ir2prs_rsp_wr_o),               //write return stack pointer
+      .ir2prs_lit_val_o           (ir2prs_lit_val_o),              //literal value
+      .ir2prs_ups_tp_o            (ir2prs_ups_tp_o),               //upper stack transition pattern
+      .ir2prs_ips_tp_o            (ir2prs_ips_tp_o),               //10:push, 01:pull
+      .ir2prs_irs_tp_o            (ir2prs_irs_tp_o),               //10:push, 01:pull
 
       //Probe signals
-      .prb_ir_cur_o             (prb_ir_cur_o),                    //current instruction register
-      .prb_ir_hoard_o           (prb_ir_hoard_o));                 //hoarded instruction register
+      .prb_ir_o                   (prb_ir_o),                      //current instruction register
+      .prb_ir_stash_o             (prb_ir_stash_o));               //stashed instruction register
 
 `ifdef FORMAL
    //Testbench signals

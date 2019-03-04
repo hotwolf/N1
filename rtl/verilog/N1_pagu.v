@@ -27,37 +27,31 @@
 //###############################################################################
 `default_nettype none
 
+//TBD: update implementation
+
 module N1_pagu
   #(parameter PBUS_AADR_OFFSET = 16'h0000,                       //offset for direct program address
     parameter PBUS_MADR_OFFSET = 16'h0000)                       //offset for direct data
 
-   (//Interrupt interface
-    input  wire [15:0]               irq_req_adr_i,             //requested interrupt vector
-
-    //Internal interfaces
+   (//Internal interfaces
     //-------------------
     //DSP interface
-    output wire                      pagu2dsp_abs_rel_b_o,      //1:absolute COF, 0:relative COF
-    output wire [15:0]               pagu2dsp_rel_adr_o,        //relative COF address
-    output wire [15:0]               pagu2dsp_abs_adr_o,        //absolute COF address
+    output wire                      pagu2dsp_adr_sel_o,        //1:absolute COF, 0:relative COF
+    output wire [15:0]               pagu2dsp_radr_o,           //relative COF address
+    output wire [15:0]               pagu2dsp_aadr_o,           //absolute COF address
 
     //IR interface
     input  wire                      ir2pagu_eow_i,             //end of word (EOW bit)
     input  wire                      ir2pagu_eow_postpone_i,    //postpone EOW
     input  wire                      ir2pagu_jmp_or_cal_i,      //jump or call instruction
     input  wire                      ir2pagu_bra_i,             //conditional branch
-    input  wire                      ir2pagu_rty_i,             //retry instruction
     input  wire                      ir2pagu_scyc_i,            //single cycle instruction
     input  wire                      ir2pagu_mem_i,             //memory I/O
-
+    input  wire                      ir2pagu_aadr_sel_i,        //select (indirect) absolute address
+    input  wire                      ir2pagu_madr_sel_i,        //select (indirect) data address
     input  wire [13:0]               ir2pagu_aadr_i,            //direct absolute address
     input  wire [12:0]               ir2pagu_radr_i,            //direct relative address
     input  wire [7:0]                ir2pagu_madr_i,            //direct memory address
-    input  wire                      ir2pagu_sel_aadr_i,        //select absolute direct address
-    input  wire                      ir2pagu_sel_madr_i,        //select absolute direct address
-
-    input  wire                      ir2pagu_sel_madr_i,        //select (indirect) data address
-    input  wire [15:0]               ir2pagu_madr_i,            //immediate address
 
     //PRS interface
     input  wire [15:0]               prs2pagu_ps0_i,            //PS0

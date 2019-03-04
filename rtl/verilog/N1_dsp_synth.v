@@ -37,137 +37,116 @@ module N1_dsp
     input  wire                             async_rst_i,           //asynchronous reset
     input  wire                             sync_rst_i,            //synchronous reset
 
-
-
-
-
-
-
+    //Program bus (wishbone)
+    output wire [15:0]                      pbus_adr_o,            //address bus
 
     //Internal interfaces
     //-------------------
     //ALU interface
     output wire [31:0]                      dsp2alu_add_res_o,     //result from adder
     output wire [31:0]                      dsp2alu_mul_res_o,     //result from multiplier
-    input  wire                             alu2dsp_sub_add_b_i,   //1:op1 - op0, 0:op1 + op0
-    input  wire                             alu2dsp_smul_umul_b_i, //1:signed, 0:unsigned
-    input  wire [15:0]                      alu2dsp_add_op0_i,     //first operand for adder/subtractor
-    input  wire [15:0]                      alu2dsp_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
-    input  wire [15:0]                      alu2dsp_mul_op0_i,     //first operand for multipliers
-    input  wire [15:0]                      alu2dsp_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
+    input  wire                             alu2dsp_add_sel_i,     //1:op1 - op0, 0:op1 + op0
+    input  wire                             alu2dsp_mul_sel_i,     //1:signed, 0:unsigned
+    input  wire [15:0]                      alu2dsp_add_opd0_i,    //first operand for adder/subtractor
+    input  wire [15:0]                      alu2dsp_add_opd1_i,    //second operand for adder/subtractor (zero if no operator selected)
+    input  wire [15:0]                      alu2dsp_mul_opd0_i,    //first operand for multipliers
+    input  wire [15:0]                      alu2dsp_mul_opd1_i,    //second operand dor multipliers (zero if no operator selected)
 
     //FC interface
-    input reg                               fc2dsp_pc_hold_i,      //maintain PC
+    input  wire                             fc2dsp_pc_hold_i,      //maintain PC
 
+    //PAGU interface
+    output wire                             pagu2dsp_adr_sel_i,     //1:absolute COF, 0:relative COF
+    output wire [15:0]                      pagu2dsp_aadr_i,        //absolute COF address
+    output wire [15:0]                      pagu2dsp_radr_i,        //relative COF address
 
+    //PRS interface
+    output wire [15:0]                      dsp2prs_pc_o,           //program counter
+    output wire [SP_WIDTH-1:0]              dsp2prs_psp_o,          //parameter stack pointer (AGU output)
+    output wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,          //return stack pointer (AGU output)
 
-    //Flow control interface (program counter)
-    input  wire                             fc2dsp_abs_rel_b_i,    //1:absolute COF, 0:relative COF
-    input  wire                             fc2dsp_update_i,       //update PC
-    input  wire [15:0]                      fc2dsp_rel_adr_i,      //relative COF address
-    input  wire [15:0]                      fc2dsp_abs_adr_i,      //absolute COF address
-    output wire [15:0]                      dsp2fc_next_pc_o,      //result
-
-    //Intermediate parameter stack interface (AGU, stack grows towards lower addresses)
-    input  wire                             ips2dsp_psh_i,         //push (decrement address)
-    input  wire                             ips2dsp_pul_i,         //pull (increment address)
-    input  wire                             ips2dsp_rst_i,         //reset AGU
-    output wire [SP_WIDTH-1:0]              dsp2ips_lsp_o,         //lower stack pointer
-
-    //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
-    input  wire                             irs2dsp_psh_i,         //push (increment address)
-    input  wire                             irs2dsp_pul_i,         //pull (decrement address)
-    input  wire                             irs2dsp_rst_i,         //reset AGU
-    output wire [SP_WIDTH-1:0]              dsp2irs_lsp_o);        //lower stack pointer
+    //SAGU interface
+    output wire [SP_WIDTH-1:0]              dsp2sagu_psp_o,         //parameter stack pointer
+    output wire [SP_WIDTH-1:0]              dsp2sagu_rsp_o,         //return stack pointer
+    input  wire                             sagu2dsp_psp_hold_i,    //maintain PSP
+    input  wire                             sagu2dsp_psp_op_sel_i,  //1:set new PSP, 0:add offset to PSP
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_psp_offs_i,    //PSP offset
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_psp_next_i,    //new PSP
+    input  wire                             sagu2dsp_rsp_hold_i,    //maintain RSP
+    input  wire                             sagu2dsp_rsp_op_sel_i,  //1:set new RSP, 0:add offset to RSP
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_offs_i,    //relative address
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_next_i);   //absolute address
 
    //Internal Signals
    //----------------
    //Program AGU
    reg  [15:0]                              pc_reg;                //program counter
-   wire [16:0]                              pc_agu_out;            //long AGU result
-   //ALU
-   wire [31:0]                              alu_add_out;           //long sum
-   wire [31:0]                              alu_mul_out;           //long product
    //Lower parameter stack AGU
-   reg  [SP_WIDTH-1:0]                      lps_sp_reg;            //stack pointer
-   wire [SP_WIDTH:0]                        lps_agu_out;           //long AGU result
+   reg  [SP_WIDTH-1:0]                      psp_reg;               //parameter stack pointer
    //Lower return  stack AGU
-   reg  [SP_WIDTH-1:0]                      lrs_sp_reg;            //stack pointer
-   wire [SP_WIDTH:0]                        lrs_agu_out;           //long AGU result
+   reg  [SP_WIDTH-1:0]                      rsp_reg;               //return stack pointer
 
    //ALU
    //---
    //Adder
-   assign alu_add_out  = { 15'h0000, {17{alu2dsp_sub_add_b_i}}} ^
-                         ({16'h0000, {16{alu2dsp_sub_add_b_i}} ^ alu2dsp_add_op1_i} +
-                          {16'h0000, alu2dsp_add_op0_i});
+   assign dsp2alu_add_res_o = { 15'h0000, {17{alu2dsp_add_sel_i}}} ^
+                              ({16'h0000, {16{alu2dsp_add_sel_i}}  ^ alu2dsp_add_opd1_i} +
+                               {16'h0000, alu2dsp_add_opd0_i});
 
    //Multiplier
-   assign alu_mul_out = {{16{alu2dsp_smul_umul_b_i & alu2dsp_mul_op0_i[15]}}, alu2dsp_mul_op0_i} *
-                        {{16{alu2dsp_smul_umul_b_i & alu2dsp_mul_op1_i[15]}}, alu2dsp_mul_op1_i};
-
-   //Output
-   assign dsp2alu_add_res_o        = alu_add_out;
-   assign dsp2alu_mul_res_o        = alu_mul_out;
+   assign dsp2alu_mul_res_o = {{16{alu2dsp_mul_sel_i & alu2dsp_mul_opd0_i[15]}}, alu2dsp_mul_opd0_i} *
+                              {{16{alu2dsp_mul_sel_i & alu2dsp_mul_opd1_i[15]}}, alu2dsp_mul_opd1_i};
 
    //Program AGU
    //-----------
-   //In-/decrementer
-   assign pc_agu_out = fc2dsp_rel_adr_i + pc_reg;
+   //Program counter
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+        if (async_rst_i)                                          //asynchronous reset
+          pc_reg <= 16'h0000;                                     //start address
+        else if (sync_rst_i)                                      //synchronous reset
+          pc_reg <= 16'h0000;                                     //start address
+        else if (~fc2dsp_pc_hold_i)                               //update PC
+          pc_reg <= pbus_adr_o;
+     end // always @ (posedge async_rst_i or posedge clk_i)
 
+   //Outputs
+   assign pbus_adr_o   = pagu2dsp_adr_sel_i ? pagu2dsp_aadr_i :
+                                              pagu2dsp_radr_i + pc_reg;
+   assign dsp2prs_pc_o = pc_reg;
+
+   //Parameter stack AGU
+   //-------------------
    //Stack pointer
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                          //asynchronous reset
-          pc_reg <= {16{1'b0}};                                   //start address
+          psp_reg <= {SP_WIDTH{1'b0}};                            //TOS
         else if (sync_rst_i)                                      //synchronous reset
-          pc_reg <= {16{1'b0}};                                   //start address
-        else if (fc2dsp_update_i)                                 //update PC
-          pc_reg <= dsp2fc_next_pc_o;
+          psp_reg <= {SP_WIDTH{1'b0}};                            //TOS
+        else if (~sagu2dsp_psp_hold_i)                            //update PSP
+          psp_reg <= dsp2sagu_psp_o;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Output
-   assign dsp2fc_next_pc_o = fc2dsp_abs_rel_b_i ? fc2dsp_abs_adr_i :
-                                                  pc_agu_out[15:0];
+   assign dsp2prs_psp_o = sagu2dsp_psp_op_sel_i ? sagu2dsp_psp_next_i :
+                                                  sagu2dsp_psp_offs_i + psp_reg;
 
-   //Lower parameter stack AGU
-   //-------------------------
-   //In-/decrementer
-   assign lps_agu_out = {{SP_WIDTH-1{ips2dsp_psh_i}},1'b1} + lps_sp_reg;
 
+   //Return stack AGU
+   //----------------
    //Stack pointer
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                          //asynchronous reset
-          lps_sp_reg <= {SP_WIDTH{1'b0}};                         //TOS
+          rsp_reg <= {SP_WIDTH{1'b0}};                            //TOS
         else if (sync_rst_i)                                      //synchronous reset
-          lps_sp_reg <= {SP_WIDTH{1'b0}};                         //TOS
-        else if (ips2dsp_psh_i|ips2dsp_pul_i|ips2dsp_rst_i)       //update SP
-          lps_sp_reg <= ips2dsp_rst_i ? {SP_WIDTH{1'b0}} :
-                                        lps_agu_out[SP_WIDTH-1:0];
+          rsp_reg <= {SP_WIDTH{1'b0}};                            //TOS
+        else if (~sagu2dsp_rsp_hold_i)                            //update RSP
+          rsp_reg <= dsp2sagu_rsp_o;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Output
-   assign dsp2ips_lsp_o = lps_sp_reg;
-
-   //Lower return stack AGU
-   //----------------------
-   //In-/decrementer
-   assign lrs_agu_out = {{SP_WIDTH-1{irs2dsp_psh_i}},1'b1} + lrs_sp_reg;
-
-   //Stack pointer
-   always @(posedge async_rst_i or posedge clk_i)
-     begin
-        if (async_rst_i)                                          //asynchronous reset
-          lrs_sp_reg <= {SP_WIDTH{1'b0}};                         //TOS
-        else if (sync_rst_i)                                      //synchronous reset
-          lrs_sp_reg <= {SP_WIDTH{1'b0}};                         //TOS
-        else if (irs2dsp_psh_i|irs2dsp_pul_i|irs2dsp_rst_i)       //update SP
-          lrs_sp_reg <= irs2dsp_rst_i ? {SP_WIDTH{1'b0}} :
-                                        lrs_agu_out[SP_WIDTH-1:0];
-     end // always @ (posedge async_rst_i or posedge clk_i)
-
-   //Output
-   assign dsp2irs_lsp_o = lrs_sp_reg;
-
+   assign dsp2prs_rsp_o = sagu2dsp_rsp_op_sel_i ? sagu2dsp_rsp_next_i :
+                                                  sagu2dsp_rsp_offs_i + rsp_reg;
 endmodule // N1_dsp

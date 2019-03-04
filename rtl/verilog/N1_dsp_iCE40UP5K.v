@@ -39,46 +39,62 @@ module N1_dsp
     input  wire                             async_rst_i,           //asynchronous reset
     input  wire                             sync_rst_i,            //synchronous reset
 
+    //Program bus (wishbone)
+    output wire [15:0]                      pbus_adr_o,            //address bus
+
+    //Internal interfaces
+    //-------------------
     //ALU interface
-    input  wire                             alu2dsp_sub_add_b_i,   //1:op1 - op0, 0:op1 + op0
-    input  wire                             alu2dsp_smul_umul_b_i, //1:signed, 0:unsigned
-    input  wire [15:0]                      alu2dsp_add_op0_i,     //first operand for adder/subtractor
-    input  wire [15:0]                      alu2dsp_add_op1_i,     //second operand for adder/subtractor (zero if no operator selected)
-    input  wire [15:0]                      alu2dsp_mul_op0_i,     //first operand for multipliers
-    input  wire [15:0]                      alu2dsp_mul_op1_i,     //second operand dor multipliers (zero if no operator selected)
     output wire [31:0]                      dsp2alu_add_res_o,     //result from adder
     output wire [31:0]                      dsp2alu_mul_res_o,     //result from multiplier
+    input  wire                             alu2dsp_add_sel_i,     //1:op1 - op0, 0:op1 + op0
+    input  wire                             alu2dsp_mul_sel_i,     //1:signed, 0:unsigned
+    input  wire [15:0]                      alu2dsp_add_opd0_i,    //first operand for adder/subtractor
+    input  wire [15:0]                      alu2dsp_add_opd1_i,    //second operand for adder/subtractor (zero if no operator selected)
+    input  wire [15:0]                      alu2dsp_mul_opd0_i,    //first operand for multipliers
+    input  wire [15:0]                      alu2dsp_mul_opd1_i,    //second operand dor multipliers (zero if no operator selected)
 
-    //Flow control interface (program counter)
-    input  wire                             fc2dsp_abs_rel_b_i,    //1:absolute COF, 0:relative COF
-    input  wire                             fc2dsp_update_i,       //update PC
-    input  wire [15:0]                      fc2dsp_rel_adr_i,      //relative COF address
-    input  wire [15:0]                      fc2dsp_abs_adr_i,      //absolute COF address
-    output wire [15:0]                      dsp2fc_next_pc_o,      //result
+    //FC interface
+    input  wire                             fc2dsp_pc_hold_i,      //maintain PC
 
-    //Intermediate parameter stack interface (AGU, stack grows towards lower addresses)
-    input  wire                             ips2dsp_psh_i,         //push (decrement address)
-    input  wire                             ips2dsp_pul_i,         //pull (increment address)
-    input  wire                             ips2dsp_rst_i,         //reset AGU
-    output wire [SP_WIDTH-1:0]              dsp2ips_lsp_o,         //lower stack pointer
+    //PAGU interface
+    output wire                             pagu2dsp_adr_sel_i,     //1:absolute COF, 0:relative COF
+    output wire [15:0]                      pagu2dsp_aadr_i,        //absolute COF address
+    output wire [15:0]                      pagu2dsp_radr_i,        //relative COF address
 
-    //Intermediate return stack interface (AGU, stack grows towardshigher addresses)
-    input  wire                             irs2dsp_psh_i,         //push (increment address)
-    input  wire                             irs2dsp_pul_i,         //pull (decrement address)
-    input  wire                             irs2dsp_rst_i,         //reset AGU
-    output wire [SP_WIDTH-1:0]              dsp2irs_lsp_o);        //lower stack pointer
+    //PRS interface
+    output wire [15:0]                      dsp2prs_pc_o,           //program counter
+    output wire [SP_WIDTH-1:0]              dsp2prs_psp_o,          //parameter stack pointer (AGU output)
+    output wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,          //return stack pointer (AGU output)
 
-   //Internal Signals
+    //SAGU interface
+    output wire [SP_WIDTH-1:0]              dsp2sagu_psp_o,         //parameter stack pointer
+    output wire [SP_WIDTH-1:0]              dsp2sagu_rsp_o,         //return stack pointer
+    input  wire                             sagu2dsp_psp_hold_i,    //maintain PSP
+    input  wire                             sagu2dsp_psp_op_sel_i,  //1:set new PSP, 0:add offset to PSP
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_psp_offs_i,    //PSP offset
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_psp_next_i,    //new PSP
+    input  wire                             sagu2dsp_rsp_hold_i,    //maintain RSP
+    input  wire                             sagu2dsp_rsp_op_sel_i,  //1:set new RSP, 0:add offset to RSP
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_offs_i,    //relative address
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_next_i);   //absolute address
+
+   //Internal parameters
+   //-------------------
+   localparam SP_PAD = {16-SP_WIDTH{1'b0}};
+
+   //Internal signals
    //----------------
-   //Stack AGUs
-   wire [31:0]                              sagu_out;              //Stack AGU output
-   //Program AGU
-   wire [31:0]                              pagu_out;              //Program AGU output
    //ALU
    wire                                     alu_add_c;             //ALU adder carry bit
    wire [31:0]                              alu_add_out;           //ALU adder output
    wire [31:0]                              alu_umul_out;          //ALU unsigned multiplier output
    wire [31:0]                              alu_smul_out;          //ALU signed multiplier output
+   //Program AGU
+   reg  [15:0]                              pc_mirror_reg;         //Program AGU output
+   wire [31:0]                              pagu_out;              //Program AGU output
+   //Stack AGUs
+   wire [31:0]                              sagu_out;              //Stack AGU output
 
    //Shared SB_MAC16 cell for the program AGU and the ALU adder
    //----------------------------------------------------------
@@ -111,10 +127,10 @@ module N1_dsp
    SB_MAC16_pagu
      (.CLK                       (clk_i),                          //clock input
       .CE                        (1'b1),                           //clock enable
-      .C                         (alu2dsp_add_op1_i),              //op1
-      .A                         (alu2dsp_add_op0_i),              //op0
-      .B                         (fc2dsp_rel_adr_i),               //relative COF address
-      .D                         (fc2dsp_abs_adr_i),               //absolute COF address
+      .C                         (alu2dsp_add_opd1_i),             //op1
+      .A                         (alu2dsp_add_opd0_i),             //op0
+      .B                         (pagu2dsp_radr_i),                //relative COF address
+      .D                         (pagu2dsp_aadr_i),                //absolute COF address
       .AHOLD                     (1'b1),                           //keep hold register stable
       .BHOLD                     (1'b1),                           //keep hold register stable
       .CHOLD                     (1'b1),                           //keep hold register stable
@@ -124,11 +140,11 @@ module N1_dsp
       .ORSTTOP                   (1'b1),                           //keep hold register in reset
       .ORSTBOT                   (|{async_rst_i,sync_rst_i}),      //use common reset
       .OLOADTOP                  (1'b0),                           //no bypass
-      .OLOADBOT                  (fc2dsp_abs_rel_b_i),             //absolute COF
-      .ADDSUBTOP                 (alu2dsp_sub_add_b_i),            //subtract
+      .OLOADBOT                  (pagu2dsp_adr_sel_i),             //absolute COF
+      .ADDSUBTOP                 (alu2dsp_add_sel_i),              //subtract
       .ADDSUBBOT                 (1'b0),                           //always use adder
       .OHOLDTOP                  (1'b1),                           //keep hold register stable
-      .OHOLDBOT                  (~fc2dsp_update_i),               //update PC
+      .OHOLDBOT                  (fc2dsp_pc_hold_i),                  //update PC
       .CI                        (1'b0),                           //no carry
       .ACCUMCI                   (1'b0),                           //no carry
       .SIGNEXTIN                 (1'b0),                           //no sign extension
@@ -137,9 +153,21 @@ module N1_dsp
       .ACCUMCO                   (alu_add_c),                      //carry bit determines upper word
       .SIGNEXTOUT                ());                              //ignore sign extension output
 
+   //Mirrored PC
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+        if (async_rst_i)                                           //asynchronous reset
+          pc_mirror_reg <= 16'h0000;                               //start address
+        else if (sync_rst_i)                                       //synchronous reset
+          pc_mirror_reg <= 16'h0000;                               //start address
+        else if (~fc2dsp_pc_hold_i)                                //update PC
+          pc_mirror_reg <= pagu_out[15:0];
+     end // always @ (posedge async_rst_i or posedge clk_i)
+
    //Outputs
    assign dsp2alu_add_res_o = {{16{alu_add_c}}, pagu_out[31:16]};
-   assign dsp2fc_next_pc_o  = pagu_out[15:0];
+   assign pbus_adr_o        = pagu_out[15:0];
+   assign dsp2prs_pc_o      = pc_mirror_reg;
 
    //Shared SB_MAC32 cell for both stack AGUs
    //----------------------------------------
@@ -157,11 +185,11 @@ module N1_dsp
        .BOT_8x8_MULT_REG         (1'b1),                           //C5         -> keep unused signals quiet
        .PIPELINE_16x16_MULT_REG1 (1'b1),                           //C6         -> keep unused signals quiet
        .PIPELINE_16x16_MULT_REG2 (1'b1),                           //C7         -> keep unused signals quiet
-       .TOPOUTPUT_SELECT         (2'b01),                          //C8,C9      -> registered output
+       .TOPOUTPUT_SELECT         (2'b00),                          //C8,C9      -> unregistered output
        .TOPADDSUB_LOWERINPUT     (2'b00),                          //C10,C11    -> plain adder
        .TOPADDSUB_UPPERINPUT     (1'b0),                           //C12        -> connect to stack pointer
        .TOPADDSUB_CARRYSELECT    (2'b00),                          //C13,C14    -> no carry
-       .BOTOUTPUT_SELECT         (2'b01),                          //C15,C16    -> registered output
+       .BOTOUTPUT_SELECT         (2'b00),                          //C15,C16    -> unregistered output
        .BOTADDSUB_LOWERINPUT     (2'b00),                          //C17,C18    -> plain adder
        .BOTADDSUB_UPPERINPUT     (1'b1),                           //C19        -> connect to stack pointer
        .BOTADDSUB_CARRYSELECT    (2'b00),                          //C20,C21    -> no carry
@@ -171,10 +199,10 @@ module N1_dsp
    SB_MAC16_sagu
      (.CLK                       (clk_i),                          //clock input
       .CE                        (1'b1),                           //clock enable
-      .C                         (16'h0000),                       //PSP reset value
-      .A                         (16'h0001),                       //parameter stack increment/decrement
-      .B                         (16'h0001),                       //return stack increment/decrement
-      .D                         (16'hFFFF),                       //RSP reset value
+      .C                         ({SP_PAD, sagu2dsp_psp_next_i}),  //PSP set value
+      .A                         ({SP_PAD, sagu2dsp_psp_offs_i}),  //parameter stack increment/decrement
+      .B                         ({SP_PAD, sagu2dsp_rsp_offs_i}),  //return stack increment/decrement
+      .D                         ({SP_PAD, sagu2dsp_rsp_next_i}),  //RSP set value
       .AHOLD                     (1'b1),                           //keep hold register stable
       .BHOLD                     (1'b1),                           //keep hold register stable
       .CHOLD                     (1'b1),                           //keep hold register stable
@@ -183,16 +211,12 @@ module N1_dsp
       .IRSTBOT                   (1'b1),                           //keep hold register in reset
       .ORSTTOP                   (|{async_rst_i,sync_rst_i}),      //use common reset
       .ORSTBOT                   (|{async_rst_i,sync_rst_i}),      //use common reset
-      .OLOADTOP                  (ips2dsp_rst_i),                  //soft reset
-      .OLOADBOT                  (irs2dsp_rst_i),                  //soft reset
-      .ADDSUBTOP                 (ips2dsp_psh_i),                  //push (decrement address)
-      .ADDSUBBOT                 (irs2dsp_pul_i),                  //pull (decrement address)
-      .OHOLDTOP                  (~|{ips2dsp_psh_i,                //update PSP
-                                     ips2dsp_pul_i,                //
-                                     ips2dsp_rst_i}),              //
-      .OHOLDBOT                  (~|{irs2dsp_psh_i,                //update RSP
-                                     ips2dsp_pul_i,                //
-                                     ips2dsp_rst_i}),              //
+      .OLOADTOP                  (sagu2dsp_psp_op_sel_i),          //load PSP
+      .OLOADBOT                  (sagu2dsp_rsp_op_sel_i),          //load RSP
+      .ADDSUBTOP                 (1'b0),                           //always use adder
+      .ADDSUBBOT                 (1'b0),                           //always use adder
+      .OHOLDTOP                  (sagu2dsp_psp_hold_i),            //update PSP
+      .OHOLDBOT                  (sagu2dsp_rsp_hold_i),            //update RSP
       .CI                        (1'b0),                           //no carry
       .ACCUMCI                   (1'b0),                           //no carry
       .SIGNEXTIN                 (1'b0),                           //no sign extension
@@ -201,8 +225,8 @@ module N1_dsp
       .ACCUMCO                   (),                               //ignore carry output
       .SIGNEXTOUT                ());                              //ignore sign extension output
 
-   assign dsp2ips_lsp_o = sagu_out[SP_WIDTH+15:16];
-   assign dsp2irs_lsp_o = sagu_out[SP_WIDTH-1:0];
+   assign dsp2prs_psp_o = sagu_out[SP_WIDTH+15:16];
+   assign dsp2prs_rsp_o = sagu_out[SP_WIDTH-1:0];
 
    //SB_MAC32 cell for unsigned multiplications
    //-------------------------------------------
@@ -233,8 +257,8 @@ module N1_dsp
      (.CLK                       (1'b0),                           //no clock
       .CE                        (1'b0),                           //no clock
       .C                         (16'h0000),                       //not in use
-      .A                         (alu2dsp_mul_op0_i),              //op0
-      .B                         (alu2dsp_mul_op1_i),              //op1
+      .A                         (alu2dsp_mul_opd0_i),             //op0
+      .B                         (alu2dsp_mul_opd1_i),             //op1
       .D                         (16'h0000),                       //not in use
       .AHOLD                     (1'b1),                           //keep hold register stable
       .BHOLD                     (1'b1),                           //keep hold register stable
@@ -287,8 +311,8 @@ module N1_dsp
      (.CLK                       (1'b0),                           //no clock
       .CE                        (1'b0),                           //no clock
       .C                         (16'h0000),                       //not in use
-      .A                         (alu2dsp_mul_op0_i),              //op0
-      .B                         (alu2dsp_mul_op1_i),              //op1
+      .A                         (alu2dsp_mul_opd0_i),             //op0
+      .B                         (alu2dsp_mul_opd1_i),             //op1
       .D                         (16'h0000),                       //not in use
       .AHOLD                     (1'b1),                           //keep hold register stable
       .BHOLD                     (1'b1),                           //keep hold register stable
@@ -313,7 +337,7 @@ module N1_dsp
       .SIGNEXTOUT                ());                              //ignore sign extension output
 
    //Output
-   assign dsp2alu_mul_res_o = {(alu2dsp_smul_umul_b_i ? alu_smul_out[31:16] : alu_umul_out[31:16]),
-                                                                              alu_umul_out[15:0]};
+   assign dsp2alu_mul_res_o = {(alu2dsp_mul_sel_i ? alu_smul_out[31:16] : alu_umul_out[31:16]),
+                                                                          alu_umul_out[15:0]};
 
 endmodule // N1_dsp

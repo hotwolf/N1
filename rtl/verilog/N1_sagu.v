@@ -27,8 +27,8 @@
 //###############################################################################
 `default_nettype none
 
-module N1_prs
-  #(parameter   SP_WIDTH        =      12,                         //width of the stack pointer
+module N1_sagu
+  #(parameter   SP_WIDTH        =      12,                         //width of either stack pointer
     parameter   PS_RS_DIST      =      22)                         //safety sistance between PS and RS
 								   
    (//Clock and reset						   

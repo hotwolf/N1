@@ -63,18 +63,12 @@ VCD2FST      := vcd2fst
 #			N1_us.default \
 #		)
 
-MODCONFS := $(sort	N1_dsp_synth.default \
+MODCONFS := $(sort	N1_alu.default \
+			N1_dsp_synth.default \
 			N1_dsp_iCE40UP5K.default \
-			N1_sarb.default \
-			N1_is.ps_default \
-			N1_is.rs_default \
+			N1_excpt.default \
+			N1_fc.default \
 			N1_ir.default \
-			N1_alu.default \
-			N1.default \
-			SB_MAC16.pagu \
-			SB_MAC16.sagu \
-			SB_MAC16.umul \
-			SB_MAC16.smul \
 		)
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
