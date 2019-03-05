@@ -52,10 +52,12 @@ module N1_excpt
 
     //PRS interface
     output wire [15:0]               excpt2prs_tc_o,         //throw code
+    input  wire                      prs2excpt_psuf_i,       //PS underflow
+    input  wire                      prs2excpt_rsuf_i,       //RS underflow
+
+    //SAGU interface
     input  wire                      sagu2excpt_psof_i,       //PS overflow
-    input  wire                      sagu2excpt_psuf_i,       //PS underflow
     input  wire                      sagu2excpt_rsof_i,       //RS overflow
-    input  wire                      sagu2excpt_rsuf_i,       //RS underflow
 
     //Probe signals
     output wire [2:0]                prb_excpt_o,            //exception tracker
@@ -94,9 +96,9 @@ module N1_excpt
         else if (~|{excpt_reg, ~excpt_en_reg})               //write condition
           excpt_reg <= ir2excpt_excpt_en_i  ? 3'b000       : //clear old exceptions
                        sagu2excpt_psof_i    ? TC_PSOF[2:0] : //PS overflow
-                       sagu2excpt_psuf_i    ? TC_PSUF[2:0] : //PS underflow
+                       prs2excpt_psuf_i     ? TC_PSUF[2:0] : //PS underflow
                        sagu2excpt_rsof_i    ? TC_RSOF[2:0] : //RS overflow
-                       sagu2excpt_rsuf_i    ? TC_RSUF[2:0] : //RS underflow
+                       prs2excpt_rsuf_i     ? TC_RSUF[2:0] : //RS underflow
                        fc2excpt_buserr_i    ? TC_IMEM[2:0] : //pbus error
                                               3'b000;        //no exception
      end // always @ (posedge async_rst_i or posedge clk_i)

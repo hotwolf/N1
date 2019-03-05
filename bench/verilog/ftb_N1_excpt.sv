@@ -63,10 +63,12 @@ module ftb_N1_excpt
 
     //PRS interface
     output wire [15:0]               excpt2prs_tc_o,         //throw code
+    input  wire                      prs2excpt_psuf_i,       //PS underflow
+    input  wire                      prs2excpt_rsuf_i,       //RS underflow
+
+    //SAGU interface
     input  wire                      sagu2excpt_psof_i,      //PS overflow
-    input  wire                      sagu2excpt_psuf_i,      //PS underflow
     input  wire                      sagu2excpt_rsof_i,      //RS overflow
-    input  wire                      sagu2excpt_rsuf_i,      //RS underflow
 
     //Probe signals
     output wire [2:0]                prb_excpt_o,            //exception tracker
@@ -99,12 +101,12 @@ module ftb_N1_excpt
 
     //PRS interface
     .excpt2prs_tc_o                  (excpt2prs_tc_o),       //throw code
+    .prs2excpt_psuf_i                (prs2excpt_psuf_i),     //PS underflow
+    .prs2excpt_rsuf_i                (prs2excpt_rsuf_i),     //RS underflow
 
     //SAGU interface
     .sagu2excpt_psof_i               (sagu2excpt_psof_i),    //PS overflow
-    .sagu2excpt_psuf_i               (sagu2excpt_psuf_i),    //PS underflow
     .sagu2excpt_rsof_i               (sagu2excpt_rsof_i),    //RS overflow
-    .sagu2excpt_rsuf_i               (sagu2excpt_rsuf_i),    //RS underflow
 
     //Probe signals
     .prb_excpt_o                     (prb_excpt_o),          //exception tracker

@@ -27,18 +27,16 @@
 //###############################################################################
 `default_nettype none
 
-//TBD: update implementation
-
 module N1_pagu
-  #(parameter PBUS_AADR_OFFSET = 16'h0000,                       //offset for direct program address
-    parameter PBUS_MADR_OFFSET = 16'h0000)                       //offset for direct data
+  #(parameter PBUS_AADR_OFFSET = 16'h0000,                      //offset for direct program address
+    parameter PBUS_MADR_OFFSET = 16'h0000)                      //offset for direct data
 
    (//Internal interfaces
     //-------------------
     //DSP interface
-    output wire                      pagu2dsp_adr_sel_o,        //1:absolute COF, 0:relative COF
-    output wire [15:0]               pagu2dsp_radr_o,           //relative COF address
-    output wire [15:0]               pagu2dsp_aadr_o,           //absolute COF address
+    output reg                       pagu2dsp_adr_sel_o,        //1:absolute COF, 0:relative COF
+    output reg  [15:0]               pagu2dsp_radr_o,           //relative COF address
+    output reg  [15:0]               pagu2dsp_aadr_o,           //absolute COF address
 
     //IR interface
     input  wire                      ir2pagu_eow_i,             //end of word (EOW bit)
@@ -61,36 +59,42 @@ module N1_pagu
    //-------------------
    localparam RST_ADR = 16'h0000;                               //reset address
 
+   //Internal signalss
+   //-------------------
+   wire [15:0]                       dir_aadr = {PBUS_AADR_OFFSET[15:14], ir2pagu_aadr_i};
+   wire [15:0]                       dir_radr = {{3{ir2pagu_radr_i[12]}}, ir2pagu_radr_i};
+   wire [15:0]                       dir_madr = {PBUS_MADR_OFFSET[15:8],  ir2pagu_madr_i};
+
    //DSP control
    //-----------
    always @*
      begin
         //default
-        pagu2dsp_abs_rel_b_o    =  1'b0;                        //1:absolute COF, 0:relative COF
-        pagu2dsp_rel_adr_o      = 16'h0000;                     //relative COF address
-        pagu2dsp_abs_adr_o      = 16'h0000;                     //absolute COF address
+        pagu2dsp_adr_sel_o    =  1'b0;                          //1:absolute COF, 0:relative COF
+        pagu2dsp_radr_o       = 16'h0000;                       //relative COF address
+        pagu2dsp_aadr_o       = 16'h0000;                       //absolute COF address
 
         //Jump or Call
         if (ir2pagu_jmp_or_cal_i)
           begin
-             pagu2dsp_abs_rel_b_o = 1'b1;                       //drive absolute address
-             pagu2dsp_abs_adr_o   = pagu2dsp_abs_adr_o   |      //make use of onehot encoding
-                                    (ir2pagu_sel_dadr_i ?       //direct or indirect addressing
-                                     ir2pagu_dadr_i     :       //direct address
-                                     prs2pagu_ps0_i);           //indirect address
+             pagu2dsp_adr_sel_o = 1'b1;                         //drive absolute address
+             pagu2dsp_aadr_o    = pagu2dsp_aadr_o     |         //make use of onehot encoding
+                                  (ir2pagu_aadr_sel_i ?         //direct or indirect addressing
+                                   prs2pagu_ps0_i     :         //indirect address
+                                   dir_aadr);                   //direct address
           end // if (ir2pagu_jmp_or_cal_i)
 
         //Conditional branch
         if (ir2pagu_bra_i)
           begin
-             pagu2dsp_abs_rel_b_o = ir2pagu_eow_i &             //EOW bit set
-                                    ~|prs2pagu_ps0_i;           //branch not taken
-             pagu2dsp_abs_adr_o   = pagu2dsp_abs_adr_o |        //make use of onehot encoding
-                                    prs2pagu_rs0_i);            //return address
-             pagu2dsp_rel_adr_o   = pagu2dsp_abs_adr_o |        //make use of onehot encoding
-                                    (|prs2pagu_ps0_i ?          //branch or not
-                                     ir2pagu_dadr_i  :          //branch address
-                                     16'h0001);                 //increment
+             pagu2dsp_adr_sel_o = ir2pagu_eow_i &               //EOW bit set
+                                  ~|prs2pagu_ps0_i;             //branch not taken
+             pagu2dsp_aadr_o    = pagu2dsp_aadr_o    |          //make use of onehot encoding
+                                  prs2pagu_rs0_i;               //return address
+             pagu2dsp_radr_o    = pagu2dsp_aadr_o    |          //make use of onehot encoding
+                                  (|prs2pagu_ps0_i   ?          //branch or not
+                                   dir_radr          :          //branch address
+                                   16'h0001);                   //increment
           end // if (ir2pagu_bra_i)
 
         //Single cycle instruction
@@ -98,22 +102,23 @@ module N1_pagu
           begin
             //Increment PC
              begin
-                pagu2dsp_abs_rel_b_o = ir2pagu_eow_i &          //EOW bit set
-                                       ~ir2pagu_eow_ppstpone_i; //don't postpone EOW
-                pagu2dsp_abs_adr_o   = pagu2dsp_abs_adr_o |     //make use of onehot encoding
-                                       prs2pagu_rs0_i);         //return address
-                pagu2dsp_rel_adr_o   = pagu2dsp_abs_adr_o |     //make use of onehot encoding
-                                       16'h0001);               //increment
+                pagu2dsp_adr_sel_o = ir2pagu_eow_i &            //EOW bit set
+                                     ~ir2pagu_eow_postpone_i;   //don't postpone EOW
+                pagu2dsp_aadr_o    = pagu2dsp_aadr_o |          //make use of onehot encoding
+                                     prs2pagu_rs0_i;            //return address
+                pagu2dsp_radr_o    = pagu2dsp_aadr_o |          //make use of onehot encoding
+                                     16'h0001;                  //increment
              end
           end // if (ir2pagu_scyc_i)
 
         //Memory IO
-        if (ir2fc_mem_i)
+        if (ir2pagu_mem_i)
           begin
-             pagu2dsp_abs_rel_b_o = 1'b1;                       //drive absolute address
-             pagu2dsp_abs_adr_o   = pagu2dsp_abs_adr_o   |      //make use of onehot encoding
-                                    (ir2pagu_sel_iadr_i ?       //immediate or indirect addressing
-                                     prs2pagu_ps0_i);           //indirect address
+             pagu2dsp_adr_sel_o = 1'b1;                         //drive absolute address
+             pagu2dsp_aadr_o    = pagu2dsp_aadr_o     |         //make use of onehot encoding
+                                  (ir2pagu_madr_sel_i ?         //immediate or indirect addressing
+                                  prs2pagu_ps0_i      :         //indirect address
+                                  dir_madr);                    //direct address
           end // if (ir2fc_mem_i)
      end // always @ *
 

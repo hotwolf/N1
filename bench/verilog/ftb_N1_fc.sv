@@ -37,37 +37,37 @@
 //Fall back
 //---------
 
-module ftb_N1_ir
+module ftb_N1_fc
    (//Clock and reset
-    input wire                    clk_i,                           //module clock
-    input wire                    async_rst_i,                     //asynchronous reset
-    input wire                    sync_rst_i,                      //synchronous reset
+    input wire                       clk_i,                        //module clock
+    input wire                       async_rst_i,                  //asynchronous reset
+    input wire                       sync_rst_i,                   //synchronous reset
 
     //Program bus
     output wire                      pbus_cyc_o,                   //bus cycle indicator       +-
-    output reg                       pbus_stb_o,                   //access request            | initiator to target
+    output wire                      pbus_stb_o,                   //access request            | initiator to target
     input  wire                      pbus_ack_i,                   //bus acknowledge           +-
     input  wire                      pbus_err_i,                   //error indicator           | target to initiator
     input  wire                      pbus_stall_i,                 //access delay              +-
 
     //Interrupt interface
-    output reg                       irq_ack_o,                    //interrupt acknowledge
+    output wire                      irq_ack_o,                    //interrupt acknowledge
 
     //Internal interfaces
     //-------------------
     //DSP interface
-    output reg                       fc2dsp_pc_hold_o,             //maintain PC
+    output wire                      fc2dsp_pc_hold_o,             //maintain PC
 
     //IR interface
-    output reg                       fc2ir_capture_o,              //capture current IR
-    output reg                       fc2ir_stash_o,                //capture stashed IR
-    output reg                       fc2ir_expend_o,               //stashed IR -> current IR
-    output reg                       fc2ir_force_eow_o,            //load EOW bit
-    output reg                       fc2ir_force_0call_o,          //load 0 CALL instruction
-    output reg                       fc2ir_force_call_o,           //load CALL instruction
-    output reg                       fc2ir_force_drop_o,           //load DROP instruction
-    output reg                       fc2ir_force_nop_o,            //load NOP instruction
-    output reg                       fc2ir_force_isr_o,            //load ISR instruction
+    output wire                      fc2ir_capture_o,              //capture current IR
+    output wire                      fc2ir_stash_o,                //capture stashed IR
+    output wire                      fc2ir_expend_o,               //stashed IR -> current IR
+    output wire                      fc2ir_force_eow_o,            //load EOW bit
+    output wire                      fc2ir_force_0call_o,          //load 0 CALL instruction
+    output wire                      fc2ir_force_call_o,           //load CALL instruction
+    output wire                      fc2ir_force_drop_o,           //load DROP instruction
+    output wire                      fc2ir_force_nop_o,            //load NOP instruction
+    output wire                      fc2ir_force_isr_o,            //load ISR instruction
     input  wire                      ir2fc_eow_i,                  //end of word (EOW bit set)
     input  wire                      ir2fc_eow_postpone_i,         //EOW conflict detected
     input  wire                      ir2fc_jump_or_call_i,         //either JUMP or CALL
@@ -79,8 +79,8 @@ module ftb_N1_ir
     input  wire                      ir2fc_madr_sel_i,             //direct memory address
 
     //PRS interface
-    output reg                       fc2prs_hold_o,                //hold any state tran
-    output reg                       fc2prs_dat2ps0_o,             //capture read data
+    output wire                      fc2prs_hold_o,                //hold any state tran
+    output wire                      fc2prs_dat2ps0_o,             //capture read data
     input  wire                      prs2fc_hold_i,                //stacks not ready
     input  wire                      prs2fc_ps0_true_i,            //PS0 in non-zero
 
@@ -98,7 +98,7 @@ module ftb_N1_ir
 
    //Instantiation
    //=============
-   N1_ir
+   N1_fc
    DUT
      (//Clock and reset
       .clk_i                      (clk_i),                         //module clock
@@ -171,6 +171,6 @@ module ftb_N1_ir
       .sync_rst_i                 (sync_rst_i),                    //synchronous reset
       .gated_clk_o                ());                             //gated clock
 
-`endif //  `ifdef FORMAL
+`endif // `ifdef FORMAL
 
-endmodule // ftb_N1_ir
+endmodule // ftb_N1_fc

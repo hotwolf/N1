@@ -101,9 +101,9 @@ module N1_fc
     input  wire                      prs2fc_ps0_true_i,                                        //PS0 in non-zero
 
     //EXCPT interface
-    output wire                      fc2excpt_excpt_dis_o,                                     //disable exceptions
-    output wire                      fc2excpt_irq_dis_o,                                       //disable interrupts
-    output wire                      fc2excpt_buserr_o,                                        //invalid pbus access
+    output reg                       fc2excpt_excpt_dis_o,                                     //disable exceptions
+    output reg                       fc2excpt_irq_dis_o,                                       //disable interrupts
+    output reg                       fc2excpt_buserr_o,                                        //invalid pbus access
     input  wire                      excpt2fc_excpt_i,                                         //exception to be handled
     input  wire                      excpt2fc_irq_i,                                           //exception to be handled
 
@@ -139,41 +139,32 @@ module N1_fc
 
    //Finite state machine
    //--------------------
-   localparam STATE_EXEC           = 2'00;
-   localparam STATE_EXEC_STASH     = 2'01;
-   localparam STATE_UNREACH        = 2'10;
-   localparam STATE_EXEC_READ      = 2'11;
+   localparam STATE_EXEC        = 2'b00;
+   localparam STATE_EXEC_STASH  = 2'b01;
+   localparam STATE_UNREACH     = 2'b10;
+   localparam STATE_EXEC_READ   = 2'b11;
 
    always @*
      begin
         //Default outputs
         pbus_stb_o              = 1'b0;                                                        //access request
-
         irq_ack_o               = 1'b0;                                                        //interrupt acknowledge
-
         fc2dsp_pc_hold_o        = 1'b0;                                                        //maintain PC
-
         fc2ir_capture_o         = 1'b0;                                                        //capture current IR
         fc2ir_stash_o           = 1'b0;                                                        //capture stashed IR
         fc2ir_expend_o          = 1'b0;                                                        //stashed IR -> current IR
         fc2ir_force_eow_o       = 1'b0;                                                        //load EOW bit
         fc2ir_force_0call_o     = 1'b0;                                                        //load 0 CALL instruction
         fc2ir_force_call_o      = 1'b0;                                                        //load CALL instruction
-        fc2ir_force_fetch_o     = 1'b0;                                                        //load FETCH instruction
         fc2ir_force_drop_o      = 1'b0;                                                        //load DROP instruction
         fc2ir_force_nop_o       = 1'b0;                                                        //load NOP instruction
-        fc2ir_force_rdpsh_o     = 1'b0;                                                        //load FETCH instruction (push to TOS)
-        fc2ir_force_rdrpl_o     = 1'b0;                                                        //load FETCH instruction (replace TOS)
         fc2ir_force_isr_o       = 1'b0;                                                         //load ISR instruction
-
-        fc2prs_dat2ps0_o        = 1'b0;                                                        //capture read data
         fc2prs_hold_o           = 1'b0;                                                        //hold any state tran
-
+        fc2prs_dat2ps0_o        = 1'b0;                                                        //capture read data
         fc2excpt_excpt_dis_o    = 1'b0;                                                        //disable exceptions
         fc2excpt_irq_dis_o      = 1'b0;                                                        //disable interrupts
         fc2excpt_buserr_o       = 1'b0;                                                        //invalid pbus access
-
-        state_next              = 0;                                                           //remain in current state
+        state_next              = STATE_EXEC;                                                           //remain in current state
 
         //Wait for bus response (stay in sync with memory)
         if (pbus_acc_reg &                                                                     //ongoung bus access
@@ -189,7 +180,10 @@ module N1_fc
         else
           begin
              //Trigger exception
-             fc2excpt_buserr_o = pbus_err_i & ~ir2fc_cof_i;                                    //bus error and no COF
+             fc2excpt_buserr_o = pbus_err_i                                          &         //bus error
+	                         ~ir2fc_jump_or_call_i                               &         //no JUMP or CALL
+				 ~(ir2fc_bra_i & prs2fc_ps0_true_i)                  &         //no taken BRANCH
+				 ~(ir2fc_scyc_i & ir2fc_eow_i & ~ir2fc_eow_postpone_i);        //no EOW
              //Capture read data
              fc2prs_dat2ps0_o  = ~|{state_reg ^ STATE_EXEC_READ} |                             //memory read
                                  ~|{state_reg ^ STATE_UNREACH};                                //unreachable
@@ -199,7 +193,6 @@ module N1_fc
                  prs2fc_hold_i)                                                                //stacks are busy
                begin
                   fc2ir_stash_o    = ~|{state_reg ^ STATE_EXEC};                               //stash next instruction
-                  pbus_cyc_o       = ~|{state_reg ^ STATE_EXEC};                               //delay next access
                   pbus_stb_o       = 1'b0;                                                     //
                   fc2dsp_pc_hold_o = 1'b1;                                                     //don't update PC
                   fc2prs_hold_o    = 1'b1;                                                     //don't update stacks
@@ -224,7 +217,7 @@ module N1_fc
                        if (ir2fc_mem_i)
                          begin
                             fc2dsp_pc_hold_o        = 1'b1;                                    //don't update PC
-                            fc2ir_stash_o           = ~|{state_reg ^ STATE_EXEC);              //stash next instruction
+                            fc2ir_stash_o           = ~|{state_reg ^ STATE_EXEC};              //stash next instruction
                             fc2ir_force_eow_o       = ir2fc_eow_i;                             //postpone EOW
                             //Fetch
                             if (ir2fc_mem_rd_i)
@@ -235,22 +228,22 @@ module N1_fc
                             //Store
                             else
                               begin
-                                 fc2ir_force_drop_o =  ir2fc_sel_madr_i;                       //indirect addressing
-                                 fc2ir_force_nop_o  = ~ir2fc_sel_madr_i;                       //direct addressing
+                                 fc2ir_force_drop_o =  ir2fc_madr_sel_i;                       //indirect addressing
+                                 fc2ir_force_nop_o  = ~ir2fc_madr_sel_i;                       //direct addressing
                                  state_next         = STATE_EXEC_STASH;                        //track stashed opcode
                               end // else: !if(ir2fc_mem_rd_i)
                          end
                        //Change of flow
-                       if ( ir2fc_jump_or_call_i |                                             //call or jump
-			   (ir2fc_bra_i & prs2fc_ps0_true_i) |                                 //taken branch
-			   (ir2fc_scyc & ir2fc_eow_o & ~ir2fc_eow_postpone_o))                 //EOW
+                       if ( ir2fc_jump_or_call_i                              |                //call or jump
+			   (ir2fc_bra_i & prs2fc_ps0_true_i)                  |                //taken branch
+			   (ir2fc_scyc_i & ir2fc_eow_i & ~ir2fc_eow_postpone_i))               //EOW
                          begin
                             //Exception
                             if (excpt2fc_excpt_i)                                              //pending exception
                               begin
                                  fc2ir_force_0call_o  = 1'b1;                                  //force jump to addess zero
                                  fc2ir_force_eow_o    = 1'b1;                                  //(call + EOW)
-                                 fc2excpt_excpt_dis_i = 1'b1;                                  //inhibit further exceptions
+                                 fc2excpt_excpt_dis_o = 1'b1;                                  //inhibit further exceptions
                               end
                             //Interrupt
                             else if (excpt2fc_irq_i)                                           //pending interrupt
@@ -273,7 +266,7 @@ module N1_fc
                               begin
                                  fc2ir_force_0call_o  = 1'b1;                                  //force jump to addess zero
                                  fc2ir_force_eow_o    = 1'b1;                                  //(call + EOW)
-                                 fc2excpt_excpt_dis_i = 1'b1;                                  //inhibit further exceptions
+                                 fc2excpt_excpt_dis_o = 1'b1;                                  //inhibit further exceptions
                               end
                             //Launch ISR
                             else
@@ -289,16 +282,16 @@ module N1_fc
                                                         STATE_EXEC;                            //execute NOP
                          end // if (ir2fc_isr_i)
                        //Linear execution
-                       if ((~ir2fc_eow_o | ir2fc_eow_postpone_o) &                             //no EOW
+                       if ((~ir2fc_eow_i | ir2fc_eow_postpone_i) &                             //no EOW
 			   ((ir2fc_bra_i & ~prs2fc_ps0_true_i) |                               //branch not taken
-			    ir2fc_scyc))                                                       //single cycle instruction
+			    ir2fc_scyc_i))                                                     //single cycle instruction
                          begin
                             //Exception
                             if (excpt2fc_excpt_i) //pending exception
                               begin
                                  fc2ir_force_0call_o  = 1'b1;                                  //force jump to addess zero
                                  fc2ir_force_eow_o    = 1'b1;                                  //(call + EOW)
-                                 fc2excpt_excpt_dis_i = 1'b1;                                  //inhibit further exceptions
+                                 fc2excpt_excpt_dis_o = 1'b1;                                  //inhibit further exceptions
                               end
                             //Interrupt
                             else if (excpt2fc_irq_i)                                           //pending interrupt
@@ -316,9 +309,9 @@ module N1_fc
                             //Continue program flow
                             else
                               begin
-                                 fc2ir_expend_o       = ~|{state_reg ^ STATE_EXEC_STASH) |     //use stashed upcode next
-                                                        ~|{state_reg ^ STATE_EXEC_READ);       //
-                                 fc2ir_capture_o      = ~|{state_reg ^ STATE_EXEC);            //capture opcode
+                                 fc2ir_expend_o       = ~|{state_reg ^ STATE_EXEC_STASH} |     //use stashed upcode next
+                                                        ~|{state_reg ^ STATE_EXEC_READ};       //
+                                 fc2ir_capture_o      = ~|{state_reg ^ STATE_EXEC};            //capture opcode
                               end // else: !if(ir2fc_eow_postpone_i)
                             state_next                = state_next |                           //make use of onehot encoding
                                                         STATE_EXEC;                            //execute next opcode

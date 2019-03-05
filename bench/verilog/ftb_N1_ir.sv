@@ -94,11 +94,12 @@ module ftb_N1_ir
     output wire [7:0]             ir2pagu_madr_o,                  //direct memory address
 
     //PRS interface
-    output wire                   ir2prs_alu2ps0_o,                //ALU output       -> PS0
-    output wire                   ir2prs_alu2ps1_o,                //ALU output       -> PS1
-    output wire                   ir2prs_lit2ps0_o,                //literal          -> PS0
-    output wire                   ir2prs_ivec2ps0_o,               //interrupt vector -> PS0
-    output wire                   ir2prs_pc2rs0_o,                 //PC               -> RS0
+    output wire                   ir2prs_alu2ps0_o,                //ALU output  -> PS0
+    output wire                   ir2prs_alu2ps1_o,                //ALU output  -> PS1
+    output wire                   ir2prs_lit2ps0_o,                //literal     -> PS0
+    output wire                   ir2prs_isr2ps0_o,                //ISR address -> PS0
+    output wire                   ir2prs_tc2ps0_o,                 //throw code  -> PS0
+    output wire                   ir2prs_pc2rs0_o,                 //PC          -> RS0
     output wire                   ir2prs_ps_rst_o,                 //reset parameter stack
     output wire                   ir2prs_rs_rst_o,                 //reset return stack
     output wire                   ir2prs_psp_rd_o,                 //read parameter stack pointer
@@ -172,11 +173,12 @@ module ftb_N1_ir
       .ir2pagu_madr_o             (ir2pagu_madr_o),                //direct memory address
 
       //PRS interface
-      .ir2prs_alu2ps0_o           (ir2prs_alu2ps0_o),              //ALU output       -> PS0
-      .ir2prs_alu2ps1_o           (ir2prs_alu2ps1_o),              //ALU output       -> PS1
-      .ir2prs_lit2ps0_o           (ir2prs_lit2ps0_o),              //literal          -> PS0
-      .ir2prs_ivec2ps0_o          (ir2prs_ivec2ps0_o),             //interrupt vector -> PS0
-      .ir2prs_pc2rs0_o            (ir2prs_pc2rs0_o),               //PC               -> RS0
+      .ir2prs_alu2ps0_o           (ir2prs_alu2ps0_o),              //ALU output  -> PS0
+      .ir2prs_alu2ps1_o           (ir2prs_alu2ps1_o),              //ALU output  -> PS1
+      .ir2prs_lit2ps0_o           (ir2prs_lit2ps0_o),              //literal     -> PS0
+      .ir2prs_isr2ps0_o           (ir2prs_isr2ps0_o),              //ISR address -> PS0
+      .ir2prs_tc2ps0_o            (ir2prs_tc2ps0_o),               //throw code  -> RS0
+      .ir2prs_pc2rs0_o            (ir2prs_pc2rs0_o),               //PC          -> RS0
       .ir2prs_ps_rst_o            (ir2prs_ps_rst_o),               //reset parameter stack
       .ir2prs_rs_rst_o            (ir2prs_rs_rst_o),               //reset return stack
       .ir2prs_psp_rd_o            (ir2prs_psp_rd_o),               //read parameter stack pointer

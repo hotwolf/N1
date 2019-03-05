@@ -56,147 +56,127 @@
 `default_nettype none
 
 module N1_prs
-  #(parameter   SP_WIDTH        =      12,                         //width of the stack pointer
-    parameter   IPS_DEPTH       =       8,                         //depth of the intermediate parameter stack
-    parameter   IPS_DEPTH       =       8)                         //depth of the intermediate return stack
-								   
-   (//Clock and reset						   
-    input wire                               clk_i,                //module clock
-    input wire                               async_rst_i,          //asynchronous reset
-    input wire                               sync_rst_i,           //synchronous reset
-					     			   
-    //Program bus (wishbone)		     			   
-    input  wire [15:0]                       pbus_dat_o,           //write data bus
-    input  wire [15:0]                       pbus_dat_i,           //read data bus
-								   
-    //Stack bus (wishbone)					   
-    output wire                              sbus_cyc_o,           //bus cycle indicator       +-
-    output wire                              sbus_stb_o,           //access request            |
-    output wire                              sbus_we_o,            //write enable              | initiator
-    output wire [SP_WIDTH-1:0]               sbus_adr_o,           //address bus               | to
-    output wire [15:0]                       sbus_dat_o,           //write data bus            | target
-    output wire                              sbus_tga_ps_o,        //parameter stack access    |
-    output wire                              sbus_tga_rs_o,        //return stack access       +-
-    input  wire                              sbus_ack_i,           //bus cycle acknowledge     +-
-    input  wire                              sbus_err_i,           //error indicator           | target
-    input  wire                              sbus_rty_i,           //retry request             | to
-    input  wire                              sbus_stall_i,         //access delay              | initiator
-    input  wire [15:0]                       sbus_dat_i,           //read data bus             +-
-
-    //ALU interface
-    input  wire [15:0]                       alu2prs_ps0_next_i,   //new PS0 (TOS)
-    input  wire [15:0]                       alu2prs_ps1_next_i,   //new PS1 (TOS+1)
-    output wire [15:0]                       prs2alu_ps0_cur_o,    //current PS0 (TOS)
-    output wire [15:0]                       prs2alu_ps1_cur_o,    //current PS1 (TOS+1)
+  #(parameter   SP_WIDTH        =      12,                                         //width of the stack pointer
+    parameter   IPS_DEPTH       =       8,                                         //depth of the intermediate parameter stack
+    parameter   IPS_DEPTH       =       8)                                         //depth of the intermediate return stack
+								                   
+   (//Clock and reset						                   
+    input wire                               clk_i,                                //module clock
+    input wire                               async_rst_i,                          //asynchronous reset
+    input wire                               sync_rst_i,                           //synchronous reset
+					     			                   
+    //Program bus (wishbone)		     			                   
+    input  wire [15:0]                       pbus_dat_o,                           //write data bus
+    input  wire [15:0]                       pbus_dat_i,                           //read data bus
+								                   
+    //Stack bus (wishbone)					                   
+    output wire                              sbus_cyc_o,                           //bus cycle indicator       +-
+    output wire                              sbus_stb_o,                           //access request            |
+    output wire                              sbus_we_o,                            //write enable              | initiator
+    output wire [15:0]                       sbus_dat_o,                           //write data bus            | target
+    input  wire                              sbus_ack_i,                           //bus cycle acknowledge     +-
+    input  wire                              sbus_stall_i,                         //access delay              | initiator
+    input  wire [15:0]                       sbus_dat_i,                           //read data bus             +-
 
     //Probe signals
  
     //Internal signals
     //----------------
+    //ALU interface
+    input  wire [15:0]                       alu2prs_ps0_next_i,                   //new PS0 (TOS)
+    input  wire [15:0]                       alu2prs_ps1_next_i,                   //new PS1 (TOS+1)
+    output wire [15:0]                       prs2alu_ps0_o,                        //current PS0 (TOS)
+    output wire [15:0]                       prs2alu_ps1_o,                        //current PS1 (TOS+1)
 
-    //SAGU interface
-    output wire                              prs2sagu_adr_sel_o,   //0:PS, 1:RS
-    output wire                              prs2sagu_rst_psp_o,   //reset stack pointer
-    output wire                              prs2sagu_inc_psp_o,   //
-    output wire                              prs2sagu_dec_psp_o,   //0:PS, 1:RS
-    output wire                              prs2sagu_set_psp_o,   //0:PS, 1:RS
-    output wire                              prs2sagu_get_psp_o,   //0:PS, 1:RS
-  
+     //DSP interface
+    input  wire [15:0]                       dsp2prs_pc_i,                         //program counter
+    input  wire [SP_WIDTH-1:0]               dsp2prs_psp_i,                        //parameter stack pointer (AGU output)
+    input  wire [SP_WIDTH-1:0]               dsp2prs_rsp_i,                        //return stack pointer (AGU output)
+								                   
+    //EXCPT interface						                   
+    output wire                              prs2excpt_psuf_o,                     //parameter stack underflow
+    output wire                              prs2excpt_rsuf_o,                     //return stack underflow
+    input  wire [15:0]                       excpt2prs_tc;                         //throw code
+								                   
+    //FC interface						                   
+    output wire                              prs2fc_hold_o,                        //stacks not ready
+    output wire                              prs2fc_ps0_true_o,                    //PS0 in non-zero	
+    input  wire                              fc2prs_hold_i,                        //hold any state tran
+    input  wire                              fc2prs_dat2ps0_i,                     //capture read data
+  								                   
+    //IR interface						                   
+    input  wire [15:0]                       ir2prs_lit_val_i,                     //literal value
+    input  wire [7:0]                        ir2prs_ups_tp_i,                      //upper stack transition pattern
+    input  wire [1:0]                        ir2prs_ips_tp_i,                      //intermediate parameter stack transition pattern
+    input  wire [1:0]                        ir2prs_irs_tp_i,                      //intermediate return stack transition pattern
+    input  wire                              ir2prs_alu2ps0_i,                     //ALU output  -> PS0
+    input  wire                              ir2prs_alu2ps1_i,                     //ALU output  -> PS1
+    input  wire                              ir2prs_dat2ps0_i,                     //read data   -> PS0
+    input  wire                              ir2prs_lit2ps0_i,                     //literal     -> PS0
+    input  wire                              ir2prs_isr2ps0_i,                     //ISR address -> PS0
+    input  wire                              ir2prs_tc2ps0_i,                      //throw code  -> PS0
+    input  wire                              ir2prs_pc2rs0_i,                      //PC          -> RS0
+    input  wire                              ir2prs_ps_rst_i,                      //reset parameter stack
+    input  wire                              ir2prs_rs_rst_i,                      //reset return stack
+    input  wire                              ir2prs_psp_rd_i,                      //read parameter stack pointer
+    input  wire                              ir2prs_psp_wr_i,                      //write parameter stack pointer
+    input  wire                              ir2prs_rsp_rd_i,                      //read return stack pointer
+    input  wire                              ir2prs_rsp_wr_i);                     //write return stack pointer
+								                   
+    //SAGU interface						                   
+    output wire                              prs2sagu_hold_o,                      //maintain stack pointers
+    output wire                              prs2sagu_psp_rst_o,                   //reset PSP
+    output wire                              prs2sagu_rsp_rst_o,                   //reset RSP
+    output wire                              prs2sagu_stack_sel_o,                 //1:RS, 0:PS
+    output wire                              prs2sagu_push_o,                      //increment stack pointer
+    output wire                              prs2sagu_pull_o,                      //decrement stack pointer
+    output wire                              prs2sagu_load_o,                      //load stack pointer
+    output wire [SP_WIDTH-1:0]               prs2sagu_psp_next_o,                  //parameter stack load value
+    output wire [SP_WIDTH-1:0]               prs2sagu_rsp_next_o,                  //return stack load value
+    input  wire                              prs2sagu_lps_empty_i,                 //lower parameter stack is empty
+    input  wire                              prs2sagu_lrs_empty_i);                //lower return stack is empty
 
-   output wire                              prs2sagu_ps_pul_o,    //0:PS, 1:RS
-
-
-    input  wire [SP_WIDTH-1:0]               dsp2sagu_psp_next_i,  //PSP SAGU output
-    input  wire [SP_WIDTH-1:0]               dsp2sagu_rsp_next_i,  //RSP SAGU output
-
-
-    //DSP interface
-    output wire [SP_WIDTH-1:0]               prs2dsp_psp_offs_o,   //parameter stack pointer offset
-    output wire                              prs2dsp_psp_add_o,    //add offset to PSP
-    output wire                              prs2dsp_psp_sub_o,    //subtract offset from PSP
-    output wire                              prs2dsp_psp_load_o,   //load offset to PSP
-    output wire                              prs2dsp_psp_update_o, //update PSP
-    output wire [SP_WIDTH-1:0]               prs2dsp_rsp_offs_o,   //return stack pointer offset
-    output wire                              prs2dsp_rsp_add_o,    //add offset to RSP
-    output wire                              prs2dsp_rsp_sub_o,    //subtract offset from RSP
-    output wire                              prs2dsp_rsp_load_o,   //load offset to RSP
-    output wire                              prs2dsp_rsp_update_o, //update RSP
-    input  wire [SP_WIDTH-1:0]               dsp2prs_psp_next_i,   //new lower parameter stack pointer
-    input  wire [SP_WIDTH-1:0]               dsp2prs_rsp_next_i,   //new lower return stack pointer
-
-    //EXCPT interface
-    output wire                              prs2excpt_psof_o,     //parameter stack overflow
-    output wire                              prs2excpt_psuf_o,     //parameter stack underflow
-    output wire                              prs2excpt_rsof_o,     //return stack overflow
-    output wire                              prs2excpt_rsuf_o,     //return stack underflow
-    output wire                              prs2excpt_bus_o,      //bus error
-
-    //FC interface
-    output wire                              prs2fc_hold_o,        //stacks not ready
-    output wire                              prs2fc_ps0_true_o,    //PS0 in non-zero	
-    input  wire                              fc2prs_hold_i,        //hold any state tran
-    input  wire                              fc2prs_dat2ps0_i,     //capture read data
-  
-    //IR interface
-    input  wire [15:0]                       ir2prs_lit_val_i,     //literal value
-    input  wire [7:0]                        ir2prs_ups_tp_i,      //upper stack transition pattern
-    input  wire [1:0]                        ir2prs_ips_tp_i,      //intermediate parameter stack transition pattern
-    input  wire [1:0]                        ir2prs_irs_tp_i,      //intermediate return stack transition pattern
-    input  wire                              ir2prs_alu2ps0_i,     //ALU output       -> PS0
-    input  wire                              ir2prs_alu2ps1_i,     //ALU output       -> PS1
-    input  wire                              ir2prs_dat2ps0_i,     //read data        -> PS0
-    input  wire                              ir2prs_lit2ps0_i,     //literal          -> PS0
-    input  wire                              ir2prs_ivec2ps0_i,    //interrupt vector -> PS0
-    input  wire                              ir2prs_ps_rst_i,      //reset parameter stack
-    input  wire                              ir2prs_rs_rst_i,      //reset return stack
-    input  wire                              ir2prs_psp_rd_i,      //read parameter stack pointer
-    input  wire                              ir2prs_psp_wr_i,      //write parameter stack pointer
-    input  wire                              ir2prs_rsp_rd_i,      //read return stack pointer
-    input  wire                              ir2prs_rsp_wr_i);     //write return stack pointer
-
-							   
-
-    //Internal signals
+   //Internal signals
    //-----------------
 
    //Upper stack
-   reg  [15:0]                               rs0_reg;              //current RS0
-   reg  [15:0]                               ps0_reg;              //current PS0
-   reg  [15:0]                               ps1_reg;              //current PS1
-   reg  [15:0]                               ps2_reg;              //current PS2
-   reg  [15:0]                               ps3_reg;              //current PS3
-   reg  [15:0]                               rs0_next;             //next RS0
-   reg  [15:0]                               ps0_next;             //next PS0
-   reg  [15:0]                               ps1_next;             //next PS1
-   reg  [15:0]                               ps2_next;             //next PS2
-   reg  [15:0]                               ps3_next;             //next PS3
-   reg                                       rs0_tag_reg;          //current RS0 tag
-   reg                                       ps0_tag_reg;          //current PS0 tag
-   reg                                       ps1_tag_reg;          //current PS1 tag
-   reg                                       ps2_tag_reg;          //current PS2 tag
-   reg                                       ps3_tag_reg;          //current PS3 tag
-   reg                                       rs0_tag_next;         //next RS0 tag
-   reg                                       ps0_tag_next;         //next PS0 tag
-   reg                                       ps1_tag_next;         //next PS1 tag
-   reg                                       ps2_tag_next;         //next PS2 tag
-   reg                                       ps3_tag_next;         //next PS3 tag
-   reg                                       rs0_we;               //write enable
-   reg                                       ps0_we;               //write enable
-   reg                                       ps1_we;               //write enable
-   reg                                       ps2_we;               //write enable
-   reg                                       ps3_we;               //write enable
-   //Intermediate parameter stack
-   reg  [(16*IPS_DEPTH)-1:0]                 ips_reg;              //current IPS
-   reg  [(16*IPS_DEPTH)-1:0]                 ips_next;             //next IPS
-   reg  [IPS_DEPTH-1:0]                      ips_tags_reg;         //current IPS
-   reg  [IPS_DEPTH-1:0]                      ips_tags_next;        //next IPS
-   reg                                       ips_we;               //write enable  
-   //Intermediate parameter stack
-   reg  [(16*IRS_DEPTH)-1:0]                 irs_reg;              //current IRS
-   reg  [(16*IRS_DEPTH)-1:0]                 irs_next;             //next IRS
-   reg  [IRS_DEPTH-1:0]                      irs_tags_reg;         //current IRS
-   reg  [IRS_DEPTH-1:0]                      irs_tags_next;        //next IRS
-   reg                                       irs_we;               //write enable
+   reg  [15:0]                               rs0_reg;                              //current RS0
+   reg  [15:0]                               ps0_reg;                              //current PS0
+   reg  [15:0]                               ps1_reg;                              //current PS1
+   reg  [15:0]                               ps2_reg;                              //current PS2
+   reg  [15:0]                               ps3_reg;                              //current PS3
+   reg  [15:0]                               rs0_next;                             //next RS0
+   reg  [15:0]                               ps0_next;                             //next PS0
+   reg  [15:0]                               ps1_next;                             //next PS1
+   reg  [15:0]                               ps2_next;                             //next PS2
+   reg  [15:0]                               ps3_next;                             //next PS3
+   reg                                       rs0_tag_reg;                          //current RS0 tag
+   reg                                       ps0_tag_reg;                          //current PS0 tag
+   reg                                       ps1_tag_reg;                          //current PS1 tag
+   reg                                       ps2_tag_reg;                          //current PS2 tag
+   reg                                       ps3_tag_reg;                          //current PS3 tag
+   reg                                       rs0_tag_next;                         //next RS0 tag
+   reg                                       ps0_tag_next;                         //next PS0 tag
+   reg                                       ps1_tag_next;                         //next PS1 tag
+   reg                                       ps2_tag_next;                         //next PS2 tag
+   reg                                       ps3_tag_next;                         //next PS3 tag
+   reg                                       rs0_we;                               //write enable
+   reg                                       ps0_we;                               //write enable
+   reg                                       ps1_we;                               //write enable
+   reg                                       ps2_we;                               //write enable
+   reg                                       ps3_we;                               //write enable
+   //Intermediate parameter stack				                   
+   reg  [(16*IPS_DEPTH)-1:0]                 ips_reg;                              //current IPS
+   reg  [(16*IPS_DEPTH)-1:0]                 ips_next;                             //next IPS
+   reg  [IPS_DEPTH-1:0]                      ips_tags_reg;                         //current IPS
+   reg  [IPS_DEPTH-1:0]                      ips_tags_next;                        //next IPS
+   reg                                       ips_we;                               //write enable  
+   //Intermediate parameter stack				                   
+   reg  [(16*IRS_DEPTH)-1:0]                 irs_reg;                              //current IRS
+   reg  [(16*IRS_DEPTH)-1:0]                 irs_next;                             //next IRS
+   reg  [IRS_DEPTH-1:0]                      irs_tags_reg;                         //current IRS
+   reg  [IRS_DEPTH-1:0]                      irs_tags_next;                        //next IRS
+   reg                                       irs_we;                               //write enable
    
 
 

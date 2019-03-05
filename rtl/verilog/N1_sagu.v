@@ -30,120 +30,121 @@
 module N1_sagu
   #(parameter   SP_WIDTH        =      12,                         //width of either stack pointer
     parameter   PS_RS_DIST      =      22)                         //safety sistance between PS and RS
-								   
-   (//Clock and reset						   
-    input wire                               clk_i,                //module clock
-    input wire                               async_rst_i,          //asynchronous reset
-    input wire                               sync_rst_i,           //synchronous reset
-								   
-    //Stack bus (wishbone)					   
-    output wire                              sbus_cyc_o,           //bus cycle indicator       +-
-    output wire                              sbus_stb_o,           //access request            |
-    output wire                              sbus_we_o,            //write enable              | initiator
-    output wire [SP_WIDTH-1:0]               sbus_adr_o,           //address bus               | to
-    output wire [15:0]                       sbus_dat_o,           //write data bus            | target
-    output wire                              sbus_tga_ps_o,        //parameter stack access    |
-    output wire                              sbus_tga_rs_o,        //return stack access       +-
-    input  wire                              sbus_ack_i,           //bus cycle acknowledge     +-
-    input  wire                              sbus_stall_i,         //access delay              | initiator
-    input  wire [15:0]                       sbus_dat_i,           //read data bus             +-
 
-    //ALU interface
-    input  wire [15:0]                       alu2prs_ps0_next_i,   //new PS0 (TOS)
-    input  wire [15:0]                       alu2prs_ps1_next_i,   //new PS1 (TOS+1)
-    output wire [15:0]                       prs2alu_ps0_cur_o,    //current PS0 (TOS)
-    output wire [15:0]                       prs2alu_ps1_cur_o,    //current PS1 (TOS+1)
+   (//Stack bus (wishbone)
+    output wire [SP_WIDTH-1:0]              sbus_adr_o,            //address bus
+    output wire                             sbus_tga_ps_o,         //parameter stack access
+    output wire                             sbus_tga_rs_o,         //return stack access
 
-    //Probe signals
- 
     //Internal signals
     //----------------
     //DSP interface
-    output wire                              sagu2dsp_psp_hold_o,  //keep PSP
-    output wire [SP_WIDTH-1:0]               sagu2dsp_ps_aadr_o,   //PS absolute address
-    output wire [SP_WIDTH-1:0]               sagu2dsp_ps_radr_o,   //PS relative address
-    output wire                              sagu2dsp_ps_set_o,     //PS relative address
-    output wire                              sagu2dsp_ps_add_o,     //PS relative address
-    output wire                              sagu2dsp_ps_sub_o,     //PS relative address
+    output wire                             sagu2dsp_psp_hold_o,   //maintain PSP
+    output wire                             sagu2dsp_psp_op_sel_o, //1:set new PSP, 0:add offset to PSP
+    output wire [SP_WIDTH-1:0]              sagu2dsp_psp_offs_o,   //PSP offset
+    output wire [SP_WIDTH-1:0]              sagu2dsp_psp_next_o,   //new PSP
+    output wire                             sagu2dsp_rsp_hold_o,   //maintain RSP
+    output wire                             sagu2dsp_rsp_op_sel_o, //1:set new RSP, 0:add offset to RSP
+    output wire [SP_WIDTH-1:0]              sagu2dsp_rsp_offs_o,   //relative address
+    output wire [SP_WIDTH-1:0]              sagu2dsp_rsp_next_o,   //absolute address
+    input  wire [SP_WIDTH-1:0]              dsp2sagu_psp_i,        //parameter stack pointer
+    input  wire [SP_WIDTH-1:0]              dsp2sagu_rsp_i,        //return stack pointer
+
+    //EXCPT  interface
+    output wire                             sagu2excpt_psof_o,     //PS overflow
+    output wire                             sagu2excpt_rsof_o,     //RS overflow
+
+    //PRS interface
+    output wire                             prs2sagu_lps_empty_o,  //lower parameter stack is empty
+    output wire                             prs2sagu_lrs_empty_o,  //lower return stack is empty
+    input  wire                             prs2sagu_hold_i,       //maintain stack pointers
+    input  wire                             prs2sagu_psp_rst_i,    //reset PSP
+    input  wire                             prs2sagu_rsp_rst_i,    //reset RSP
+    input  wire                             prs2sagu_stack_sel_i,  //1:RS, 0:PS
+    input  wire                             prs2sagu_push_i,       //increment stack pointer
+    input  wire                             prs2sagu_pull_i,       //decrement stack pointer
+    input  wire                             prs2sagu_load_i,       //load stack pointer
+    input  wire [SP_WIDTH-1:0]              prs2sagu_psp_next_i,   //parameter stack load value
+    input  wire [SP_WIDTH-1:0]              prs2sagu_rsp_next_i);  //return stack load value
+
+   //Stack bus
+   //---------
+   assign sbus_adr_o    = prs2sagu_stack_sel_i ? dsp2sagu_rsp_i :  //return stack access
+                                                ~dsp2sagu_psp_i;   //parameter stack access
+   assign sbus_tga_ps_o = ~prs2sagu_stack_sel_i;                   //parameter stack access
+   assign sbus_tga_rs_o =  prs2sagu_stack_sel_i;                   //return stack access
+
+   //DSP interface
+   //-------------
+   //PS
+   assign sagu2dsp_psp_hold_o   = prs2sagu_hold_i    |             //all stack pointers held
+                                  prs2sagu_stack_sel_i;            //RSP operation
+   assign sagu2dsp_psp_op_sel_o = prs2sagu_psp_rst_i |             //PSP reset
+                                  prs2sagu_load_i;                 //load operation
+   assign sagu2dsp_psp_offs_o   = (prs2sagu_push_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    PS_RS_DIST[SP_WIDTH-1:0]    :  //safety distance
+                                    {{SP_WIDTH-1{1'b0}}, 1'b1}) :  //incremebnt
+                                   {SP_WIDTH{1'b0}})            |  //show PSP
+
+                                  (prs2sagu_pull_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    {SP_WIDTH{1'b0}}            :  //show PSP
+                                    {SP_WIDTH{1'b1}})           :  //decrement PSP
+                                   {SP_WIDTH{1'b0}})            |  //show PSP
+
+                                  (prs2sagu_load_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    {SP_WIDTH{1'b0}}            :  //show PSP
+                                    prs2sagu_psp_next_i)        :  //load PSP
+                                   {SP_WIDTH{1'b0}});              //show PSP
+
+   assign sagu2dsp_psp_next_o   =  prs2sagu_load_i     ?           //load operation
+                                   prs2sagu_psp_next_i :           //PSP load value
+                                   {SP_WIDTH{1'b0}};               //reset PSP
+
+   //RS
+   assign sagu2dsp_rsp_hold_o   = prs2sagu_hold_i    |             //all stack pointers held
+                                  ~prs2sagu_stack_sel_i;           //PSP operation
+   assign sagu2dsp_rsp_op_sel_o = prs2sagu_rsp_rst_i |             //RSP reset
+                                  prs2sagu_load_i;                 //load operation
 
 
+   assign sagu2dsp_rsp_offs_o   = (prs2sagu_push_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    {{SP_WIDTH-1{1'b0}}, 1'b1}  :  //incremebnt
+                                    PS_RS_DIST[SP_WIDTH-1:0])   :  //safety distance
+                                   {SP_WIDTH{1'b0}})            |  //show RSP
 
-    output wire                              sagu2dsp_psp_add_o,    //add offset to PSP
-    output wire                              sagu2dsp_psp_sub_o,    //subtract offset from PSP
-    output wire                              sagu2dsp_psp_load_o,   //load offset to PSP
-    output wire                              sagu2dsp_psp_update_o, //update PSP
-    output wire [SP_WIDTH-1:0]               sagu2dsp_rsp_offs_o,   //return stack pointer offset
-    output wire                              sagu2dsp_rsp_add_o,    //add offset to RSP
-    output wire                              sagu2dsp_rsp_sub_o,    //subtract offset from RSP
-    output wire                              sagu2dsp_rsp_load_o,   //load offset to RSP
-    output wire                              sagu2dsp_rsp_update_o, //update RSP
-    input  wire [SP_WIDTH-1:0]               dsp2prs_psp_next_i,   //new lower parameter stack pointer
-    input  wire [SP_WIDTH-1:0]               dsp2prs_rsp_next_i,   //new lower return stack pointer
+                                  (prs2sagu_pull_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    {SP_WIDTH{1'b1}}            :  //decrement RSP
+                                    {SP_WIDTH{1'b0}})           :  //show RSP
+                                   {SP_WIDTH{1'b0}})            |  //show RSP
 
-    //EXCPT interface
-    output wire                              prs2excpt_psof_o,     //parameter stack overflow
-    output wire                              prs2excpt_rsof_o,     //return stack overflow
+                                  (prs2sagu_load_i              ?  //push operation
+                                   (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
+                                    prs2sagu_rsp_next_i         :  //load RSP
+                                    {SP_WIDTH{1'b0}})           :  //show RSP
+                                  {SP_WIDTH{1'b0}});              //show RSP
 
-    //FC interface
-    output wire                              prs2fc_hold_o,        //stacks not ready
-    output wire                              prs2fc_ps0_true_o,    //PS0 in non-zero	
-    input  wire                              fc2prs_hold_i,        //hold any state tran
-    input  wire                              fc2prs_dat2ps0_i,     //capture read data
-  
-    //IR interface
-    input  wire [15:0]                       ir2prs_lit_val_i,     //literal value
-    input  wire [7:0]                        ir2prs_ups_tp_i,      //upper stack transition pattern
-    input  wire [1:0]                        ir2prs_ips_tp_i,      //intermediate parameter stack transition pattern
-    input  wire [1:0]                        ir2prs_irs_tp_i,      //intermediate return stack transition pattern
-    input  wire                              ir2prs_alu2ps0_i,     //ALU output       -> PS0
-    input  wire                              ir2prs_alu2ps1_i,     //ALU output       -> PS1
-    input  wire                              ir2prs_dat2ps0_i,     //read data        -> PS0
-    input  wire                              ir2prs_lit2ps0_i,     //literal          -> PS0
-    input  wire                              ir2prs_ivec2ps0_i,    //interrupt vector -> PS0
-    input  wire                              ir2prs_ps_rst_i,      //reset parameter stack
-    input  wire                              ir2prs_rs_rst_i,      //reset return stack
-    input  wire                              ir2prs_psp_rd_i,      //read parameter stack pointer
-    input  wire                              ir2prs_psp_wr_i,      //write parameter stack pointer
-    input  wire                              ir2prs_rsp_rd_i,      //read return stack pointer
-    input  wire                              ir2prs_rsp_wr_i,      //write return stack pointer
-
-							   
+   assign sagu2dsp_rsp_next_o   =  prs2sagu_load_i     ?           //load operation
+                                   prs2sagu_rsp_next_i :           //RSP load value
+                                   {SP_WIDTH{1'b0}};               //reset RSP
 
 
+   //EXCPT interface
+   //---------------
+   assign sagu2excpt_psof_o = &{(dsp2sagu_psp_i ^ dsp2sagu_rsp_i), //stack pointer collision
+                                prs2sagu_push_i,                   //push operation
+                               ~prs2sagu_stack_sel_i};             //parameter stack operation
+   assign sagu2excpt_rsof_o = &{(dsp2sagu_psp_i ^ dsp2sagu_rsp_i), //stack pointer collision
+                                prs2sagu_push_i,                   //push operation
+                               ~prs2sagu_stack_sel_i};             //return stack operation
 
-
-   //Internal signals
-   //----------------
-   //Upper and intermediate stacks
-   reg  [(16*(IPS_DEPTH+IRS_DEPTH+5))-1:0]           ps_cells_reg;      //cell content
-   wire [(16*(IPS_DEPTH+4))-1:0]           ps_cells_next;     //cell input
-   reg  [IPS_DEPTH+3:0]                    ps_tags_reg;       //tag content
-   wire [IPS_DEPTH+3:0]                    ps_tags_next;      //tag input
-   wire [IPS_DEPTH+3:0]                    ps_we;             //write enable
-
-   //Return stack
-   reg  [(16*(IRS_DEPTH+1))-1:0]           rs_cells_reg;      //cell content
-   wire [(16*(IRS_DEPTH+1))-1:0]           rs_cells_next;     //cell input
-   reg  [IRS_DEPTH:0]                      rs_tags_reg;       //tag content
-   wire [IRS_DEPTH:0]                      rs_tags_next;      //tag input
-   wire [IRS_DEPTH:0]                      rs_we;             //write enable
-
-   //Stack transition  
-
-   //Stack underflow conditions
-   wire 				   psuf_alu;           
-   wire 				   psuf_shop;
-   wire 				   rsuf_shop;
-   wire 				   rsuf_eow;
-   
-
-
-
-   wire                                    fsm_update;        //perform IR operation
-   wire                                    fsm_load;          //load cell from lower stack
-   wire                                    fsm_unload;        //unload cell into lower stack
-   wire                                    fsm_pack;          //move all cells into lower stack
-   wire                                    fsm_unpack;        //retrive cells from lower stack 
-      
+   //PRS interface
+   //-------------
+   assign prs2sagu_lps_empty_o = ~|dsp2sagu_psp_i;                 //lower parameter stack is empty
+   assign prs2sagu_lrs_empty_o = ~|dsp2sagu_rsp_i;                 //lower return stack is empty
 
 endmodule // N1_sagu
