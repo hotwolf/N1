@@ -45,14 +45,14 @@ module ftb_N1_excpt
     input  wire                      sync_rst_i,             //synchronous reset
 
     //Interrupt interface
-    input  wire [15:0]               irq_req_adr_i,          //requested ISR
+    input  wire [15:0]               irq_req_i,              //requested ISR
 
     //Internal interfaces
     //-------------------
     //FC interface
     output wire                      excpt2fc_excpt_o,       //exception to be handled
     output wire                      excpt2fc_irq_o,         //exception to be handled
-    input  wire                      fc2excpt_excpt_dis_i,   //disable exceptions
+    input  wire                      fc2excpt_excpt_clr_i,   //clear and disable exceptions
     input  wire                      fc2excpt_irq_dis_i,     //disable interrupts
     input  wire                      fc2excpt_buserr_i,      //pbus error
 
@@ -85,12 +85,12 @@ module ftb_N1_excpt
     .sync_rst_i                      (sync_rst_i),           //synchronous reset
 
     //Interrupt interface
-    .irq_req_adr_i                   (irq_req_adr_i),        //requested ISR
+    .irq_req_i                       (irq_req_i),            //requested ISR
 
     //FC interface
     .excpt2fc_excpt_o                (excpt2fc_excpt_o),     //exception to be handled
     .excpt2fc_irq_o                  (excpt2fc_irq_o),       //exception to be handled
-    .fc2excpt_excpt_dis_i            (fc2excpt_excpt_dis_i), //disable exceptions
+    .fc2excpt_excpt_clr_i            (fc2excpt_excpt_clr_i), //clear and disable exceptions
     .fc2excpt_irq_dis_i              (fc2excpt_irq_dis_i),   //disable interrupts
     .fc2excpt_buserr_i               (fc2excpt_buserr_i),    //pbus error
 

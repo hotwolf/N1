@@ -52,26 +52,26 @@ GTKWAVE      := gtkwave
 VCD2FST      := vcd2fst
 
 #List of modules and their supported configurations <module>.<configuration>
-#MODCONFS := $(sort	N1.default \
+#MODCONFS := 	$(sort	N1.default \
+#			N1.iCE40UP5K \
 #			N1_alu.default \
+#			N1_dsp_synth.default \
+#			N1_dsp_iCE40UP5K.default \
+#			N1_excpt.default \
 #			N1_fc.default \
-#			N1_hm_synth.default \
-#			N1_hm_iCE40UP5K.default \
 #			N1_ir.default \
-#			N1_is.default \
-#			N1_sarb.default \
-#			N1_us.default \
-#		)
-
-MODCONFS := $(sort	N1_alu.default \
+#			N1_pagu.default \
+#			N1_prs.default \
+#			N1_sagu.default \
+#		 )
+MODCONFS := 	$(sort	N1_alu.default \
 			N1_dsp_synth.default \
 			N1_dsp_iCE40UP5K.default \
 			N1_excpt.default \
-			N1_fc.default \
 			N1_ir.default \
 			N1_pagu.default \
 			N1_sagu.default \
-		)
+		 )
 
 MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
 CONFS := $(sort $(foreach mod,$(MODCONFS),$(lastword  $(subst ., ,$(mod)))))
@@ -137,18 +137,18 @@ LINT_MODCONFS := $(MODCONFS:%=lint.%)
 LINT_MODS     := $(MODS:%=lint.%)
 LINT_CONFS    := $(CONFS:%=lint.%)
 
-${RTL_DIR}/N1_dsp.v: ${RTL_DIR}/N1_dsp_synth.v 
-	ln -s N1_dsp_synth.v ${RTL_DIR}/N1_dsp.v
-
-$(LINT_MODCONFS): ${RTL_DIR}/N1_dsp.v
-	$(eval mod     := $(word 2,$(subst ., ,$@)))
-	$(eval commod  := $(patsubst N1_dsp_%,N1_dsp,${mod}))
-	$(eval conf    := $(lastword $(subst ., ,$@)))
-	$(eval confdef := CONF_$(shell echo $(conf) | tr '[:lower:]' '[:upper:]'))
+$(LINT_MODCONFS): 
+	$(eval mod      := $(word 2,$(subst ., ,$@)))
+	$(eval commod   := $(patsubst N1_dsp_%,N1_dsp,${mod}))
+	$(eval conf     := $(lastword $(subst ., ,$@)))
+	$(eval confdef  := CONF_$(shell echo $(conf) | tr '[:lower:]' '[:upper:]'))
+	$(eval srcfiles := $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v)
+	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.default" ];   then echo $(RTL_DIR)/N1_dsp_synth.v;     fi;))  	
+	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.iCE40UP5K" ]; then echo $(RTL_DIR)/N1_dsp_iCE40UP5K.v; fi;))  	
 	$(info ...Linting $(mod) in $(conf) configuration)
-	@$(VERILATOR) -D$(confdef) --top-module ftb_$(commod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v 
-	@$(IVERILOG) -D$(confdef) -s ftb_$(commod) -y $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v  
-	@$(YOSYS) -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v"
+	@$(VERILATOR) -D$(confdef) --top-module ftb_$(commod) -y $(RTL_DIR) $(srcfiles) 
+	@$(IVERILOG) -D$(confdef) -s ftb_$(commod) -y $(RTL_DIR) $(srcfiles)  
+	@$(YOSYS) -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(srcfiles)"
 
 $(LINT_MODS): $$(filter $$@.%,$(LINT_MODCONFS))
 

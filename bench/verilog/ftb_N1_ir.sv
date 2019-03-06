@@ -64,7 +64,6 @@ module ftb_N1_ir
     output wire                   ir2fc_eow_postpone_o,            //EOW conflict detected
     output wire                   ir2fc_jump_or_call_o,            //either JUMP or CALL
     output wire                   ir2fc_bra_o,                     //conditonal BRANCG instruction
-    output wire                   ir2fc_isr_o,                     //ISR launcher
     output wire                   ir2fc_scyc_o,                    //linear flow
     output wire                   ir2fc_mem_o,                     //memory I/O
     output wire                   ir2fc_mem_rd_o,                  //memory read
@@ -76,8 +75,8 @@ module ftb_N1_ir
     input  wire                   fc2ir_force_0call_i,             //load 0 CALL instruction
     input  wire                   fc2ir_force_call_i,              //load CALL instruction
     input  wire                   fc2ir_force_drop_i,              //load DROP instruction
+    input  wire                   fc2ir_force_0lit_i,              //load 0 LIT instruction
     input  wire                   fc2ir_force_nop_i,               //load NOP instruction
-    input  wire                   fc2ir_force_isr_i,               //load ISR instruction
 
     //PAGU interface
     output wire                   ir2pagu_eow_o,                   //end of word (EOW bit)
@@ -97,8 +96,6 @@ module ftb_N1_ir
     output wire                   ir2prs_alu2ps0_o,                //ALU output  -> PS0
     output wire                   ir2prs_alu2ps1_o,                //ALU output  -> PS1
     output wire                   ir2prs_lit2ps0_o,                //literal     -> PS0
-    output wire                   ir2prs_isr2ps0_o,                //ISR address -> PS0
-    output wire                   ir2prs_tc2ps0_o,                 //throw code  -> PS0
     output wire                   ir2prs_pc2rs0_o,                 //PC          -> RS0
     output wire                   ir2prs_ps_rst_o,                 //reset parameter stack
     output wire                   ir2prs_rs_rst_o,                 //reset return stack
@@ -143,7 +140,6 @@ module ftb_N1_ir
       .ir2fc_eow_postpone_o       (ir2fc_eow_postpone_o),          //EOW conflict detected
       .ir2fc_jump_or_call_o       (ir2fc_jump_or_call_o),          //either JUMP or CALL
       .ir2fc_bra_o                (ir2fc_bra_o),                   //conditonal BRANCG instruction
-      .ir2fc_isr_o                (ir2fc_isr_o),                   //ISR launcher
       .ir2fc_scyc_o               (ir2fc_scyc_o),                  //linear flow
       .ir2fc_mem_o                (ir2fc_mem_o),                   //memory I/O
       .ir2fc_mem_rd_o             (ir2fc_mem_rd_o),                //memory read
@@ -155,8 +151,8 @@ module ftb_N1_ir
       .fc2ir_force_0call_i        (fc2ir_force_0call_i),           //load 0 CALL instruction
       .fc2ir_force_call_i         (fc2ir_force_call_i),            //load CALL instruction
       .fc2ir_force_drop_i         (fc2ir_force_drop_i),            //load DROP instruction
+      .fc2ir_force_0lit_i         (fc2ir_force_0lit_i),            //load 0 LIT instruction
       .fc2ir_force_nop_i          (fc2ir_force_nop_i),             //load NOP instruction
-      .fc2ir_force_isr_i          (fc2ir_force_isr_i),             //load ISR instruction
 
       //PAGU interface
       .ir2pagu_eow_o              (ir2pagu_eow_o),                 //end of word (EOW bit)
@@ -176,8 +172,6 @@ module ftb_N1_ir
       .ir2prs_alu2ps0_o           (ir2prs_alu2ps0_o),              //ALU output  -> PS0
       .ir2prs_alu2ps1_o           (ir2prs_alu2ps1_o),              //ALU output  -> PS1
       .ir2prs_lit2ps0_o           (ir2prs_lit2ps0_o),              //literal     -> PS0
-      .ir2prs_isr2ps0_o           (ir2prs_isr2ps0_o),              //ISR address -> PS0
-      .ir2prs_tc2ps0_o            (ir2prs_tc2ps0_o),               //throw code  -> RS0
       .ir2prs_pc2rs0_o            (ir2prs_pc2rs0_o),               //PC          -> RS0
       .ir2prs_ps_rst_o            (ir2prs_ps_rst_o),               //reset parameter stack
       .ir2prs_rs_rst_o            (ir2prs_rs_rst_o),               //reset return stack

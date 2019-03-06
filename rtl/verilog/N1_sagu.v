@@ -55,8 +55,8 @@ module N1_sagu
     output wire                             sagu2excpt_rsof_o,     //RS overflow
 
     //PRS interface
-    output wire                             prs2sagu_lps_empty_o,  //lower parameter stack is empty
-    output wire                             prs2sagu_lrs_empty_o,  //lower return stack is empty
+    output wire                             sagu2prs_lps_empty_o,  //lower parameter stack is empty
+    output wire                             sagu2prs_lrs_empty_o,  //lower return stack is empty
     input  wire                             prs2sagu_hold_i,       //maintain stack pointers
     input  wire                             prs2sagu_psp_rst_i,    //reset PSP
     input  wire                             prs2sagu_rsp_rst_i,    //reset RSP
@@ -144,7 +144,7 @@ module N1_sagu
 
    //PRS interface
    //-------------
-   assign prs2sagu_lps_empty_o = ~|dsp2sagu_psp_i;                 //lower parameter stack is empty
-   assign prs2sagu_lrs_empty_o = ~|dsp2sagu_rsp_i;                 //lower return stack is empty
+   assign sagu2prs_lps_empty_o = ~|dsp2sagu_psp_i;                 //lower parameter stack is empty
+   assign sagu2prs_lrs_empty_o = ~|dsp2sagu_rsp_i;                 //lower return stack is empty
 
 endmodule // N1_sagu

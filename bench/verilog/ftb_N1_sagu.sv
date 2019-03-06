@@ -69,8 +69,8 @@ module ftb_N1_sagu
     output wire                             sagu2excpt_rsof_o,     //RS overflow
 
     //PRS interface
-    output wire                             prs2sagu_lps_empty_o,  //lower parameter stack is empty
-    output wire                             prs2sagu_lrs_empty_o,  //lower return stack is empty
+    output wire                             sagu2prs_lps_empty_o,  //lower parameter stack is empty
+    output wire                             sagu2prs_lrs_empty_o,  //lower return stack is empty
     input  wire                             prs2sagu_hold_i,       //maintain stack pointers
     input  wire                             prs2sagu_psp_rst_i,    //reset PSP
     input  wire                             prs2sagu_rsp_rst_i,    //reset RSP
@@ -109,8 +109,8 @@ module ftb_N1_sagu
       .sagu2excpt_rsof_o	(sagu2excpt_rsof_o),               //RS overflow
 						                 
       //PRS interface				                 
-      .prs2sagu_lps_empty_o	(prs2sagu_lps_empty_o),            //lower parameter stack is empty
-      .prs2sagu_lrs_empty_o	(prs2sagu_lrs_empty_o),            //lower return stack is empty
+      .sagu2prs_lps_empty_o	(sagu2prs_lps_empty_o),            //lower parameter stack is empty
+      .sagu2prs_lrs_empty_o	(sagu2prs_lrs_empty_o),            //lower return stack is empty
       .prs2sagu_hold_i		(prs2sagu_hold_i),                 //maintain stack pointers
       .prs2sagu_psp_rst_i	(prs2sagu_psp_rst_i),              //reset PSP
       .prs2sagu_rsp_rst_i	(prs2sagu_rsp_rst_i),              //reset RSP

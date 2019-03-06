@@ -66,13 +66,12 @@ module ftb_N1_fc
     output wire                      fc2ir_force_0call_o,          //load 0 CALL instruction
     output wire                      fc2ir_force_call_o,           //load CALL instruction
     output wire                      fc2ir_force_drop_o,           //load DROP instruction
+    output wire                      fc2ir_force_0lit_o,           //load 0 LIT instruction
     output wire                      fc2ir_force_nop_o,            //load NOP instruction
-    output wire                      fc2ir_force_isr_o,            //load ISR instruction
     input  wire                      ir2fc_eow_i,                  //end of word (EOW bit set)
     input  wire                      ir2fc_eow_postpone_i,         //EOW conflict detected
     input  wire                      ir2fc_jump_or_call_i,         //either JUMP or CALL
     input  wire                      ir2fc_bra_i,                  //conditonal BRANCG instruction
-    input  wire                      ir2fc_isr_i,                  //ISR launcher
     input  wire                      ir2fc_scyc_i,                 //linear flow
     input  wire                      ir2fc_mem_i,                  //memory I/O
     input  wire                      ir2fc_mem_rd_i,               //memory read
@@ -81,6 +80,8 @@ module ftb_N1_fc
     //PRS interface
     output wire                      fc2prs_hold_o,                //hold any state tran
     output wire                      fc2prs_dat2ps0_o,             //capture read data
+    output reg                       fc2prs_tc2ps0_o,              //capture throw code
+    output reg                       fc2prs_isr2ps0_o,             //capture ISR
     input  wire                      prs2fc_hold_i,                //stacks not ready
     input  wire                      prs2fc_ps0_true_i,            //PS0 in non-zero
 
@@ -126,13 +127,12 @@ module ftb_N1_fc
       .fc2ir_force_0call_o        (fc2ir_force_0call_o),           //load 0 CALL instruction
       .fc2ir_force_call_o         (fc2ir_force_call_o),            //load CALL instruction
       .fc2ir_force_drop_o         (fc2ir_force_drop_o),            //load DROP instruction
+      .fc2ir_force_0lit           (fc2ir_force_0lit_o),            //load 0 LIT instruction
       .fc2ir_force_nop_o          (fc2ir_force_nop_o),             //load NOP instruction
-      .fc2ir_force_isr_o          (fc2ir_force_isr_o),             //load ISR instruction
       .ir2fc_eow_i                (ir2fc_eow_i),                   //end of word (EOW bit set)
       .ir2fc_eow_postpone_i       (ir2fc_eow_postpone_i),          //EOW conflict detected
       .ir2fc_jump_or_call_i       (ir2fc_jump_or_call_i),          //either JUMP or CALL
       .ir2fc_bra_i                (ir2fc_bra_i),                   //conditonal BRANCG instruction
-      .ir2fc_isr_i                (ir2fc_isr_i),                   //ISR launcher
       .ir2fc_scyc_i               (ir2fc_scyc_i),                  //linear flow
       .ir2fc_mem_i                (ir2fc_mem_i),                   //memory I/O
       .ir2fc_mem_rd_i             (ir2fc_mem_rd_i),                //memory read
@@ -141,6 +141,8 @@ module ftb_N1_fc
       //PRS interface		  
       .fc2prs_hold_o              (fc2prs_hold_o),                 //hold any state tran
       .fc2prs_dat2ps0_o           (fc2prs_dat2ps0_o),              //capture read data
+      .fc2prs_tc2ps0_o            (fc2prs_tc2ps0_o),               //capture throw code
+      .fc2prs_isr2ps0_o           (fc2prs_isr2ps0_o),              //capture ISR
       .prs2fc_hold_i              (prs2fc_hold_i),                 //stacks not ready
       .prs2fc_ps0_true_i          (prs2fc_ps0_true_i),             //PS0 in non-zero
 				  

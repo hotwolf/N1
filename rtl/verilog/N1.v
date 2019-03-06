@@ -144,7 +144,7 @@ module N1
 
     //Interrupt interface
     output wire                              irq_ack_o,              //interrupt acknowledge
-    input  wire [15:0]                       irq_vec_i,              //requested interrupt vector
+    input  wire [15:0]                       irq_req_i,              //requested interrupt vector
 
     //Probe signals
     //EXCPT - Exception aggregator
@@ -196,6 +196,10 @@ module N1
    //FC - Flow control
    //FC -> DSP
    wire                                     fc2dsp_pc_hold,          //maintain PC
+   //FC -> EXCPT
+   wire                                     fc2excpt_excpt_clr,      //clear and disable exceptions
+   wire                                     fc2excpt_irq_dis,        //disable interrupts
+   wire                                     fc2excpt_buserr,         //invalid pbus access
    //FC -> IR
    wire                                     fc2ir_capture;           //capture current IR
    wire                                     fc2ir_stash;             //capture stashed IR
@@ -204,11 +208,13 @@ module N1
    wire                                     fc2ir_force_0call;       //load 0 CALL instruction
    wire                                     fc2ir_force_call;        //load CALL instruction
    wire                                     fc2ir_force_drop;        //load DROP instruction
+   wire                                     fc2ir_force_0lit;        //load 0 LIT instruction
    wire                                     fc2ir_force_nop;         //load NOP instruction
-   wire                                     fc2ir_force_isr;         //load ISR instruction
    //FC -> PRS
    wire                                     fc2prs_hold;             //hold any state tran
    wire                                     fc2prs_dat2ps0;          //capture read data
+   wire                                     fc2prs_tc2ps0;           //capture throw code
+   wire                                     fc2prs_isr2ps0;          //capture ISR
 
    //IR - Instruction Register and Decoder
    //IR -> ALU
@@ -220,7 +226,6 @@ module N1
    wire                                     ir2fc_eow_postpone;      //EOW conflict detected
    wire                                     ir2fc_jump_or_call;      //either JUMP or CALL
    wire                                     ir2fc_bra;               //conditonal BRANCG instruction
-   wire                                     ir2fc_isr;               //ISR launcher
    wire                                     ir2fc_scyc;              //linear flow
    wire                                     ir2fc_mem;               //memory I/O
    wire                                     ir2fc_mem_rd;            //memory read
@@ -246,8 +251,6 @@ module N1
    wire                                     ir2prs_alu2ps0;          //ALU output  -> PS0
    wire                                     ir2prs_alu2ps1;          //ALU output  -> PS1
    wire                                     ir2prs_lit2ps0;          //literal     -> PS0
-   wire                                     ir2prs_isr2ps0;          //ISR address -> PS0
-   wire                                     ir2prs_tc2ps0;           //throw code  -> PS0
    wire                                     ir2prs_pc2rs0;           //PC          -> RS0
    wire                                     ir2prs_ps_rst;           //reset parameter stack
    wire                                     ir2prs_rs_rst;           //reset return stack
@@ -302,7 +305,10 @@ module N1
    //SAGU -> EXCPT
    wire                                     sagu2excpt_psof;         //PS overflow
    wire                                     sagu2excpt_rsof;         //RS overflow
-
+   //SAGU -> PRS
+   wire                                     sagu2prs_lps_empty_i;    //lower parameter stack is empty
+   wire                                     sagu2prs_lrs_empty_i;    //lower return stack is empty
+   
    //ALU - Arithmetic logic unit
    //---------------------------
    N1_alu
@@ -386,12 +392,12 @@ module N1
     .sync_rst_i                 (sync_rst_i),                        //synchronous reset
 
     //Interrupt interface
-    irq_req_adr_i               (irq_req_adr_i),                     //requested ISR
+    irq_req_i                   (irq_req_i),                         //requested ISR
 
     //FC interface
     .excpt2fc_excpt_o           (excpt2fc_excpt),                    //exception to be handled
     .excpt2fc_irq_o             (excpt2fc_irq),                      //exception to be handled
-    .fc2excpt_excpt_dis_i       (fc2excpt_excpt_dis),                //disable exceptions
+    .fc2excpt_excpt_clr_i       (fc2excpt_excpt_clr),                //clear and disable exceptions
     .fc2excpt_irq_dis_i         (fc2excpt_irq_dis),                  //disable interrupts
     .fc2excpt_buserr_i          (fc2excpt_buserr),                   //pbus error
 
@@ -444,13 +450,12 @@ module N1
       .fc2ir_force_0call_o      (fc2ir_force_0call),                 //load 0 CALL instruction
       .fc2ir_force_call_o       (fc2ir_force_call),                  //load CALL instruction
       .fc2ir_force_drop_o       (fc2ir_force_drop),                  //load DROP instruction
+      .fc2ir_force_0lit         (fc2ir_force_0lit),                  //load 0 LIT instruction
       .fc2ir_force_nop_o        (fc2ir_force_nop),                   //load NOP instruction
-      .fc2ir_force_isr_o        (fc2ir_force_isr),                   //load ISR instruction
       .ir2fc_eow_i              (ir2fc_eow),                         //end of word (EOW bit set)
       .ir2fc_eow_postpone_i     (ir2fc_eow_postpone),                //EOW conflict detected
       .ir2fc_jump_or_call_i     (ir2fc_jump_or_call),                //either JUMP or CALL
-      .ir2fc_bra_i              (ir2fc_bra),                         //conditonal BRANCG instruction
-      .ir2fc_isr_i              (ir2fc_isr),                         //ISR launcher
+      .ir2fc_bra_i              (ir2fc_bra),                         //conditonal BRANCH instruction
       .ir2fc_scyc_i             (ir2fc_scyc),                        //linear flow
       .ir2fc_mem_i              (ir2fc_mem),                         //memory I/O
       .ir2fc_mem_rd_i           (ir2fc_mem_rd),                      //memory read
@@ -459,11 +464,13 @@ module N1
       //PRS interface
       .fc2prs_hold_o            (fc2prs_hold),                       //hold any state tran
       .fc2prs_dat2ps0_o         (fc2prs_dat2ps0),                    //capture read data
+      .fc2prs_tc2ps0_o          (fc2prs_tc2ps0),                     //capture throw code
+      .fc2prs_isr2ps0_o         (fc2prs_isr2ps0),                    //capture ISR
       .prs2fc_hold_i            (prs2fc_hold),                       //stacks not ready
       .prs2fc_ps0_true_i        (prs2fc_ps0_true),                   //PS0 in non-zero
 
       //EXCPT interface
-      .fc2excpt_excpt_dis_o     (fc2excpt_excpt_dis),                //disable exceptions
+      .fc2excpt_excpt_clr_o     (fc2excpt_excpt_clr),                //clear and disable exceptions
       .fc2excpt_irq_dis_o       (fc2excpt_irq_dis),                  //disable interrupts
       .fc2excpt_buserr_o        (fc2excpt_buserr),                   //invalid pbus access
       .excpt2fc_excpt_i         (excpt2fc_excpt),                    //exception to be handled
@@ -513,8 +520,8 @@ module N1
       .fc2ir_force_0call_i      (fc2ir_force_0call),                 //load 0 CALL instruction
       .fc2ir_force_call_i       (fc2ir_force_call),                  //load CALL instruction
       .fc2ir_force_drop_i       (fc2ir_force_drop),                  //load DROP instruction
+      .fc2ir_force_0lit_i       (fc2ir_force_0lit),                  //load 0 LIT instruction
       .fc2ir_force_nop_i        (fc2ir_force_nop),                   //load NOP instruction
-      .fc2ir_force_isr_i        (fc2ir_force_isr),                   //load ISR instruction
 
       //PAGU interface
       .ir2pagu_eow_o            (ir2pagu_eow),                       //end of word (EOW bit)
@@ -534,8 +541,6 @@ module N1
       .ir2prs_alu2ps0_o         (ir2prs_alu2ps0),                    //ALU output  -> PS0
       .ir2prs_alu2ps1_o         (ir2prs_alu2ps1),                    //ALU output  -> PS1
       .ir2prs_lit2ps0_o         (ir2prs_lit2ps0),                    //literal     -> PS0
-      .ir2prs_isr2ps0_o         (ir2prs_isr2ps0),                    //ISR address -> PS0
-      .ir2prs_tc2ps0_o          (ir2prs_tc2ps0),                     //throw code  -> PS0
       .ir2prs_pc2rs0_o          (ir2prs_pc2rs0),                     //PC          -> RS0
       .ir2prs_ps_rst_o          (ir2prs_ps_rst),                     //reset parameter stack
       .ir2prs_rs_rst_o          (ir2prs_rs_rst),                     //reset return stack
@@ -590,6 +595,10 @@ module N1
       .async_rst_i              (async_rst_i),                       //asynchronous reset
       .sync_rst_i               (sync_rst_i),                        //synchronous reset
 
+      //Program bus (wishbone)		     			                   
+      .pbus_dat_o               (pbus_dat_o),                        //write data bus
+      .pbus_dat_i               (pbus_dat_i),                        //read data bus
+								                   
       //Stack bus (wishbone)
       .sbus_cyc_o               (sbus_cyc_o),                        //bus cycle indicator       +-
       .sbus_stb_o               (sbus_stb_o),                        //access request            | initiator
@@ -611,12 +620,34 @@ module N1
       .dsp2prs_rsp_i            (dsp2prs_rsp_i),                     //return stack pointer (AGU output)
 
       //EXCPT interface
+      .prs2excpt_psuf_o         (prs2excpt_psuf),                    //parameter stack underflow
+      .prs2excpt_rsuf_o         (prs2excpt_rsuf),                    //return stack underflow
       .excpt2prs_tc_i           (excpt2prs_tc),                      //throw code
 
       //FC interface
       .prs2fc_hold_o            (prs2fc_hold),                       //stacks not ready
       .prs2fc_ps0_true_o        (prs2fc_ps0_true),                   //PS0 in non-zero
+      .fc2prs_hold_i            (fc2prs_hold),                       //hold any state tran
+      .fc2prs_dat2ps0_i         (fc2prs_dat2ps0),                    //capture read data
+      .fc2prs_tc2ps0_i          (fc2prs_tc2ps0),                     //capture throw code
+      .fc2prs_isr2ps0_i         (fc2prs_isr2ps0),                    //capture ISR
 
+      //IR interface
+      .ir2prs_alu2ps0_i		(ir2prs_alu2ps0),                    //ALU output  -> PS0
+      .ir2prs_alu2ps1_i		(ir2prs_alu2ps1),                    //ALU output  -> PS1
+      .ir2prs_lit2ps0_i		(ir2prs_lit2ps0),                    //literal     -> PS0
+      .ir2prs_pc2rs0_i		(ir2prs_pc2rs0),                     //PC          -> RS0
+      .ir2prs_ps_rst_i		(ir2prs_ps_rst),                     //reset parameter stack
+      .ir2prs_rs_rst_i		(ir2prs_rs_rst),                     //reset return stack
+      .ir2prs_psp_rd_i		(ir2prs_psp_rd),                     //read parameter stack pointer
+      .ir2prs_psp_wr_i		(ir2prs_psp_wr),                     //write parameter stack pointer
+      .ir2prs_rsp_rd_i		(ir2prs_rsp_rd),                     //read return stack pointer
+      .ir2prs_rsp_wr_i		(ir2prs_rsp_wr),                     //write return stack pointer
+      .ir2prs_lit_val_i		(ir2prs_lit_val),                    //literal value
+      .ir2prs_ups_tp_i		(ir2prs_ups_tp),                     //upper stack transition pattern
+      .ir2prs_ips_tp_i		(ir2prs_ips_tp),                     //10:push, 01:pull
+      .ir2prs_irs_tp_i		(ir2prs_irs_tp),                     //10:push, 01:pull
+     
       //SAGU interface
       .prs2sagu_hold_o          (prs2sagu_hold),                     //maintain stack pointer
       .prs2sagu_ps_rst_o        (prs2sagu_ps_rst),                   //reset parameter stack
@@ -626,8 +657,6 @@ module N1
       .prs2sagu_pul_o           (prs2sagu_pul),                      //reset return stack
       .prs2sagu_set_o           (prs2sagu_set),                      //reset return stack
       .prs2sagu_sp_next_o       (prs2sagu_sp_next),                  //relative address
-
-
 
       //Probe signals
 
@@ -662,8 +691,8 @@ module N1
       .sagu2excpt_rsof_o        (sagu2excpt_rsof),                   //RS overflow
 
       //PRS interface
-      .prs2sagu_lps_empty_o     (prs2sagu_lps_empty),                //lower parameter stack is empty
-      .prs2sagu_lrs_empty_o     (prs2sagu_lrs_empty),                //lower return stack is empty
+      .sagu2prs_lps_empty_o     (sagu2prs_lps_empty),                //lower parameter stack is empty
+      .sagu2prs_lrs_empty_o     (sagu2prs_lrs_empty),                //lower return stack is empty
       .prs2sagu_hold_i          (prs2sagu_hold),                     //maintain stack pointers
       .prs2sagu_psp_rst_i       (prs2sagu_psp_rst),                  //reset PSP
       .prs2sagu_rsp_rst_i       (prs2sagu_rsp_rst),                  //reset RSP

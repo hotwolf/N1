@@ -82,13 +82,12 @@ module N1_fc
     output reg                       fc2ir_force_0call_o,                                      //load 0 CALL instruction
     output reg                       fc2ir_force_call_o,                                       //load CALL instruction
     output reg                       fc2ir_force_drop_o,                                       //load DROP instruction
+    output reg                       fc2ir_force_0lit_o,                                       //load 0 LIT instruction
     output reg                       fc2ir_force_nop_o,                                        //load NOP instruction
-    output reg                       fc2ir_force_isr_o,                                        //load ISR instruction
     input  wire                      ir2fc_eow_i,                                              //end of word (EOW bit set)
     input  wire                      ir2fc_eow_postpone_i,                                     //EOW conflict detected
     input  wire                      ir2fc_jump_or_call_i,                                     //either JUMP or CALL
     input  wire                      ir2fc_bra_i,                                              //conditonal BRANCG instruction
-    input  wire                      ir2fc_isr_i,                                              //ISR launcher
     input  wire                      ir2fc_scyc_i,                                             //linear flow
     input  wire                      ir2fc_mem_i,                                              //memory I/O
     input  wire                      ir2fc_mem_rd_i,                                           //memory read
@@ -97,11 +96,13 @@ module N1_fc
     //PRS interface
     output reg                       fc2prs_hold_o,                                            //hold any state tran
     output reg                       fc2prs_dat2ps0_o,                                         //capture read data
+    output reg                       fc2prs_tc2ps0_o,                                          //capture throw code
+    output reg                       fc2prs_isr2ps0_o,                                         //capture ISR
     input  wire                      prs2fc_hold_i,                                            //stacks not ready
     input  wire                      prs2fc_ps0_true_i,                                        //PS0 in non-zero
 
     //EXCPT interface
-    output reg                       fc2excpt_excpt_dis_o,                                     //disable exceptions
+    output reg                       fc2excpt_excpt_clr_o,                                     //clear and disable exceptions
     output reg                       fc2excpt_irq_dis_o,                                       //disable interrupts
     output reg                       fc2excpt_buserr_o,                                        //invalid pbus access
     input  wire                      excpt2fc_excpt_i,                                         //exception to be handled

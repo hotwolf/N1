@@ -34,14 +34,14 @@ module N1_excpt
     input wire                       sync_rst_i,             //synchronous reset
 
     //Interrupt interface
-    input  wire [15:0]               irq_req_adr_i,          //requested ISR
+    input  wire [15:0]               irq_req_i,              //requested ISR
 
     //Internal interfaces
     //-------------------
     //FC interface
     output wire                      excpt2fc_excpt_o,       //exception to be handled
     output wire                      excpt2fc_irq_o,         //exception to be handled
-    input  wire                      fc2excpt_excpt_dis_i,   //disable exceptions
+    input  wire                      fc2excpt_excpt_clr_i,   //clear and disable exceptions
     input  wire                      fc2excpt_irq_dis_i,     //disable interrupts
     input  wire                      fc2excpt_buserr_i,      //pbus error
 
@@ -93,8 +93,9 @@ module N1_excpt
           excpt_reg <= 3'b000;
         else if (sync_rst_i)                                 //synchronous reset
           excpt_reg <= 3'b000;
-        else if (~|{excpt_reg, ~excpt_en_reg})               //write condition
-          excpt_reg <= ir2excpt_excpt_en_i  ? 3'b000       : //clear old exceptions
+        else if (fc2excpt_excpt_clr_i |                      //clear from FC                       
+		 ~|{excpt_reg, ~excpt_en_reg})               //capture new exception
+          excpt_reg <= fc2excpt_excpt_clr_i ? 3'b000       : //clear old exceptions
                        sagu2excpt_psof_i    ? TC_PSOF[2:0] : //PS overflow
                        prs2excpt_psuf_i     ? TC_PSUF[2:0] : //PS underflow
                        sagu2excpt_rsof_i    ? TC_RSOF[2:0] : //RS overflow
@@ -111,7 +112,8 @@ module N1_excpt
           excpt_en_reg <= 1'b0;
         else if (sync_rst_i)                                 //synchronous reset
           excpt_en_reg <= 1'b0;
-        else if (ir2excpt_excpt_en_i | fc2excpt_excpt_dis_i) //write condition
+        else if (ir2excpt_excpt_en_i |                       //enable fron IR
+		 fc2excpt_excpt_clr_i)                       //disable from FC
           excpt_en_reg <= ir2excpt_excpt_en_i;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
@@ -129,8 +131,8 @@ module N1_excpt
 
    //Outputs
    //-------
-   assign excpt2fc_excpt_o = |excpt_reg     & excpt_en_reg;  //exception indicator
-   assign excpt2fc_irq_o   = |irq_req_adr_i & irq_en_reg;    //interrupt indicator
+   assign excpt2fc_excpt_o = |excpt_reg & excpt_en_reg;      //exception indicator
+   assign excpt2fc_irq_o   = |irq_req_i & irq_en_reg;        //interrupt indicator
    assign excpt2prs_tc_o   = {{12{|excpt_reg}},              //throw code
                               ^excpt_reg[2:1],
                                excpt_reg};
