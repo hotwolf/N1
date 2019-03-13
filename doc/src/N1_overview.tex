@@ -25,16 +25,50 @@
 \section{Overview}
 \label{overview}
 
-The N1 is a snall stack machine, inspired by the J1 Forth CPU\cite{j1}. 
-Just like its paragon, the N1 is a 16-bit processor wich implements basic \Gls{forth} \glspl{word} directly
-in hardware. However the N1 parts from the J1's simplistic design approach in in two ways:
+The N1 is a 16-bit stack machine, targeted for low-end FPGA applications.
+It's instruction set and architecture is designed for efficient execution
+of \Gls{forth} code. 
+
+\noindent
+Here is a summary of the N1's characteristics:
 
 \begin{itemize}
-  \item The N1 support a larger code space of up to 32KB. Therefore it has its own instruction set
-        (see \secref{opcodes}.
-  \item The N1 implements its parameter and return stacks as shallow register stacks, which overflow
-        into RAM. The overall depth of each stack is determined by the available RAM. 
-        (see \secref{stacks}.
-\end{itemize}
 
+
+
+
+
+
+  
+%Stacks  
+\item Hardware support for parameter and return stack 
+  \begin{itemize}
+  \item Cells are 16 bit wide
+  \item Over and underflows monitored in hardware
+  \item Upper cells of both stacks stored in registers
+    \begin{itemize}
+    \item Number of register based cells configurable via integration parameters
+    \item Shift direction of topmost cells individually controllable, supporting
+      common stack operations without additional data paths in hardware
+    \item Data movement to and from RAM with hysteresis behavior to reduce bus accesses
+    \end{itemize}
+  \item Lower cells stored in RAM
+    \begin{itemize}
+    \item Dedicated address space for stacks, up to 128KB in size
+    \item RAM space for stacks configurable via integration parameter
+    \item Stacks allocated to grow towards eachother
+    \item Dedicated whshbone interface for stack accesses
+    \end{itemize}
+  \end{itemize}
+  
+ %COF     
+
+
+
+
+
+
+  
+  
+\end{itemize}
 

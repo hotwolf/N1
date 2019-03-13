@@ -25,5 +25,158 @@
 \section{Integration Guide}
 \label{integration}
 
-TBD
+This section explains the interfaces and configurations of the N1 processor
+for system integration.
+
+\subsection{Integratation Parameters}
+\label{integration:params}
+
+The N1 processor supports six integration parameters to configure the design for
+application specific needs:
+
+\begin{description}[style=nextline]
+
+\item[\texttt{SP\_WIDTH}] Stack pointer width. \\
+
+\item[\texttt{IPS\_DEPTH}] Depth of the intermediate parameter stack. \\
+
+\item[\texttt{IRS\_DEPTH}] Depth of the intermediate return stack. \\
+
+\item[\texttt{PBUS\_AADR\_OFFSET}] Offset for direct \gls{jump} or \gls{call} addressing. \\
+
+\item[\texttt{PBUS\_MADR\_OFFSET}] Offset for direct data accesses. \\
+
+\item[\texttt{PS\_RS\_DIST}] Safety distance between the \gls{ps} and the \gls{rs}. \\
+
+
+
+  
+\end{description}
+
+
+\subsection{Interfaces}
+\label{integration:if}
+
+\subsubsection{Clock and Resets}
+\label{integration:if:clk}
+
+\begin{description}[style=nextline]
+
+\item[\texttt{clk\_i}] Common clock input for all Wishbone interfaces.\\  
+  This clock input  corresponds to signal \texttt{CLK\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{async\_rst\_i}] Optional asynchronous reset input for all sequential logic. \\
+  This reset signal may assert asynchronously, but must deassert synchronously. If no
+  asynchrounous reset is implemented, this input must be tied to zero.
+
+\item[\texttt{sync\_rst\_i}] Synchronous reset input. \\
+  For WbXBC components, this synchronous reset is not required, if an asynchronous reset is provided.
+  If no synchrounous reset is implemented, this input must be tied to zero.
+  This reset input corresponds to signal \texttt{RST\_I} of the Wishbone specification~\cite{wishbone}.
+ 
+\end{description}
+
+
+\subsubsection{Program Bus}
+\label{integration:if:pbus}
+
+\begin{description}[style=nextline]
+  
+\item[\texttt{pbus\_cyc\_o}] Cycle indicator output. \\
+  This output signal corresponds to signal \texttt{CYC\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_stb\_o}] Strobe output. \\   
+  This output signal corresponds to signal \texttt{STB\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_we\_o}]  Write enable output. \\
+  This output signal corresponds to signal \texttt{WE\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_adr\_o}] Address bus. \\   
+  These output signals correspond to bus \texttt{ADR\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_dat\_o}] Write data bus. \\    
+  These output signals correspond to bus \texttt{DAT\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_tga\_o}] Address bus tags. \\   
+  These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_ack\_i}] Acknowlede input. \\   
+  This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_err\_i}] Error indicator input. \\  
+  This input signal corresponds to signal \texttt{ERR\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_stall\_i}] Pipeline stall input. \\
+  This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{pbus\_dat\_i}] Read data bus. \\ 
+  These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
+
+\end{description}
+
+
+
+
+\subsubsection{Stack Bus}
+\label{integration:if:sbus}
+
+\begin{description}[style=nextline]
+
+\item[\texttt{sbus\_cyc\_o}] Cycle indicator output. \\
+  This output signal corresponds to signal \texttt{CYC\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_stb\_o}] Strobe output. \\   
+  This output signal corresponds to signal \texttt{STB\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_we\_o}]  Write enable output. \\
+  This output signal corresponds to signal \texttt{WE\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_adr\_o}] Address bus. \\   
+  These output signals correspond to bus \texttt{ADR\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_dat\_o}] Write data bus. \\    
+  These output signals correspond to bus \texttt{DAT\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_tga\_o}] Address bus tags. \\   
+  These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_ack\_i}] Acknowlede input. \\   
+  This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_stall\_i}] Pipeline stall input. \\
+  This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
+
+\item[\texttt{sbus\_dat\_i}] Read data bus. \\ 
+  These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
+
+\end{description}
+
+\subsubsection{Interrupt Interface}
+\label{integration:if:irq}
+
+\begin{description}[style=nextline]
+
+\item[\texttt{irq\_ack\_o}] Interrupt acknowledge. \\
+  TBD
+
+\item[\texttt{irq\_req\_i}] Interrupt request. \\
+  TBD
+
+\end{description}
+
+\subsubsection{Probe Signals}
+\label{integration:if:prb}
+
+
+
+
+
+
+
+
+\subsection{Target Specific Design Files}
+\label{integration:ifs}
+
+
+
 

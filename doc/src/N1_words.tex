@@ -468,7 +468,17 @@ which can be easily mapped to N1 instructions.
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0750}}}                                       \\ \hline
-                                              
+
+    %EXECUTE                                        
+      \texttt{FALSE}                                              &
+      ( $i*$x xt -- $j*$x )                                       &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Execute xt}}                                            &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x7FFF}}}                                       \\ \hline
+      
     %FALSE                                        
       \texttt{FALSE}                                              &
       ( -- false )                                                &
@@ -478,6 +488,17 @@ which can be easily mapped to N1 instructions.
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x1000}}}                                       \\ \hline
+                              
+    %I                                        
+      \texttt{I}                                                  &
+      ( -- n$\mid$u ) ( R: n$\mid$u -- n$\mid$u )                 &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy the innermost loop index (n$\mid$u) onto the       \\
+          \gls{ps}}}                                              &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0754}}}                                       \\ \hline
                               
     %INVERT                                        
       \texttt{INVERT}                                             &
@@ -489,6 +510,18 @@ which can be easily mapped to N1 instructions.
         \makecell[c]{                   
           \texttt{0x0EBF}}}                                       \\ \hline
 
+    %J                                        
+      \texttt{J}                                                  &
+      ( -- n$\mid$u ) ( R: x n$\mid$u -- x n$\mid$u )             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy the next-outer loop index (n$\mid$u) onto the      \\
+          \gls{ps}}}                                              &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0755}                                         \\
+          \texttt{0x0407}}}                                       \\ \hline
+                              
     %LSHIFT                                        
       \texttt{LSHIFT}                                             &
       ( x1 u -- x2 )                                              &
