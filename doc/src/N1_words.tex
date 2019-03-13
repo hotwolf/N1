@@ -25,8 +25,9 @@
 \section{ANS Forth Words}
 \label{N1_words}
 
-\tabref{words:list} provides a list of standard ANS Forth words (see \cite{dpans94})
-which map to hardware instructions of the N1 processor. 
+The N1 processor aims at executing Forth code in an efficient way.
+\tabref{words:list} provides a list of standard ANS Forth\cite{dpans94} words 
+which can be easily mapped to N1 instructions. 
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -42,7 +43,7 @@ which map to hardware instructions of the N1 processor.
     \rowcolor{gray!25}
     \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Word}}          &  
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Stack}}          &
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}}  &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}}    &
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Opcode}} \\
     \hline
     \endhead                               
@@ -55,381 +56,650 @@ which map to hardware instructions of the N1 processor.
     \endlastfoot
     
     %!
-      \texttt{!}                              &
-      ( x a-addr -- )                         &
-      Store a cell                            &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{!}                                                  &
+      ( x addr -- )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Store x at addr}}                                       &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x02FF}}}                                       \\ \hline
                                               
     %*                                        
-      \texttt{*}                              &
-      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 ) &
-      Multiply two cells                      &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                              
+      \texttt{*}                                                  &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Multiply n1$\mid$u1 by n2$\mid$u2}}                     &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0E00}}}                                       \\ \hline
+
     %+                                        
-      \texttt{+}                              &
-      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 ) &
-      Add two cells                           &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{+}                                                  &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Add n1$\mid$u1 to n2$\mid$u2}}                          &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C00}}}                                       \\ \hline
                                               
     %+!                                        
-      \texttt{+!}                             &
-      ( n1$\mid$u1 a-adr -- )                 &
-      Add number to memory location           &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{+!}                                                 &
+      ( n1$\mid$u1 a-adr -- )                                     &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Add n1$\mid$u1 to the cell at addr}}                    &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0403}                                         \\        %copy addr to RS0 
+          \texttt{0x03FF}                                         \\        %@
+          \texttt{0x0C00}                                         \\        %+
+          \texttt{0x0755}                                         \\        %R>
+          \texttt{0x02FF}}}                                       \\ \hline %!
                                               
     %-                                        
-      \texttt{-}                              &
-      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 ) &
-      Subtract a cell from another            &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{-}                                                  &
+      ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Subtract n2$\mid$u2 from n1$\mid$u1}}                   &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C40}}}                                       \\ \hline
                               
     %0<                                        
-      \texttt{0<}                             &
-      ( n -- flag )                           &
-      Check if cell is negative               &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{0<}                                                 &
+      ( n -- flag )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Test if n is negative}}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0CF0}}}                                       \\ \hline
                               
     %0<>                                        
-      \texttt{0<>}                            &
-      ( x -- flag )                           &
-      Check if cell is not zero               &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{0<>}                                                &
+      ( x -- flag )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Test if x is not zero}}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0D70}}}                                       \\ \hline
                               
     %0>                                        
-      \texttt{0>}                             &
-      ( n -- flag )                           &
-      Check if cell is greater than zero      &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                              
+      \texttt{0>}                                                 &
+      ( n -- flag )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Test if n is greater than zero}}                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0CA0}}}                                       \\ \hline
+                             
      %0=                                        
-      \texttt{0=}                             &
-      ( x -- flag )                           &
-      Check if cell is zero                   &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{0=}                                                 &
+      ( x -- flag )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Test if x is not zero}}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0D70}}}                                       \\ \hline
                               
      %1+                                        
-      \texttt{1+}                             &
-      ( n1$\mid$u1 -- n2$\mid$u2 )            &
-      Increment cell                          &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{1+}                                                 &
+      ( n1$\mid$u1 -- n2$\mid$u2 )                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Increment n1$\mid$u1}}                                  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C01}}}                                       \\ \hline
 
      %1-                                        
-      \texttt{1-}                             &
-      ( n1$\mid$u1 -- n2$\mid$u2 )            &
-      Decrement cell                          &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{1-}                                                 &
+      ( n1$\mid$u1 -- n2$\mid$u2 )                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Decrement n1$\mid$u1}}                                  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C1F}}}                                       \\ \hline
+
+      %2!                                        
+      \texttt{2!}                                                 &
+      ( x1 x2 addr --  )                                          &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Store x2 at addr and x1 at addr+1}}                     &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}                                         \\        %TUCK 
+          \texttt{0x0460}                                         \\        % 
+          \texttt{0x02FF}                                         \\        %!
+          \texttt{0x0C01}                                         \\        %1+
+          \texttt{0x02FF}}}                                       \\ \hline %!
 
      %2*                                        
-      \texttt{2*}                              &
-      ( x1 -- x2 )                             &
-      Shift cell one bit towards the \gls{msb} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2*}                                                 &
+      ( x1 -- x2 )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x1 one bit towards the \gls{msb}}}                &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0F41}}}                                       \\ \hline
 
      %2/                                        
-      \texttt{2/}                              &
-      ( x1 -- x2 )                             &
-      Shift cell one bit towards the \gls{lsb} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2/}                                                 &
+      ( x1 -- x2 )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x1 one bit towards the \gls{lsb}, while the \gls{msb} \\
+          remains unchanged}}                                  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0F41}}}                                       \\ \hline
 
      %2@                                        
-      \texttt{2@}                              &
-      ( a-adr -- x1 x2 )                       &
-      Fetch two consecutive cells from memory  &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2@}                                                 &
+      ( addr -- x1 x2 )                                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Fetch x2 from addr and x1 at addr+1}}                   &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}                                         \\        %DUP 
+          \texttt{0x0C01}                                         \\        %1+ 
+          \texttt{0x03FF}                                         \\        %@
+          \texttt{0x0418}                                         \\        %SWAP
+          \texttt{0x03FF}}}                                       \\ \hline %@
 
      %2DROP                                        
-      \texttt{2DROP}                               &
-      ( x1 x2 -- )                                 &
-      Drop the two topmost cells from the \gls{ps} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2DROP}                                              &
+      ( x1 x2 -- )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Drop cell pair x1 x2 }}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x06A8}                                         \\        %DROP
+          \texttt{0x06A8}}}                                       \\ \hline %DROP
 
      %2DUP                                       
-      \texttt{2DUP}                            &
-      ( x1 x2 -- x1 x2 x1 x2 )                 &
-      Duplicate a cell pair                    &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2DUP}                                               &
+      ( x1 x2 -- x1 x2 x1 x2 )                                    &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Drop cell pair x1 x2 }}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0758}                                         \\        %SWAP and duplicate PS1
+          \texttt{0x0758}}}                                       \\ \hline %SWAP and duplicate PS1
 
      %2OVER                                       
-      \texttt{2OVER}                                 &
-      ( x1 x2 x3 x4 -- x1 x2 x1 x2 x3 x4 x1 x2 )     &
-      Copy the next lower cell pair to the \gls{tos} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2OVER}                                              &
+      ( x1 x2 x3 x4 -- x1 x2 x1 x2 x3 x4 x1 x2 )                  &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy cell pair x1 x2 to the \gls{tos}}}                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}                                         \\        %PS4<-PS3<>PS2  PS1  PS0
+          \texttt{0x0460}                                         \\        %PS4  PS3  PS2<>PS1  PS0
+          \texttt{0x0789}                                         \\        %PS4<-PS3<>PS2  PS1<>PS0
+          \texttt{0x0460}}}                                       \\ \hline %PS4  PS3  PS2<>PS1  PS0
+
+     %2>R                                        
+      \texttt{2>R}                                                &
+       ( x1 x2 -- ) (R: -- x1 x2 )                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift cell pair x1 x2 to the \gls{rs}}}                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x06AB}                                         \\        %>R
+          \texttt{0x06AB}}}                                       \\ \hline %>R
+
+     %2R>                                        
+      \texttt{2R>}                                                &
+      ( -- x1 x2 ) (R: x1 x2 -- )                                 &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift cell pair x1 x2 to the \gls{ps}}}                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0755}                                         \\        %R>
+          \texttt{0x0755}}}                                       \\ \hline %R>
+
+      %2R@                                        
+      \texttt{2R@}                                                &
+      ( -- x1 x2 ) (R: x1 x2 -- x1 x2 )                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy cell pair x1 x2 to the \gls{ps}}}                  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0755}                                         \\        %R>
+          \texttt{0x0757}}}                                       \\ \hline %PS4<-PS3<-PS2<>PS1->PS0
+      
+      %2ROT                                       
+       \texttt{2OVER}                                             &
+       ( x1 x2 x3 x4 x4 x5 x6 -- x3 x4 x5 x6 x1 x2 )              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Rotate three cell pairs}}                               &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x06AB}                                         \\        %PS-> PS3->PS2->PS1->PS0->RS0->RS1
+          \texttt{0x0580}                                         \\        %PS4  PS3<>PS2  PS1  PS0  RS0  RS1
+          \texttt{0x06AB}                                         \\        %PS-> PS3->PS2->PS1->PS0->RS0->RS1
+          \texttt{0x0598}                                         \\        %PS4  PS3<>PS2  PS1<>PS0  RS0  RS1
+          \texttt{0x0755}                                         \\        %PS4<-PS3<-PS2<-PS1<-PS0<-RS0<-RS1
+          \texttt{0x0598}                                         \\        %PS4  PS3<>PS2  PS1<>PS0  RS0  RS1
+          \texttt{0x0755}                                         \\        %PS4<-PS3<-PS2<-PS1<-PS0<-RS0<-RS1
+          \texttt{0x0598}                                         \\        %PS4  PS3<>PS2  PS1<>PS0  RS0  RS1
+          \texttt{0x0460}}}                                       \\ \hline %PS4  PS3  PS2<>PS1  PS0  RS0  RS1
 
      %2SWAP                                       
-      \texttt{2SWAP}                           &
-      ( x1 x2 x3 x4 -- x2 x3 x4 x1 x2 )        &
-      Swap two cell pairs                      &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{2SWAP}                                              &
+      ( x1 x2 x3 x4 -- x3 x4 x1 x2 )                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Swap two cell pairs}}                                   &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0460}                                         \\        %PS4  PS3  PS2<>PS1  PS0  RS0  RS1
+          \texttt{0x0598}                                         \\        %PS4  PS3<>PS2  PS1<>PS0  RS0  RS1
+          \texttt{0x0460}}}                                       \\ \hline %PS4  PS3  PS2<>PS1  PS0  RS0  RS1
 
      %;                                        
-      \texttt{;}                              &
-      ( -- ) (R: nest-sys -- )                &
-      Return to the calling word              &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{;}                                                  &
+      ( -- ) (R: addr -- )                                        &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Return to the calling word}}                            &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+        \texttt{0x8400}}}                                         \\ \hline
 
     %<                                        
-      \texttt{<}                              &
-      ( n1 n2 -- flag )                       &
-      Compare two signed numbers              &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{<}                                                  &
+      ( n1 n2 -- flag )                                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if n1 is lower than n2}}                           &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+        \texttt{0x0CE0}}}                                         \\ \hline
                               
    %<>                                        
-      \texttt{<>}                             &
-      ( x1 x2 -- flag )                       &
-      Compare two cells for inequality        &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                              
+      \texttt{<>}                                                 &
+      ( x1 x2 -- flag )                                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if x1 is different than x2}}                       &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0D40}}}                                       \\ \hline
+
     %=                                        
-      \texttt{=}                              &
-      ( x1 x2 -- flag)                        &
-      Compare two cells for equality          &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{=}                                                  &
+      ( x1 x2 -- flag )                                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if x1 equals x2}}                                  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0D00}}}                                       \\ \hline
 
     %>                                        
-      \texttt{>}                              &
-      ( n1 n2 -- flag )                       &
-      Compare two signed numbers              &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{>}                                                  &
+      ( n1 n2 -- flag )                                           &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if n1 is greater than n2}}                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0CA0}}}                                       \\ \hline
                               
-    %>R                                            
-      \texttt{>R}                                   &
-      ( x -- ) (R: -- x )                           &
-      Move a cell from the \gls{ps} to the \gls{rs} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                                         
-    %?DUP                                        
-      \texttt{TBD}                                     &
-      ( x -- 0$\mid$x x )                           &
-      Move a cell from the \gls{ps} to the \gls{rs} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+     %>R                                            
+       \texttt{>R}                                                &
+       ( x -- ) (R: -- x )                                        &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x on to the \gls{rs}}}                            &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+        \texttt{0x06AB}}}                                         \\ \hline
+                                                           
+      %?DUP                                        
+        \texttt{?DUP}                                             &
+        ( x -- 0$\mid$x x )                                       &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Duplicate x if it is not zero}}                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}                                         \\        %DUP
+          \texttt{0x2001}                                         \\        %BRA +1
+          \texttt{0x06A8}}}                                       \\ \hline %DROP
                                                          
     %@
-      \texttt{@}                              &
-      ( a-addr -- x )                         &
-      Fetch a cell                            &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                              
+      \texttt{@}                                                  &
+      ( addr -- x )                                               &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Fetch x from addr}}                                     &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x03FF}}}                                       \\ \hline
+
+    %ABS
+      \texttt{ABS}                                                &
+      ( n -- u )                                                  &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Absolute vale of n}}                                    &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C30}}}                                       \\ \hline
+      
     %AND
-      \texttt{AND}                            &
-      ( x1 x2 -- x3 )                         &
-      Bitwise logic AND                       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{AND}                                                &
+      ( x1 x2 -- x3 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Bitwise logic AND of x1 and x2}}                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+        \texttt{0x0E80}}}                                         \\ \hline
                                               
     %BL
-      \texttt{BL}                             &
-      ( -- char )                             &
-      Space character                         &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                              
+      \texttt{BL}                                                 &
+      ( -- char )                                                 &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Space character}}                                       &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1020}}}                                       \\ \hline
+      
     %CELL+
-      \texttt{CELL+}                          &
-      ( a-addr1 -- a-addr2 )                  &
-      Increment address                       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{CELL+}                                              &
+      ( addr1 -- -addr2 )                                         &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Increment addr1}}                                       &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C01}}}                                       \\ \hline
                                               
-    %%CELLS
-    %  \texttt{CELLS}                          &
-    %  ( n1 -- n2 )                            &
-    %  Has no effect                           &
-    %  \texttt{0x0000}                           \\ \hline
-                                              
-    %CHAR+
-      \texttt{CHAR+}                          &
-      ( a-addr1 -- a-addr2 )                  &
-      Increment address                       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-
-    %%CHARS
-    %  \texttt{CHARS+}                         &
-    %  ( n1 -- n2 )                            &
-    %  Has no effect                           &
-    %  \texttt{0x0000}                           \\ \hline
-
     %DEPTH
-      \texttt{DEPTH}                          &
-      ( -- +n )                               &
-      Number of cells on the \gls{ps}         &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{DEPTH}                                              &
+      ( -- +n )                                                   &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          +n is the number of cells on the \gls{ps}               \\
+          without +n}}  &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x00FF}}}                                       \\ \hline
                                               
     %DROP
-      \texttt{DROP}                           &
-      ( x -- )                                &
-      Remove a cell from the \gls{ps}         &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{DROP}                                               &
+      ( x -- )                                                    &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Drop x from the /gls{ps}}}                              &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x06A8}}}                                       \\ \hline
                                               
     %DUP
-      \texttt{DUP}                            &
-      ( x -- )                                &
-      Duplicate a cell on the \gls{ps}        &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{DUP}                                                &
+      ( x -- x x )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Duplicate x}}                                           &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}}}                                       \\ \hline
                                               
-    %EXIT                                        
-      \texttt{EXIT}                           &
-      ( -- ) (R: nest-sys -- )                &
-      Return to the calling word              &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-
     %FALSE                                        
-      \texttt{FALSE}                          &
-      ( -- false )                            &
-      Return FALSE value                      &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{FALSE}                                              &
+      ( -- false )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          FALSE flag}}                                            &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1000}}}                                       \\ \hline
                               
     %INVERT                                        
-      \texttt{INVERT}                         &
-      ( x1 -- x2 )                            &
-      Bitwise invert                          &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{INVERT}                                             &
+      ( x1 -- x2 )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Bitwise inverse of x1}}                                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0EBF}}}                                       \\ \hline
 
     %LSHIFT                                        
-      \texttt{LSHIFT}                         &
-      ( x1 u -- x2 )                          &
-      Shift cell multiple bits towards the \gls{msb} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{LSHIFT}                                             &
+      ( x1 u -- x2 )                                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x1 u bits towards the \gls{msb}}}                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0F20}}}                                       \\ \hline
 
     %M*                                        
-      \texttt{M*}                             &
-      ( n1 n2 -- d )                          &
-      Signed multiplication                   &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{M*}                                                 &
+      ( n1 n2 -- d )                                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Multiply n1 by n2}}                                     &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0A40}}}                                       \\ \hline
+
+    %M+                                        
+      \texttt{M+}                                                 &
+      ( n1 n2 -- d )                                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Add n1 to n2}}                                          &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0800}}}                                       \\ \hline
+
+    %MAX                                        
+      \texttt{MAX}                                                &
+      ( n1 n2 -- n3 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          n3 is the greater of n1 and n2}}                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0DB0}}}                                       \\ \hline
+
+    %MIN                                        
+      \texttt{MIN}                                                &
+      ( n1 n2 -- n3 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          n3 is the lesser of n1 and n2}}                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0DF0}}}                                       \\ \hline
 
     %NEGATE                                        
-      \texttt{NEGATE}                         &
-      ( n1 -- n2 )                            &
-      Two's complement                        &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{NEGATE}                                             &
+      ( n1 -- n2 )                                                &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          n2 is the two's complement of n1}}                      &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C70}}}                                       \\ \hline
 
     %NIP                                        
-      \texttt{NIP}                            &
-      ( x1 x2 -- x2 )                         &
-      Drop the cell below the \gls{tos}       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{NIP}                                                &
+      ( x1 x2 -- x2 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Drop x1}}                                               &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x06A0}}}                                       \\ \hline
                               
      %OR
-      \texttt{OR}                            &
-      ( x1 x2 -- x3 )                        &
-      Bitwise logic OR                       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                         
+      \texttt{OR}                                                 &
+      ( x1 x2 -- x3 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Bitwise logic OR of x1 and x2}}                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0EC0}}}                                       \\ \hline
+
      %OVER
-      \texttt{OVER}                          &
-      ( x1 x2 -- x1 x2 x1 )                  &
-      Copy second \gls{ps} entry to the \gls{tos} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                                         
+      \texttt{OVER}                                               &
+      ( x1 x2 -- x1 x2 x1 )                                       &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy x1 to the \gls{tos}}}                              &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0758}}}                                       \\ \hline
                                               
     %R>                                        
-      \texttt{R>}                             &
-      ( -- x ) (R: x -- )                     &
-      Move a cell from the \gls{rs} to the \gls{ps} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{R>}                                                 &
+      ( -- x ) (R: x -- )                                         &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x to the \gls{ps}}}                               &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0755}}}                                       \\ \hline
                                                          
     %R@                                        
-      \texttt{R@}                             &
-      ( -- x ) (R: x -- x )                   &
-      Copy a cell from the \gls{rs} to the \gls{ps} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{R@}                                                 &
+      ( -- x ) (R: x -- x )                                       &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy x to the \gls{ps}}}                                &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0754}}}                                       \\ \hline
                                                          
     %RSHIFT                                        
-      \texttt{RSHIFT}                         &
-      ( x1 u -- x2 )                          &
-      Shift cell multiple bits towards the \gls{lsb} &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{RSHIFT}                                             &
+      ( x1 u -- x2 )                                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Shift x1 u bits towards the \gls{lsb}}}                 &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0F00}}}                                       \\ \hline
+
+    %ROT                                        
+      \texttt{ROT}                                                &
+      ( x1 x2 x3 -- x2 x3 x1)                                     &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Rotate the three topmost cells}}                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0460}                                         \\        %PS4  PS3  PS2<>PS100PS0
+          \texttt{0x0418}}}                                       \\ \hline %PS4  PS3  PS2  PS1<>PS0
 
     %S>D                                        
-      \texttt{S>D}                            &
-      ( n -- d )                              &
-      Sign-extend cell                        &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{S>D}                                                &
+      ( n -- d )                                                  &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Sign-extend n}}                                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0A41}}}                                       \\ \hline
 
     %SWAP                                        
-      \texttt{SWAP}                           &
-      ( x1 x2 -- x2 x1 )                      &
-      Swap two cells on the \gls{ps}          &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{SWAP}                                               &
+      ( x1 x2 -- x2 x1 )                                          &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Swap x1 and x2}}                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0418}}}                                       \\ \hline
 
     %TRUE                                        
-      \texttt{TRUE}                           &
-      ( -- true )                             &
-      Return TRUE value                       &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{TRUE}                                               &
+      ( -- true )                                                 &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          TRUE flag}}                                             &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1FFF}}}                                       \\ \hline
+                              
+    %TUCK                                        
+      \texttt{TUCK}                                               &
+      ( x1 x2 -- x2 x1 x2 )                                       &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Copy x1 below x2}}                                      &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0750}                                         \\        %R>
+          \texttt{0x0460}}}                                       \\ \hline %R>
                               
     %U<                                        
-      \texttt{U<}                             &
-      ( u1 u2 -- flag)                        &
-      Compare two unsigned numbers            &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
-                              
+      \texttt{U<}                                                 &
+      ( u1 u2 -- flag)                                            &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if u1 is lower than u2}}                           &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+        \texttt{0x0CC0}}}                                         \\ \hline
+ 
     %U>                                        
-      \texttt{U>}                             &
-      ( u1 u2 -- flag)                        &
-      Compare two unsigned numbers            &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{U>}                                                 &
+      ( u1 u2 -- flag)                                            &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          test if u1 is greater than u2}}                         &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0C80}}}                                       \\ \hline
 
     %UM*                                        
-      \texttt{UM*}                            &
-      ( u1 u2 -- d )                          &
-      Unsigned multiplication                 &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{UM*}                                                &
+      ( u1 u2 -- d )                                              &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Multiply u1 by u2}}                                     &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0A00}}}                                       \\ \hline
 
      %XOR
-      \texttt{XOR}                            &
-      ( x1 x2 -- x3 )                         &
-      Bitwise exclusive-OR                    &
-      \makecell[l]{                   
-        \texttt{0x0000}}                         \\ \hline
+      \texttt{XOR}                                                &
+      ( x1 x2 -- x3 )                                             &
+      \multicolumn{1}{m{50ex}|}{
+        \makecell[l]{                   
+          Bitwise logic XOR of x1 and x2}}                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0EA0}}}                                       \\ \hline
                                   
   \end{longtable}
 \end{center}  

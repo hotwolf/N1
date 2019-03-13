@@ -1,5 +1,5 @@
 %###############################################################################
-%# N1 - Manual - Reset, Interrupts, and Exceptions                             #
+%# N1 - Manual - Exceptions and Interrupts                                     #
 %###############################################################################
 %#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
 %#    This file is part of the N1 project.                                     #
@@ -22,8 +22,39 @@
 %#      - Initial release                                                      #
 %###############################################################################
 
-\section{Reset, Interrupts, and Exceptions}
-\label{reset}
+\section{Exceptions and Interrupts}
+\label{excpt}
 
-TBD
+The N1 processor supports two mechanisms to stop the ongoing program flow in order
+to react to an urgent hardware condition: Exceptions and Interrupts.
 
+\subsection{Exceptions}
+\label{excpt:general}
+Exceptions are a mechanism to react to error conditions. Whenever an exception occurs,
+the ongoing program flow is terminated and a handler routine, located at address \texttt{0x0000} 
+is executed. Additionally, a \gls{tc} is pushed onto the \gls{ps} identifiies the cause of
+problem. Based on this information, the handler can resore a save state of the systen
+
+
+
+Resets are always triggerd at system startup, and may also occur during code execution,
+triggered by the peripheral hardware.
+When the N1 processor comes out of reset, it begins code execution at address
+\texttt{0x0000}. The return stack is empty and the parameter stack holds one entry
+of value \texttt{0x0000}. This stack entry indicates the reset condition to the startup code. 
+
+\subsection{Exceptions}
+\label{reset:excpt}
+Exeptions are triggered by five hardware conditions. 
+
+
+Whenever an exception event occurs
+
+
+
+
+Additionally exceptions may be triggered by s
+
+
+\subsection{Interrupts}
+\label{reset:irq}
