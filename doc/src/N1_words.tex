@@ -55,10 +55,10 @@ which can be easily mapped to N1 instructions.
     \hline
     \endlastfoot
     
-    %!
+    %! 
       \texttt{!}                                                  &
       ( x addr -- )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Store x at addr}}                                       &
       \multicolumn{1}{m{9ex}|}{
@@ -68,7 +68,7 @@ which can be easily mapped to N1 instructions.
     %*                                        
       \texttt{*}                                                  &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Multiply n1$\mid$u1 by n2$\mid$u2}}                     &
       \multicolumn{1}{m{9ex}|}{
@@ -78,7 +78,7 @@ which can be easily mapped to N1 instructions.
     %+                                        
       \texttt{+}                                                  &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Add n1$\mid$u1 to n2$\mid$u2}}                          &
       \multicolumn{1}{m{9ex}|}{
@@ -88,7 +88,7 @@ which can be easily mapped to N1 instructions.
     %+!                                        
       \texttt{+!}                                                 &
       ( n1$\mid$u1 a-adr -- )                                     &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Add n1$\mid$u1 to the cell at addr}}                    &
       \multicolumn{1}{m{9ex}|}{
@@ -102,7 +102,7 @@ which can be easily mapped to N1 instructions.
     %-                                        
       \texttt{-}                                                  &
       ( n1$\mid$u1 n2$\mid$u2 -- n3$\mid$u3 )                     &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Subtract n2$\mid$u2 from n1$\mid$u1}}                   &
       \multicolumn{1}{m{9ex}|}{
@@ -112,7 +112,7 @@ which can be easily mapped to N1 instructions.
     %0<                                        
       \texttt{0<}                                                 &
       ( n -- flag )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Test if n is negative}}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -122,7 +122,7 @@ which can be easily mapped to N1 instructions.
     %0<>                                        
       \texttt{0<>}                                                &
       ( x -- flag )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Test if x is not zero}}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -132,7 +132,7 @@ which can be easily mapped to N1 instructions.
     %0>                                        
       \texttt{0>}                                                 &
       ( n -- flag )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Test if n is greater than zero}}                        &
       \multicolumn{1}{m{9ex}|}{
@@ -142,7 +142,7 @@ which can be easily mapped to N1 instructions.
      %0=                                        
       \texttt{0=}                                                 &
       ( x -- flag )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Test if x is not zero}}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -152,7 +152,7 @@ which can be easily mapped to N1 instructions.
      %1+                                        
       \texttt{1+}                                                 &
       ( n1$\mid$u1 -- n2$\mid$u2 )                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Increment n1$\mid$u1}}                                  &
       \multicolumn{1}{m{9ex}|}{
@@ -162,7 +162,7 @@ which can be easily mapped to N1 instructions.
      %1-                                        
       \texttt{1-}                                                 &
       ( n1$\mid$u1 -- n2$\mid$u2 )                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Decrement n1$\mid$u1}}                                  &
       \multicolumn{1}{m{9ex}|}{
@@ -172,7 +172,7 @@ which can be easily mapped to N1 instructions.
       %2!                                        
       \texttt{2!}                                                 &
       ( x1 x2 addr --  )                                          &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Store x2 at addr and x1 at addr+1}}                     &
       \multicolumn{1}{m{9ex}|}{
@@ -186,7 +186,7 @@ which can be easily mapped to N1 instructions.
      %2*                                        
       \texttt{2*}                                                 &
       ( x1 -- x2 )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Shift x1 one bit towards the \gls{msb}}}                &
       \multicolumn{1}{m{9ex}|}{
@@ -196,10 +196,10 @@ which can be easily mapped to N1 instructions.
      %2/                                        
       \texttt{2/}                                                 &
       ( x1 -- x2 )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Shift x1 one bit towards the \gls{lsb}, while the \gls{msb} \\
-          remains unchanged}}                                  &
+          Shift x1 one bit towards the \gls{lsb},                 \\
+          while the \gls{msb} remains unchanged}}                 &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0F41}}}                                       \\ \hline
@@ -207,9 +207,10 @@ which can be easily mapped to N1 instructions.
      %2@                                        
       \texttt{2@}                                                 &
       ( addr -- x1 x2 )                                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Fetch x2 from addr and x1 at addr+1}}                   &
+          Fetch x2 from addr and x1 at                            \\
+          addr+1}}                                                &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0750}                                         \\        %DUP 
@@ -221,7 +222,7 @@ which can be easily mapped to N1 instructions.
      %2DROP                                        
       \texttt{2DROP}                                              &
       ( x1 x2 -- )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Drop cell pair x1 x2 }}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -232,7 +233,7 @@ which can be easily mapped to N1 instructions.
      %2DUP                                       
       \texttt{2DUP}                                               &
       ( x1 x2 -- x1 x2 x1 x2 )                                    &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Drop cell pair x1 x2 }}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -243,7 +244,7 @@ which can be easily mapped to N1 instructions.
      %2OVER                                       
       \texttt{2OVER}                                              &
       ( x1 x2 x3 x4 -- x1 x2 x1 x2 x3 x4 x1 x2 )                  &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Copy cell pair x1 x2 to the \gls{tos}}}                 &
       \multicolumn{1}{m{9ex}|}{
@@ -256,9 +257,10 @@ which can be easily mapped to N1 instructions.
      %2>R                                        
       \texttt{2>R}                                                &
        ( x1 x2 -- ) (R: -- x1 x2 )                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Shift cell pair x1 x2 to the \gls{rs}}}                 &
+          Shift cell pair x1 x2 to the                            \\
+          \gls{rs}}}                                              &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x06AB}                                         \\        %>R
@@ -267,9 +269,10 @@ which can be easily mapped to N1 instructions.
      %2R>                                        
       \texttt{2R>}                                                &
       ( -- x1 x2 ) (R: x1 x2 -- )                                 &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Shift cell pair x1 x2 to the \gls{ps}}}                 &
+          Shift cell pair x1 x2 to the                            \\
+          \gls{ps}}}                                              &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0755}                                         \\        %R>
@@ -278,9 +281,10 @@ which can be easily mapped to N1 instructions.
       %2R@                                        
       \texttt{2R@}                                                &
       ( -- x1 x2 ) (R: x1 x2 -- x1 x2 )                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Copy cell pair x1 x2 to the \gls{ps}}}                  &
+          Copy cell pair x1 x2 to the                             \\
+          \gls{ps}}}                                              &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0755}                                         \\        %R>
@@ -289,7 +293,7 @@ which can be easily mapped to N1 instructions.
       %2ROT                                       
        \texttt{2OVER}                                             &
        ( x1 x2 x3 x4 x4 x5 x6 -- x3 x4 x5 x6 x1 x2 )              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Rotate three cell pairs}}                               &
       \multicolumn{1}{m{9ex}|}{
@@ -307,7 +311,7 @@ which can be easily mapped to N1 instructions.
      %2SWAP                                       
       \texttt{2SWAP}                                              &
       ( x1 x2 x3 x4 -- x3 x4 x1 x2 )                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Swap two cell pairs}}                                   &
       \multicolumn{1}{m{9ex}|}{
@@ -319,7 +323,7 @@ which can be easily mapped to N1 instructions.
      %;                                        
       \texttt{;}                                                  &
       ( -- ) (R: addr -- )                                        &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Return to the calling word}}                            &
       \multicolumn{1}{m{9ex}|}{
@@ -329,7 +333,7 @@ which can be easily mapped to N1 instructions.
     %<                                        
       \texttt{<}                                                  &
       ( n1 n2 -- flag )                                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if n1 is lower than n2}}                           &
       \multicolumn{1}{m{9ex}|}{
@@ -339,7 +343,7 @@ which can be easily mapped to N1 instructions.
    %<>                                        
       \texttt{<>}                                                 &
       ( x1 x2 -- flag )                                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if x1 is different than x2}}                       &
       \multicolumn{1}{m{9ex}|}{
@@ -349,7 +353,7 @@ which can be easily mapped to N1 instructions.
     %=                                        
       \texttt{=}                                                  &
       ( x1 x2 -- flag )                                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if x1 equals x2}}                                  &
       \multicolumn{1}{m{9ex}|}{
@@ -359,7 +363,7 @@ which can be easily mapped to N1 instructions.
     %>                                        
       \texttt{>}                                                  &
       ( n1 n2 -- flag )                                           &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if n1 is greater than n2}}                         &
       \multicolumn{1}{m{9ex}|}{
@@ -369,7 +373,7 @@ which can be easily mapped to N1 instructions.
      %>R                                            
        \texttt{>R}                                                &
        ( x -- ) (R: -- x )                                        &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Shift x on to the \gls{rs}}}                            &
       \multicolumn{1}{m{9ex}|}{
@@ -379,7 +383,7 @@ which can be easily mapped to N1 instructions.
       %?DUP                                        
         \texttt{?DUP}                                             &
         ( x -- 0$\mid$x x )                                       &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Duplicate x if it is not zero}}                         &
       \multicolumn{1}{m{9ex}|}{
@@ -391,7 +395,7 @@ which can be easily mapped to N1 instructions.
     %@
       \texttt{@}                                                  &
       ( addr -- x )                                               &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Fetch x from addr}}                                     &
       \multicolumn{1}{m{9ex}|}{
@@ -401,7 +405,7 @@ which can be easily mapped to N1 instructions.
     %ABS
       \texttt{ABS}                                                &
       ( n -- u )                                                  &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Absolute vale of n}}                                    &
       \multicolumn{1}{m{9ex}|}{
@@ -411,7 +415,7 @@ which can be easily mapped to N1 instructions.
     %AND
       \texttt{AND}                                                &
       ( x1 x2 -- x3 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Bitwise logic AND of x1 and x2}}                        &
       \multicolumn{1}{m{9ex}|}{
@@ -421,7 +425,7 @@ which can be easily mapped to N1 instructions.
     %BL
       \texttt{BL}                                                 &
       ( -- char )                                                 &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Space character}}                                       &
       \multicolumn{1}{m{9ex}|}{
@@ -431,7 +435,7 @@ which can be easily mapped to N1 instructions.
     %CELL+
       \texttt{CELL+}                                              &
       ( addr1 -- -addr2 )                                         &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Increment addr1}}                                       &
       \multicolumn{1}{m{9ex}|}{
@@ -441,10 +445,10 @@ which can be easily mapped to N1 instructions.
     %DEPTH
       \texttt{DEPTH}                                              &
       ( -- +n )                                                   &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          +n is the number of cells on the \gls{ps}               \\
-          without +n}}  &
+          +n is the number of cells on the                        \\
+          \gls{ps} without +n}}                                   &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x00FF}}}                                       \\ \hline
@@ -452,7 +456,7 @@ which can be easily mapped to N1 instructions.
     %DROP
       \texttt{DROP}                                               &
       ( x -- )                                                    &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Drop x from the /gls{ps}}}                              &
       \multicolumn{1}{m{9ex}|}{
@@ -462,7 +466,7 @@ which can be easily mapped to N1 instructions.
     %DUP
       \texttt{DUP}                                                &
       ( x -- x x )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Duplicate x}}                                           &
       \multicolumn{1}{m{9ex}|}{
@@ -470,9 +474,9 @@ which can be easily mapped to N1 instructions.
           \texttt{0x0750}}}                                       \\ \hline
 
     %EXECUTE                                        
-      \texttt{FALSE}                                              &
+      \texttt{EXECUTE}                                            &
       ( $i*$x xt -- $j*$x )                                       &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Execute xt}}                                            &
       \multicolumn{1}{m{9ex}|}{
@@ -482,7 +486,7 @@ which can be easily mapped to N1 instructions.
     %FALSE                                        
       \texttt{FALSE}                                              &
       ( -- false )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           FALSE flag}}                                            &
       \multicolumn{1}{m{9ex}|}{
@@ -492,10 +496,10 @@ which can be easily mapped to N1 instructions.
     %I                                        
       \texttt{I}                                                  &
       ( -- n$\mid$u ) ( R: n$\mid$u -- n$\mid$u )                 &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Copy the innermost loop index (n$\mid$u) onto the       \\
-          \gls{ps}}}                                              &
+          Copy the innermost loop index                           \\
+          n$\mid$u onto the \gls{ps}}}                            &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0754}}}                                       \\ \hline
@@ -503,7 +507,7 @@ which can be easily mapped to N1 instructions.
     %INVERT                                        
       \texttt{INVERT}                                             &
       ( x1 -- x2 )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Bitwise inverse of x1}}                                 &
       \multicolumn{1}{m{9ex}|}{
@@ -513,19 +517,19 @@ which can be easily mapped to N1 instructions.
     %J                                        
       \texttt{J}                                                  &
       ( -- n$\mid$u ) ( R: x n$\mid$u -- x n$\mid$u )             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Copy the next-outer loop index (n$\mid$u) onto the      \\
-          \gls{ps}}}                                              &
+          Copy the next-outer loop index                          \\
+          n$\mid$u onto the \gls{ps}}}                            &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
-          \texttt{0x0755}                                         \\
-          \texttt{0x0407}}}                                       \\ \hline
+          \texttt{0x0755}                                         \\        %PS4<-PS3<-PS2<-PS1<-PS0<-RS0<-RS1
+          \texttt{0x0407}}}                                       \\ \hline %PS4  PS3  PS2  PS1  PS0<>RS0->RS1
                               
     %LSHIFT                                        
       \texttt{LSHIFT}                                             &
       ( x1 u -- x2 )                                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Shift x1 u bits towards the \gls{msb}}}                 &
       \multicolumn{1}{m{9ex}|}{
@@ -535,7 +539,7 @@ which can be easily mapped to N1 instructions.
     %M*                                        
       \texttt{M*}                                                 &
       ( n1 n2 -- d )                                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Multiply n1 by n2}}                                     &
       \multicolumn{1}{m{9ex}|}{
@@ -545,7 +549,7 @@ which can be easily mapped to N1 instructions.
     %M+                                        
       \texttt{M+}                                                 &
       ( n1 n2 -- d )                                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Add n1 to n2}}                                          &
       \multicolumn{1}{m{9ex}|}{
@@ -555,7 +559,7 @@ which can be easily mapped to N1 instructions.
     %MAX                                        
       \texttt{MAX}                                                &
       ( n1 n2 -- n3 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           n3 is the greater of n1 and n2}}                        &
       \multicolumn{1}{m{9ex}|}{
@@ -565,7 +569,7 @@ which can be easily mapped to N1 instructions.
     %MIN                                        
       \texttt{MIN}                                                &
       ( n1 n2 -- n3 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           n3 is the lesser of n1 and n2}}                         &
       \multicolumn{1}{m{9ex}|}{
@@ -575,7 +579,7 @@ which can be easily mapped to N1 instructions.
     %NEGATE                                        
       \texttt{NEGATE}                                             &
       ( n1 -- n2 )                                                &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           n2 is the two's complement of n1}}                      &
       \multicolumn{1}{m{9ex}|}{
@@ -585,7 +589,7 @@ which can be easily mapped to N1 instructions.
     %NIP                                        
       \texttt{NIP}                                                &
       ( x1 x2 -- x2 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Drop x1}}                                               &
       \multicolumn{1}{m{9ex}|}{
@@ -595,7 +599,7 @@ which can be easily mapped to N1 instructions.
      %OR
       \texttt{OR}                                                 &
       ( x1 x2 -- x3 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Bitwise logic OR of x1 and x2}}                         &
       \multicolumn{1}{m{9ex}|}{
@@ -605,7 +609,7 @@ which can be easily mapped to N1 instructions.
      %OVER
       \texttt{OVER}                                               &
       ( x1 x2 -- x1 x2 x1 )                                       &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Copy x1 to the \gls{tos}}}                              &
       \multicolumn{1}{m{9ex}|}{
@@ -615,7 +619,7 @@ which can be easily mapped to N1 instructions.
     %R>                                        
       \texttt{R>}                                                 &
       ( -- x ) (R: x -- )                                         &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Shift x to the \gls{ps}}}                               &
       \multicolumn{1}{m{9ex}|}{
@@ -625,7 +629,7 @@ which can be easily mapped to N1 instructions.
     %R@                                        
       \texttt{R@}                                                 &
       ( -- x ) (R: x -- x )                                       &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Copy x to the \gls{ps}}}                                &
       \multicolumn{1}{m{9ex}|}{
@@ -635,7 +639,7 @@ which can be easily mapped to N1 instructions.
     %RSHIFT                                        
       \texttt{RSHIFT}                                             &
       ( x1 u -- x2 )                                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Shift x1 u bits towards the \gls{lsb}}}                 &
       \multicolumn{1}{m{9ex}|}{
@@ -645,7 +649,7 @@ which can be easily mapped to N1 instructions.
     %ROT                                        
       \texttt{ROT}                                                &
       ( x1 x2 x3 -- x2 x3 x1)                                     &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Rotate the three topmost cells}}                        &
       \multicolumn{1}{m{9ex}|}{
@@ -656,7 +660,7 @@ which can be easily mapped to N1 instructions.
     %S>D                                        
       \texttt{S>D}                                                &
       ( n -- d )                                                  &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Sign-extend n}}                                         &
       \multicolumn{1}{m{9ex}|}{
@@ -666,7 +670,7 @@ which can be easily mapped to N1 instructions.
     %SWAP                                        
       \texttt{SWAP}                                               &
       ( x1 x2 -- x2 x1 )                                          &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Swap x1 and x2}}                                        &
       \multicolumn{1}{m{9ex}|}{
@@ -676,7 +680,7 @@ which can be easily mapped to N1 instructions.
     %TRUE                                        
       \texttt{TRUE}                                               &
       ( -- true )                                                 &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           TRUE flag}}                                             &
       \multicolumn{1}{m{9ex}|}{
@@ -686,7 +690,7 @@ which can be easily mapped to N1 instructions.
     %TUCK                                        
       \texttt{TUCK}                                               &
       ( x1 x2 -- x2 x1 x2 )                                       &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Copy x1 below x2}}                                      &
       \multicolumn{1}{m{9ex}|}{
@@ -697,7 +701,7 @@ which can be easily mapped to N1 instructions.
     %U<                                        
       \texttt{U<}                                                 &
       ( u1 u2 -- flag)                                            &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if u1 is lower than u2}}                           &
       \multicolumn{1}{m{9ex}|}{
@@ -707,7 +711,7 @@ which can be easily mapped to N1 instructions.
     %U>                                        
       \texttt{U>}                                                 &
       ( u1 u2 -- flag)                                            &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           test if u1 is greater than u2}}                         &
       \multicolumn{1}{m{9ex}|}{
@@ -717,7 +721,7 @@ which can be easily mapped to N1 instructions.
     %UM*                                        
       \texttt{UM*}                                                &
       ( u1 u2 -- d )                                              &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Multiply u1 by u2}}                                     &
       \multicolumn{1}{m{9ex}|}{
@@ -727,7 +731,7 @@ which can be easily mapped to N1 instructions.
      %XOR
       \texttt{XOR}                                                &
       ( x1 x2 -- x3 )                                             &
-      \multicolumn{1}{m{50ex}|}{
+      \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Bitwise logic XOR of x1 and x2}}                        &
       \multicolumn{1}{m{9ex}|}{

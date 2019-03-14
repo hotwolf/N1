@@ -15,7 +15,7 @@
 %#    GNU General Public License for more details.                             #
 %#                                                                             #
 %#    You should have received a copy of the GNU General Public License        #
-%#    along with N1.  If not, see <http:%www.gnu.org/licenses/>.               #
+%#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 %###############################################################################
 %# Version History:                                                            #
 %#   Novemmber 26, 2018                                                        #
@@ -32,43 +32,121 @@ of \Gls{forth} code.
 \noindent
 Here is a summary of the N1's characteristics:
 
-\begin{itemize}
+\begin{description}[style=nextline]
 
-
-
-
-
-
-  
-%Stacks  
-\item Hardware support for parameter and return stack 
+%Memory connection  
+\item[Memory connection:]  
   \begin{itemize}
-  \item Cells are 16 bit wide
-  \item Over and underflows monitored in hardware
-  \item Upper cells of both stacks stored in registers
+  \item[]
+  \item 16-bit \gls{vna}
+  \item Separate address space for \gls{stack} content
+  \item \Gls{wb} interfaces to main and stack memory 
+  \item Up to 128KB (main) memory space
+  \item Memory addressable in 16-bit entities 
+  \end{itemize}
+
+%Stacks  
+\item[Stacks:]
+  \begin{itemize}
+  \item[]
+  \item Two hardware \glspl{stack} (\glslink{ps}{parameter} and \gls{rs})
+  \item Each \gls{stack} consists of three segments:
+    \begin{description}[style=nextline]
+    %Upper stack  
+    \item[\Gls{us}:]
+      \begin{itemize}
+      \item[]
+      \item Shift registers with selectable shift direction for each entry
+      \item Fixed size
+        \begin{itemize}
+        \item \gls{ps}: 4 \glspl{cell}
+        \item \gls{rs}: 1 \gls{cell}
+        \end{itemize}
+      \end{itemize}
+    %Intermediate stack  
+    \item[\Gls{is}:]
+      \begin{itemize}
+      \item[]
+      \item \Gls{lifo} buffer with lazy data transfers to and from the lower stack
+      \item Configurable size
+      \end{itemize}
+    %Lower stack
+    \item[\Gls{ls}:]
+      \begin{itemize}
+      \item[]
+      \item \gls{ram} space shared by both \glspl{stack}
+      \item \Glspl{stack} grow towards each other
+      \item Up to 128KB in size
+      \end{itemize}
+    \end{description}
+  \end{itemize}
+
+%Instruction set  
+\item[Instruction set:]
+  \begin{itemize}
+  \item[]
+  \item Fixed instruction size of 16 bit
+  \item \Glspl{jump} and \glspl{call}
     \begin{itemize}
-    \item Number of register based cells configurable via integration parameters
-    \item Shift direction of topmost cells individually controllable, supporting
-      common stack operations without additional data paths in hardware
-    \item Data movement to and from RAM with hysteresis behavior to reduce bus accesses
+    \item Indirect addressing
+    \item Direct addressing within a 32KB window
+    \item Two bus cycles of execution time
+    \item Return from \glspl{call} performed concurrently with last instruction
     \end{itemize}
-  \item Lower cells stored in RAM
+  \item \Glspl{branch}
     \begin{itemize}
-    \item Dedicated address space for stacks, up to 128KB in size
-    \item RAM space for stacks configurable via integration parameter
-    \item Stacks allocated to grow towards eachother
-    \item Dedicated whshbone interface for stack accesses
+    \item Direct relative addressing within a 16KB range
+    \item Two bus cycles of execution time if branch is taken, one cycle if not
+    \end{itemize}         
+  \item \Glspl{literal}
+    \begin{itemize}
+    \item Immediate encoding of literals between -2048 and 2047
+    \item Literals out of this range requre one additional instruction
+    \end{itemize}
+  \item \glslink{alu}{Arithmetic and logic operations}
+    \begin{itemize}
+    \item Single cycle \Gls{alu} operations include:
+      \begin{itemize}
+      \item Sum and Difference
+      \item Comparisons
+      \item Signed and unsigned products
+      \item Bitwise logic operations
+      \item Milti-bit shifts
+     \end{itemize}
+    \item optional immediate encoding of one operand, usung 5bit encoding 
+    \end{itemize}
+  \item \Gls{stack} operations
+    \begin{itemize}
+      \item All 1024 stack transitions of the \gls{us} encodable
+    \end{itemize}
+  \item Memory I/O
+    \begin{itemize}
+    \item Indirect addressing
+    \item Direct addressing within a 256B window
+    \item Two bus cycles of execution time if branch is taken, one cycle if not
+    \end{itemize}   
+  \end{itemize}
+
+%Exceptions
+\item[Exceptions:]
+  \begin{itemize}
+  \item[]
+  \item Exception handler invoked by five error conditions:
+    \begin{itemize}
+    \item \Gls{ps} overflow
+    \item \Gls{ps} underflow
+    \item \Gls{rs} overflow
+    \item \Gls{rs} underflow
+    \item Access violations in the (main) address space
     \end{itemize}
   \end{itemize}
+    
+%Interrupts  
+\item[Interrupts:]
+  \begin{itemize}
+  \item[]
+  \item Optional interrupt support throgh external interrupt controller
+  \item Automatic interrupt acknowledge (flag clearing) supported
+  \end{itemize}
   
- %COF     
-
-
-
-
-
-
-  
-  
-\end{itemize}
-
+\end{description}

@@ -23,7 +23,8 @@
 %###############################################################################
 
 \documentclass[a4paper,
-               titlepage]{article}
+               titlepage,
+               bibliography=totocnumbered]{article}
 
 \usepackage[margin=4cm]{geometry}
 \usepackage{float}
@@ -139,13 +140,6 @@
 \listoftables
 
 %--------------------
-% Glossary
-%--------------------
-\clearpage
-\setglossarystyle{altlist}
-\printglossaries
-
-%--------------------
 % Overview
 %--------------------
 \include{N1_overview}
@@ -191,9 +185,21 @@
 \include{N1_tools}
 
 %--------------------
+% Glossary
+%--------------------
+%\clearpage
+\setglossarystyle{altlist}
+\printglossaries
+
+%--------------------
 % Bibliography
 %--------------------
+%\clearpage
+%\phantomsection
+%\addcontentsline{toc}{section}{References}
+\section{References}
 \bibliographystyle{plain}
+\renewcommand{\section}[2]{}%
 \bibliography{N1.bib}
 
 \end{document}
