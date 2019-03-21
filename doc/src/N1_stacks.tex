@@ -27,8 +27,7 @@
 
 The N1 operates with two stacks: the \gls{ps} to perform data transactions and the
 \gls{rs} to manage the program flow. As illustrated in \figref{stacks:fig}, each of
-these stacks consists of three hardware components: the \gls{us}, the \gls{is},
-and the \gls{ls}.
+these stacks consists of three segments: the \gls{us}, the \gls{is}, and the \gls{ls}.
 
 \begin{figure}[!h]
   \begin{center}
@@ -106,21 +105,21 @@ and the \gls{ls}.
 \subsection{Parameter Stack}
 \label{stacks:ps}
 
-The \gls{us} of the \gls{ps} contains is four \glspl{cell} deep and contains the
-most recent data entries. It's purpose is to perform stack and ALU operations
+The \glslink{us}{upper} \gls{ps} holds the four topmost data entries.
+Its purpose is to perform stack and \gls{alu} operations
 (see \secref{opcodes:stack} and \secref{opcodes:alu}).
-When the capacity of the \gls{us} is exceeded, older data entries are transferred
+When the capacity of the \gls{us} is exceeded, older data entries are shifted
 to the \gls{is}.
 
-The \gls{is} serves as a buffer between the \gls{us} and the \gls{ls} which resides
+The \gls{is} serves as a buffer between the \gls{us} and the \gls{ls}, which resides
 in \gls{ram}. The purpose of the \gls{is} is to minimize \gls{ram} traffic to and
 from the \gls{ls}.
-Push operation to the \gls{is} are only propagated to the \gls{ls}, when the buffer
-capacity is exceeded. Pull operations are onle propagated, when the \gls{is} is empty.
-\Gls{stack} fluctuations within the buffer capacity are not visible to the \gls{ls}.
+Push operations to the \gls{is} are only propagated to the \gls{ls} when the buffer
+capacity is exceeded. Pull operations are only propagated when the \gls{is} is empty.
+\Gls{stack} fluctuations within the \gls{is}'s capacity are not visible to the \gls{ls}.
 
 The \gls{ls} is a region of the \gls{ram}, which is managed by a memory controller
-that is shared between the \gls{ps} and the \gls{rs}. Within the RAM both stacks will
+that is shared by the \gls{ps} and the \gls{rs}. Within the RAM, both stacks will
 grow towards each other. Moving cell content from one stack to the other (\texttt{>R} 
 or \texttt{R>}) will never lead to a stack overflow. 
 

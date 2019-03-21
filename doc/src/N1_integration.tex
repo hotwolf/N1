@@ -25,14 +25,14 @@
 \section{Integration Guide}
 \label{integration}
 
-This section explains the interfaces and configurations of the N1 processor
+This section outlines the interfaces and configurations of the N1 processor
 for system integration.
 
 \subsection{Integratation Parameters}
 \label{integration:params}
 
-The N1 processor supports six integration parameters to configure the design for
-application specific needs:
+The N1 processor supports six \gls{verilog} integration parameters to configure
+the design for application specific needs:
 
 \begin{description}[style=nextline]
 
@@ -42,26 +42,26 @@ application specific needs:
   The default value is 12. 
   
 \item[\texttt{IPS\_DEPTH}] Depth of the intermediate parameter stack. \\
-  This parameter determines the number \glspl{cell} in the \gls{is} of the \gls{ps}.
+  This parameter determines the number of \glspl{cell} in the \gls{is} of the \gls{ps}.
   Any value larger than 2 is valid.
   The default value is 8. 
-  The purpose of the \gls{is} is to buffer fluctuations in stack usage from the \gls{ls}.
+  The purpose of the \gls{is} is to conceal fluctuations in stack usage to the \gls{ls}.
   The optimal value should be derived from the application use case.
 
 \item[\texttt{IRS\_DEPTH}] Depth of the intermediate return stack. \\
-  This parameter determines the number \glspl{cell} in the \gls{is} of the \gls{rs}.
+  This parameter determines the number of \glspl{cell} in the \gls{is} of the \gls{rs}.
   Any value larger than 2 is valid.
   The default value is 8. 
-  The purpose of the \gls{is} is to buffer fluctuations in stack usage from the \gls{ls}.
+  The purpose of the \gls{is} is to conceal fluctuations in stack usage to the \gls{ls}.
   The optimal value should be derived from the application use case.
 
 \item[\texttt{PBUS\_AADR\_OFFSET}] Offset for direct \gls{jump} or \gls{call} addressing. \\
   This parameter determines the location of the 32KB window for \glspl{jump} and \glspl{call}
-  with direct addressing.
+  with \gls{diradr}.
   The default value is \texttt{0x0000}. 
 
 \item[\texttt{PBUS\_MADR\_OFFSET}] Offset for direct data accesses. \\
-  This parameter determines the location of the 32KB window for memory I/O with direct addressing.
+  This parameter determines the location of the 511B window for memory I/O with \gls{diradr}.
   This window should cover commonly used \gls{forth} variables. The default value is \texttt{0xFFFF}. 
 
 \item[\texttt{PS\_RS\_DIST}] Safety distance between the \gls{ps} and the \gls{rs}. \\
@@ -75,7 +75,7 @@ application specific needs:
 \label{integration:if}
 
 The N1 processor provides four interfaces which must be connected at system level.
-A fifth one (see \secref{integration:if:prb}) is only included for verification and debug purposes.
+A fifth one (see \secref{integration:if:prb}) is only to be used for verification and debug purposes.
 
 \subsubsection{Clock and Resets}
 \label{integration:if:clk}
@@ -87,12 +87,12 @@ This interface provides clocks and resets for all sequential logic in the N1 des
   This clock is used for all interfaces as well as all internal sequential logic.
 
 \item[\texttt{async\_rst\_i}] Asynchronous reset input. \\
-  This high active reset input may assert asynchronously, but must deassert synchronously.
+  This active high reset input may assert asynchronously, but must deassert synchronously.
   This signal is not required if a synchrounous reset (\texttt{sync\_rst\_i}) is implemented.
   If unused, this input must be tied to \texttt{0}.
 
 \item[\texttt{sync\_rst\_i}] Synchronous reset input. \\
-  This high active reset input must assert and deassert synchronously.
+  This active high reset input must assert and deassert synchronously.
   This signal is not required if an asynchrounous reset (\texttt{async\_rst\_i}) is implemented.
   If unused, this input must be tied to \texttt{0}.
  
@@ -101,7 +101,7 @@ This interface provides clocks and resets for all sequential logic in the N1 des
 \subsubsection{Program Bus}
 \label{integration:if:pbus}
 This interface connects the N1 to the main memory.
-All signals comply with the \gls{wb} specification~\cite{wishbone}.
+All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
 
 \begin{description}[style=nextline]
   
@@ -122,38 +122,38 @@ All signals comply with the \gls{wb} specification~\cite{wishbone}.
 
 \item[\texttt{pbus\_tga\_cof\_jmp\_o}] Change of flow indicator. \\   
   This output signal corresponds to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access was caused by a \gls{jump} instruction.
+  It indicates, that the current bus access was caused by a \gls{jump} instruction.
   This information may be used to trace the program flow.
 
 \item[\texttt{pbus\_tga\_cof\_cal\_o}] Change of flow indicator. \\   
   This output signal corresponds to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access was caused by either a \gls{call} instruction or an
+  It indicates, that the current bus access was caused by either a \gls{call} instruction or an
   interrupt service request.
   This information may be used to trace the program flow.
 
 \item[\texttt{pbus\_tga\_cof\_bra\_o}] Change of flow indicator. \\   
   This output signal corresponds to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access was caused by a \gls{branch} instruction.
+  It indicates, that the current bus access was caused by a \gls{branch} instruction.
   This information may be used to trace the program flow.
 
 \item[\texttt{pbus\_tga\_cof\_eow\_o}] Change of flow indicator. \\   
   This output signal corresponds to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access was caused by a return from a \gls{call}.
+  It indicates ,that the current bus access was caused by a return from a \gls{call}.
   This information may be used to trace the program flow.
 
 \item[\texttt{pbus\_ack\_i}] Acknowlede input. \\   
   This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied tp \texttt{1}.
+  If unused, this input must be tied to \texttt{1}.
 
 \item[\texttt{pbus\_err\_i}] Error indicator input. \\  
   This input signal corresponds to signal \texttt{ERR\_I} of the Wishbone specification~\cite{wishbone}.
   It informs the N1 processor, that the current address exceeds the valid range of the connected
   memory system. 
-  If unused, this input must be tied tp \texttt{0}.
+  If unused, this input must be tied to \texttt{0}.
   
 \item[\texttt{pbus\_stall\_i}] Pipeline stall input. \\
   This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied tp \texttt{0}.
+  If unused, this input must be tied to \texttt{0}.
 
 \item[\texttt{pbus\_dat\_i}] Read data bus. \\ 
   These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
@@ -163,9 +163,9 @@ All signals comply with the \gls{wb} specification~\cite{wishbone}.
 \subsubsection{Stack Bus}
 \label{integration:if:sbus}
 This interface connects the N1 to the stack memory.
-It is expected, that the \texttt{SP\_WIDTH} parameter (see \secref{integration:params}) matches the
-implemented memory size. Therefore any \texttt{ERR\_I} input is omitted in this interface.
-All signals comply with the \gls{wb} specification~\cite{wishbone}.
+It is expected that the \texttt{SP\_WIDTH} parameter (see \secref{integration:params}) matches the
+implemented memory size. Therefore no \texttt{ERR\_I} input is needed in this interface.
+All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
 
 \begin{description}[style=nextline]
 
@@ -186,19 +186,19 @@ All signals comply with the \gls{wb} specification~\cite{wishbone}.
 
 \item[\texttt{sbus\_tga\_ps\_o}] \Gls{ps} access indicator. \\   
   These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access is associated with the \gls{ps}.
+  It indicates, that the current bus access is associated with the \gls{ps}.
 
 \item[\texttt{sbus\_tga\_rs\_o}] \Gls{rs} access indicator. \\   
   These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates that the current bus access is associated with the \gls{rs}.
+  It indicates, that the current bus access is associated with the \gls{rs}.
   
 \item[\texttt{sbus\_ack\_i}] Acknowlede input. \\   
   This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied tp \texttt{1}.
+  If unused, this input must be tied to \texttt{1}.
 
 \item[\texttt{sbus\_stall\_i}] Pipeline stall input. \\
   This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied tp \texttt{0}.
+  If unused, this input must be tied to \texttt{0}.
 
 \item[\texttt{sbus\_dat\_i}] Read data bus. \\ 
   These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
@@ -218,8 +218,8 @@ This interface connects an optional interrupt controller to the N1 processor.
 
 \item[\texttt{irq\_req\_i}] Interrupt request. \\
   Any non-zero value driven to this bus interface is interpreted as interrupt request.
-  The value determines the start address of the interrupt service routine, that is to be executed by the
-  N1 processor.
+  The value determines the start address of the interrupt service routine that is to be executed by the
+  N1 processor. This bus must be tied to \texttt{0x0000} if no interrupt controller is connected.
   
 \end{description}
 
@@ -227,16 +227,15 @@ This interface connects an optional interrupt controller to the N1 processor.
 \label{integration:if:prb}
 This interface propagates all internal states of the N1 processor to the outside.
 It is solely intended for verification and debug purposes and should be left unconnected for system integration.
-The ssignals in this interface are specific to the internal implementation of the N1 processor and may change
+The signals in this interface are specific to the internal implementation of the N1 processor and may change
 with every revision.
 
 \subsection{Target Specific Design Files}
 \label{integration:ifs}
 All adder and multiplier logic of the N1 design ls located in a single \gls{verilog} module called \texttt{N1\_dsp}.
-The N1 implementation provides a synthesizable implementation of this module in a file named
-\texttt{N1\_dsp\_synth.v}.
-If desired, this file can be replaced by one containing aa alternative implementation of the \texttt{N1\_dsp} module.
-An example is given in in the file \texttt{N1\_dsp\_iCE40UP5K.v}.
+A synthesizable implementation of this module, can be found in the file \texttt{rtl/verolog/N1\_dsp\_synth.v}.
+If desired, this file can be replaced by one containing a alternative implementation of the \texttt{N1\_dsp} module.
+An example is given in in the file \texttt{rtl/verolog/N1\_dsp\_iCE40UP5K.v}.
 It contains a custom implementation for Lattice iCE40 FPGAs, utilizing four hard instantiated \texttt{SB\_MAC16}
 macro cells.
 

@@ -34,7 +34,7 @@
 \newglossaryentry{forth} {
     name={Forth},
     description={
-      Forth is a extensible stack-based programming language.
+      Forth is an extensible stack-based programming language.
       \nopostdesc
     }
 }
@@ -180,7 +180,7 @@
       A bit field in the stack instruction which contols data movement
       on the intermediate \gls{ps} or \gls{rs}.
       The mnemonic stands for
-      ``\textbf{I}intermediate \textbf{S}tack \textbf{T}ransition''.
+      ``\textbf{I}ntermediate \textbf{S}tack \textbf{T}ransition''.
       \nopostdesc
     }
 }
@@ -188,7 +188,7 @@
 \newglossaryentry{ls} {
     name={lower stack},
     description={
-      The section of the stack which stored in RAM.
+      The section of the stack which is stored in RAM.
       See \secref{stacks}. 
       \nopostdesc
     }
@@ -197,7 +197,7 @@
 \newglossaryentry{is} {
     name={intermediate stack},
     description={
-      The section of the stack, which serves as a buffer between the
+      The section of the stack that serves as a buffer between the
       \gls{ls} and the \gls{us}.
       See \secref{stacks}. 
       \nopostdesc
@@ -207,7 +207,7 @@
 \newglossaryentry{us} {
     name={upper stack},
     description={
-      The section of the stack, which contains the \gls{tos}. It supports
+      The section of the stack that contains the \gls{tos}. It supports
       reordering of its storage \gls{cell}.
       See \secref{stacks}. 
       \nopostdesc
@@ -239,9 +239,9 @@
 }
 
 \newglossaryentry{vna} {
-    name={Von Neumann architecture},
+    name={Von-Neumann-Architecture},
     description={
-      A computer architecture where intruction feteches and data I/O occur
+      A computer architecture where intruction fetches and data I/O occur
       over the same memory interface.
       \nopostdesc
     }
@@ -258,8 +258,42 @@
 \newglossaryentry{verilog} {
     name={Verilog},
     description={
-      The harware description language used for the N1 implementation
+      The harware description language used for the N1 implementation.
       \nopostdesc
+    }
+}
+
+\newglossaryentry{indadr} {
+    name={indirect addressing},
+    description={
+    Address mode, where the address ist stored on the \gls{ps}.
+    \nopostdesc
+    }
+}
+
+\newglossaryentry{diradr} {
+    name={direct addressing},
+    description={
+    Addressmode, where the address is encoded into the \gls{opcode} of
+    an instruction
+    \nopostdesc
+    }
+}
+
+\newglossaryentry{reladr} {
+    name={relative addressing},
+    description={
+    Addressmode, where the address is given relative to the current position
+    in the execution flow
+    \nopostdesc    
+    }
+}
+
+\newglossaryentry{immop} {
+    name={immediate data},
+    description={
+    A data value, which is encoded into the \gls{opcode} of an instruction
+    \nopostdesc    
     }
 }
 

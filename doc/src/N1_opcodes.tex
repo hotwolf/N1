@@ -26,13 +26,14 @@
 \label{opcodes}
 
 The intent of the N1's instruction set is to map most of the essential Forth words
-to single cycle instructions. \figref{opcodes:encoding} illustrates the basic structure
-of the instructuion encoding.
+to single cycle instructions. \figref{opcodes:encoding} illustrates the instructuion
+format.
 
 \begin{figure}[!htb]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.5125} {
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
       \begin{tikzpicture}
       
         %Instruction
@@ -557,17 +558,18 @@ of the instructuion encoding.
 \label{opcodes:rtc}
 
 Rather than  providing a dedicated instruction to end the execution of 
-word in Forth and to return the program flow to its caller, the N1 allows
+word in Forth and to return the caller's program flow, the N1 allows
 to perform this operation in parallel to the execution of any of its
 instructions. Each \gls{opcode} contains a bit (bit 15) to indicate, that the
-current instruction in the last operation in the current word. If this bit
+current instruction is the last operation of the current word. If this bit
 is set, the program flow will resume at the calling word as soon as the
 operationis performed.
 
-As shown in \figref{opcodes:encoding}, bit 15 is also used to distinguish jump
-and call. Considering that the last call in a word definition can be optimized
-to a jump to the first instruction of the called word, bit 15 can ber regarded
-as termination bit for these instructions as well.
+As shown in \figref{opcodes:encoding}, bit 15 is also distinction between the
+encoding of \gls{jump} and of \gls{call} instructions.
+Considering that the last \gls{call} in a word definition can be optimized
+to a \gls{jump}, bit 15 can be regarded
+as the termination bit for \gls{call} instructions as well.
 
 For a Forth compiler, this means that the semi-colon (\texttt{\gls{semicolon}})
 always translates to setting bit 15 of the last instruction.
@@ -577,7 +579,7 @@ always translates to setting bit 15 of the last instruction.
 
 \Gls{jump} instructions transfer the program flow to any address
 location within the supported 128KB program space. \Gls{jump} instructions consume an absolute
-destination address, which can be either placed on the top of the \Gls{ps} or encoded
+destination address which can either be placed on the top of the \gls{ps} or encoded
 into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
 
 \subsection{Call Instructions}
@@ -585,32 +587,32 @@ into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
 
 \Gls{call} instructions temporarily transfer the program flow to any address
 location within the supported 128KB program space, while pushing a return address onto
-the return stack. \Gls{call} instructions consume an absolute
-destination address, which can be either placed on the top of the \Gls{ps} or encoded
+the \gls{rs}. \Gls{call} instructions consume an absolute
+destination address which can either be placed on the top of the \Gls{ps} or encoded
 into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
 
 \subsection{Conditional Branches}
 \label{opcodes:branch}
 
-\Glspl{branch} invoke a change of program flow depending on an argument on the
-\gls{ps}. The branch destination cab be either an absolute address placed on the the top of  
-the \Gls{ps} or relative relative address, encoded into the opcode of the instruction
-(only for destination addresses $<$ 0x1FFF).
+\Glspl{branch} invoke a change of program flow depending on the argument at the \glslink{tos}{top}
+of the \gls{ps}. The branch destination is a \glslink{reladr}{relative address}, encoded into the opcode
+of the instruction in the range of $\pm$ 8KB.
 
 \subsection{Literals}
 \label{opcodes:literal}
 
 Signed integer \glspl{literal} of 12-bit length can be pushed onto the \gls{ps} within
-a single instruction. For larger integers a supplemental TBD \gls{call} is required.
+a single instruction. For larger integers a supplemental \gls{alu} instruction is required.
+(see encoding \texttt{11100} in \tabref{opcodes:alu:operators})
 
 \subsection{ALU Instructions}
 \label{opcodes:alu}
 \Gls{alu} instructions perform an operation on two \gls{cell} values, resulting in a new double 
-\gls{cell} value. The reult can be either placed entirely onto the \gls{ps}, or truncated, discarding
-the most significant \gls{cell}. The first operand is always taken from the \Gls{ps}. The second operand can be
-either taken from the \Gls{ps} or encoded into the opcode of the instruction. In the latter case,
-the interpretation of the embedded 5-bit value depends on the operation. It is either regarded as an unsigned
-($uimm$), a sign extended ($simm$), or an offsetted ($oimm$) integer value:
+\gls{cell} value. The result can either be placed entirely onto the \gls{ps}, or truncated, discarding
+the most significant \gls{cell}. The first operand is always taken from the \gls{ps}. The second operand can
+either be taken from the \gls{ps} or encoded into the opcode of the instruction. In the latter case,
+the interpretation of the embedded 5-bit value depends on the operation. The \glslink{immop}{immediate} value is
+interpreted as either an unsigned ($uimm$), a sign extended ($simm$), or an offsetted ($oimm$) integer value:
 
 \begin{align*}
   uimm &= \text{opcode[4:0]}                                     \\
@@ -863,13 +865,13 @@ the interpretation of the embedded 5-bit value depends on the operation. It is e
 \subsection{Stack Instructions}
 \label{opcodes:stack}
 
-The N1's stack instruction aims at efficiently implementing the essential stack operations
-in \Gls{forth} only using the data pathes which needed for the stack's push and pull
-operations.
+The N1's stack instruction aims at efficiently implementing common stack operations
+of the \Gls{forth} language, while only implementing the essential data paths, which are
+needed for plain push and pull operations.
 
-The opcode of the stack instruction contains a 10-bit wide field to specify a transition
+The opcode of the stack instruction contains a 10-bit field to specify a transition
 pattern of the upper \glspl{cell} of the \gls{ps} and the \gls{rs}. 
-The structure transition patter is shown in \figref{opcodes:stack:transpat}.
+The structure transition pattern is shown in \figref{opcodes:stack:transpat}.
     
 \begin{figure}[!h]
   %\begin{center}
@@ -1006,9 +1008,10 @@ The structure transition patter is shown in \figref{opcodes:stack:transpat}.
   %\end{center}
 \end{figure}
 
-The stack instruction contains four \gls{ust} fields which control the data transfer within the upper four
-\glspl{cell} of the \gls{ps} and the top of the \gls{rs}. Each \gls{ust} field determines the direction of
-data transfer between two neighboring stack \glspl{cell}. Four options are selectable:
+The stack instruction contains four \gls{ust} fields which control the data movement within
+the upper four \glspl{cell} of the \gls{ps} and the top \gls{cell} of the \gls{rs}. Each
+\gls{ust} field determines the direction of data transfer between two neighboring stack
+\glspl{cell}. Four options are selectable:
 \begin{itemize}
   \item No data transfer
   \item Data transfer upwards (or towards the \gls{rs})
@@ -1017,7 +1020,7 @@ data transfer between two neighboring stack \glspl{cell}. Four options are selec
 \end{itemize}
 It is possible to put the \gls{ust} fields into a combination which would trigger a data transfer of two
 source \glspl{cell} to a single desination \gls{cell}. In these cases, the resulting data in the desination
-\gls{cell} is undefined.
+\gls{cell} is a logic OR of all sources.
 
 \begin{samepage}
 The two remaining \gls{ist} fields in the stack instruction control the data movement of the \glspl{ls}.
@@ -2535,17 +2538,16 @@ Two options are selectable:
 
 Memory access instruction perform read or write acesses to the system's 128KB address space.
 Data is solely accessed in 16-bit entities.
-Accesses to a 510B subset of the address space can be done through an immediate
-addressing. This will offer faster access to frequently used system variables.
+Accesses to a 511B window in the main address space, can be done through an immediate
+addressing. This offers faster access to frequently used system variables.
 
 \subsection{Control Instructions}
 \label{opcodes:ctrl}
 
 The N1 implements two types of control instructions to manipulate the internal state of the CPU.
-The first type are simple control instructions. These don't consume input from the stacks nor do
-they produce a return value. These instructions can be executed concurrently and combined into a
-single CPU instruction. \tabref{opcodes:ctrl:smpl} shows the set of simple control instructions
-and thir encoding.
+The first type are concurrent control instructions. These don't consume input from the stacks, nor do
+they produce a return value. These instructions perform multiple tasks within one bus cycle.
+\tabref{opcodes:ctrl:smpl} shows the set of concurrent control instructionsand their encoding.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2599,7 +2601,8 @@ and thir encoding.
 \end{center}  
 \endgroup
 
-The second type of control instructions,  trigger an internal sequence of actions and consume multiple clock cycles 
+\noindent
+The second type of control instructions trigger an internal sequence of actions and consume multiple clock cycles 
 of execution time. \tabref{opcodes:ctrl:cmplx} lists the encoding of these complex control instructions.
 
 \begingroup

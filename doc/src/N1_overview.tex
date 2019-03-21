@@ -26,7 +26,7 @@
 \label{overview}
 
 The N1 is a 16-bit stack machine, targeted for low-end FPGA applications.
-It's instruction set and architecture is designed for efficient execution
+Its instruction set and architecture are designed for efficient execution
 of \Gls{forth} code. 
 
 \noindent
@@ -42,7 +42,7 @@ Here is a summary of the N1's characteristics:
   \item Separate address space for \gls{stack} content
   \item \Gls{wb} interfaces to main and stack memory 
   \item Up to 128KB (main) memory space
-  \item Memory addressable in 16-bit entities 
+  \item Memory addressable in 16-bit entities only
   \end{itemize}
 
 %Stacks  
@@ -56,18 +56,18 @@ Here is a summary of the N1's characteristics:
     \item[\Gls{us}:]
       \begin{itemize}
       \item[]
-      \item Shift registers with selectable shift direction for each entry
+      \item Shift registers with selectable shift direction for each individual cell
       \item Fixed size
         \begin{itemize}
-        \item \gls{ps}: 4 \glspl{cell}
-        \item \gls{rs}: 1 \gls{cell}
+        \item Upper \gls{ps}: 4 \glspl{cell}
+        \item Upper \gls{rs}: 1 \gls{cell}
         \end{itemize}
       \end{itemize}
     %Intermediate stack  
     \item[\Gls{is}:]
       \begin{itemize}
       \item[]
-      \item \Gls{lifo} buffer with lazy data transfers to and from the lower stack
+      \item Buffer with lazy data transfers to and from the lower stack
       \item Configurable size
       \end{itemize}
     %Lower stack
@@ -85,22 +85,22 @@ Here is a summary of the N1's characteristics:
 \item[Instruction set:]
   \begin{itemize}
   \item[]
-  \item Fixed instruction size of 16 bit
+  \item Fixed instruction size of 16-bit
   \item \Glspl{jump} and \glspl{call}
     \begin{itemize}
-    \item Indirect addressing
-    \item Direct addressing within a 32KB window
-    \item Two bus cycles of execution time
+    \item \Gls{indadr}
+    \item \Gls{diradr} within a 32KB window
+    \item Two bus cycle execution time
     \item Return from \glspl{call} performed concurrently with last instruction
     \end{itemize}
   \item \Glspl{branch}
     \begin{itemize}
-    \item Direct relative addressing within a 16KB range
+    \item \glslink{diradr}{Direct} \gls{reladr} within a 16KB range
     \item Two bus cycles of execution time if branch is taken, one cycle if not
     \end{itemize}         
   \item \Glspl{literal}
     \begin{itemize}
-    \item Immediate encoding of literals between -2048 and 2047
+    \item \glslink{immop}{Immediate} encoding of literals between -2048 and 2047
     \item Literals out of this range requre one additional instruction
     \end{itemize}
   \item \glslink{alu}{Arithmetic and logic operations}
@@ -113,7 +113,8 @@ Here is a summary of the N1's characteristics:
       \item Bitwise logic operations
       \item Milti-bit shifts
      \end{itemize}
-    \item optional immediate encoding of one operand, usung 5bit encoding 
+    \item Optional \glslink{immop}{immediate} encoding of one operand, using
+      5-bit encoding 
     \end{itemize}
   \item \Gls{stack} operations
     \begin{itemize}
@@ -121,9 +122,9 @@ Here is a summary of the N1's characteristics:
     \end{itemize}
   \item Memory I/O
     \begin{itemize}
-    \item Indirect addressing
-    \item Direct addressing within a 256B window
-    \item Two bus cycles of execution time if branch is taken, one cycle if not
+    \item \Gls{indadr}
+    \item \Gls{diradr} within a 511B window
+    \item Two bus cycle execution time if branch is taken, one cycle if not
     \end{itemize}   
   \end{itemize}
 
@@ -145,7 +146,7 @@ Here is a summary of the N1's characteristics:
 \item[Interrupts:]
   \begin{itemize}
   \item[]
-  \item Optional interrupt support throgh external interrupt controller
+  \item Optional interrupt support through external interrupt controller
   \item Automatic interrupt acknowledge (flag clearing) supported
   \end{itemize}
   
