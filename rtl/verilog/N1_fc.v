@@ -140,10 +140,14 @@ module N1_fc
 
    //Finite state machine
    //--------------------
-   localparam STATE_EXEC        = 2'b00;
-   localparam STATE_EXEC_STASH  = 2'b01;
-   localparam STATE_UNREACH     = 2'b10;
-   localparam STATE_EXEC_READ   = 2'b11;
+   localparam STATE_EXEC        = 3'b000;                                                      //execute single cycle instruction (next upcode on read data bus)
+   localparam STATE_EXEC_STASH  = 3'b001;                                                      //execute single cycle instruction (next opcode stached)
+   localparam STATE_EXEC_READ   = 3'b010;                                                      //second cycle of the reaad instruction
+   localparam STATE_EXEC_IRQ    = 3'b011;                                                      //Capture ISR and prepare CALL
+   localparam STATE_EXEC_EXCPT  = 3'b111;                                                      //Capture TC and prepare 0 JUMP
+   localparam STATE_UNREACH_0   = 3'b100;                                                      //unreachable (same as STATE_EXEC)
+   localparam STATE_UNREACH_1   = 3'b101;                                                      //unreachable (same as STATE_EXEC_STASH)
+   localparam STATE_UNREACH_2   = 3'b110;                                                      //unreachable (same as STATE_EXEC_READ)
 
    always @*
      begin
@@ -159,13 +163,13 @@ module N1_fc
         fc2ir_force_call_o      = 1'b0;                                                        //load CALL instruction
         fc2ir_force_drop_o      = 1'b0;                                                        //load DROP instruction
         fc2ir_force_nop_o       = 1'b0;                                                        //load NOP instruction
-        fc2ir_force_isr_o       = 1'b0;                                                         //load ISR instruction
+        fc2ir_force_isr_o       = 1'b0;                                                        //load ISR instruction
         fc2prs_hold_o           = 1'b0;                                                        //hold any state tran
         fc2prs_dat2ps0_o        = 1'b0;                                                        //capture read data
         fc2excpt_excpt_dis_o    = 1'b0;                                                        //disable exceptions
         fc2excpt_irq_dis_o      = 1'b0;                                                        //disable interrupts
         fc2excpt_buserr_o       = 1'b0;                                                        //invalid pbus access
-        state_next              = STATE_EXEC;                                                           //remain in current state
+        state_next              = STATE_EXEC;                                                  //remain in current state
 
         //Wait for bus response (stay in sync with memory)
         if (pbus_acc_reg &                                                                     //ongoung bus access

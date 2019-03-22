@@ -657,133 +657,133 @@ interpreted as either an unsigned ($uimm$), a sign extended ($simm$), or an offs
     \texttt{00000}                       &
     Sum                                  &
     x1 $+$ $uimm$                        &
-    x1 $+$ x2                            \\ \hline
+    x2 $+$ x1                            \\ \hline
     
     %Sum
     \texttt{00001}                       &
     Absolute value                       &
     $oimm$ $+$ ABS(x1)                   &
-    x2 $+$ ABS(x1)                       \\ \hline
+    x1 $+$ ABS(x2)                       \\ \hline
                                            
     %Difference                            
     \texttt{00010}                       &
     Difference                           &
     x1 $-$ $uimm$                        &
-    x1 $-$ x2                            \\ \hline
+    x2 $-$ x1                            \\ \hline
 
     %Difference                            
     \texttt{00011}                       &
     Difference                           &
     $oimm$ $-$ x1                        &
-    x2 $-$ x1                            \\ \hline
+    x1 $-$ x2                            \\ \hline
     %---------------------------------
-
-    %Greater/lower-than comparisons
+    
+    %MAX/MIN values
     %---------------------------------
-    %Unsigned lower-than                     
+    %Unsigned MIN value
     \texttt{00100}                       &
-    Unsigned lower-than comparison       &
-    x1 $<$ $uimm$?                       &
-    x1 $<$ x2?                           \\ \hline
-
-    %Signed greater-than
+    Unsigned minimum value               &
+    UMIN(x1, $uimm$)                     &
+    UMIN(x2, x1)                         \\ \hline
+    
+    %Signed MAX value
     \texttt{00101}                       &
-    Signed greater-than comparison       &
-    $oimm$ $<$ x1?                       &
-    x2 $<$ x1?                           \\ \hline
-
-    %Unsigned greater-than                     
+    Signed maximum value                 &
+    MAX($oimm$, x1)                      &
+    MAX(x1, x2)                          \\ \hline
+                                           
+    %Unsigned MAX value                            
     \texttt{00110}                       &
-    Unsigned greater-than comparison     &
-    x1 $>$ $uimm$?                       &
-    x1 $>$ x2?                           \\ \hline
+    Unsigned maximum value               &
+    UMAX(x1, $uimm$)                     &
+    UMAX(x2, x1)                         \\ \hline
 
-    %Signed lower-than
+    %Signed MIN value                            
     \texttt{00111}                       &
-    Signed lower-than comparison         &
-    $oimm$ $>$ x1?                       &
-    x2 $>$ x1?                           \\ \hline
+    Signed minimum value                 &
+    MIN($oimm$, x1                       &
+    MIN(x1 $>$ x2                        \\ \hline
     %---------------------------------
-   
+
     %Equals comparisons
     %---------------------------------
     %Equals                    
     \texttt{01000}                       &
     Equals comparison                    &
     x1 $=$ $uimm$?                       &
-    x1 $=$ x2?                           \\ \hline
+    x2 $=$ x1?                           \\ \hline
 
     %Equals
     \texttt{01001}                       &
     Equals comparison                    &
     $oimm$ $=$ x1?                       &
-    x2 $=$ x1?                           \\ \hline
+    x1 $=$ x2?                           \\ \hline
 
     %Not-Equals                     
     \texttt{01010}                       &
     Not-equals comparison                &
     x1 $\ne$ $uimm$?                     &
-    x1 $\ne$ x2?                         \\ \hline
+    x2 $\ne$ x1?                         \\ \hline
 
     %Not-Eqials
     \texttt{01011}                       &
     Not-equals comparison                &
     $oimm$ $\ne$ x1?                     &
-    x2 $\ne$ x1?                         \\ \hline
+    x1 $\ne$ x2?                         \\ \hline
     %---------------------------------
 
-    %MIN/MAX operations
+    %Greater/lower-than comparisons
     %---------------------------------
-    %Unsigned MIN                     
+    %Unsigned lower-than                     
     \texttt{01100}                       &
-    Unsigned minimum                     &
-    UMIN(x1, $uimm$)                     &
-    UMIN(x1, x2)                         \\ \hline
+    Unsigned lower-than comparison       &
+    x1 $<$ $uimm$?                       &
+    x2 $<$ x1?                           \\ \hline
 
-    %Signed MAX
+    %Signed lower-than
     \texttt{01101}                       &
-    Signed maximum                       &
-    MAX($oimm$,  x1)                     &
-    MAX(x2, x1)                          \\ \hline
+    Signed lower-than comparison         &
+    $oimm$ $<$ x1?                       &
+    x1 $<$ x2?                           \\ \hline
 
-    %Unsigned MAX                     
+    %Unsigned greater-than                     
     \texttt{01110}                       &
-    Unsigned maximum                     &
-    UMAX(x1, $uimm$)                     &
-    UMAX(x1, x2)                         \\ \hline
+    Unsigned greater-than comparison     &
+    x1 $>$ $uimm$?                       &
+    x2 $>$ x1?                           \\ \hline
 
-    %Signed MIN
+    %Signed greater-than
     \texttt{01111}                       &
-    Signed minimum                       &
-    MIN($oimm$, x1)                      &
-    MIN(x2, x1)                          \\ \hline
+    Signed greater-than                  &
+    $oimm$ $>$ x1?                       &
+    x1 $>$ x2?                           \\ \hline
     %---------------------------------
-    
+      
     %Multiplier operations             
     %---------------------------------
     %Unsigned product                  
       \texttt{10000}                     &
       Unsigned product                   &
       x1 $*$ $uimm$                      &
-      x1 $*$ x2                          \\ \hline
+      x2 $*$ x1                          \\ \hline
                                          
     %Unsigned product                      
       \texttt{10001}                     &
       Unsigned product                   &
       x1 $*$ $simm$                      &
-      x1 $*$ x2                          \\ \hline
+      x2 $*$ x1                          \\ \hline
                                          
     %Signed product                  
       \texttt{10010}                     &
       Signed product                     &
       x1 $*$ $uimm$                      &
-      x1 $*$ x2                          \\ \hline
+      x2 $*$ x1                          \\ \hline
                                          
     %Signed product                      
       \texttt{10011}                     &
       Signed product                     &
       x1 $*$ $simm$                      &
-      x1 $*$ x2                          \\ \hline
+      x2 $*$ x1                          \\ \hline
     %---------------------------------
                                          
     %Bitwise logic operations          
@@ -792,19 +792,19 @@ interpreted as either an unsigned ($uimm$), a sign extended ($simm$), or an offs
       \texttt{10100}                     &
       Logic AND                          &
       x1 $\land$ $simm$                  &
-      x1 $\land$ x2                      \\ \hline
+      x2 $\land$ x1                      \\ \hline
                                          
     %XOR                                 
       \texttt{10101}                     &
       Logic XOR                          &
       x1 $\oplus$ $simm$                 &
-      x1 $\oplus$ x2                     \\ \hline
+      x2 $\oplus$ x1                     \\ \hline
                                          
     %OR                                  
       \texttt{10110}                     &
       Logic OR                           &
       x1 $\lor$ $uimm$                   &
-      x1 $\lor$ x2                       \\ \hline
+      x2 $\lor$ x1                       \\ \hline
                                          
     %Reserved                            
       \texttt{10111}                     &

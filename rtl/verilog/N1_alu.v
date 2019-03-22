@@ -29,111 +29,131 @@
 
 module N1_alu
    (//DSP interface
-    output wire                   alu2dsp_add_sel_o,                 //1:sub, 0:add
-    output wire                   alu2dsp_mul_sel_o,                 //1:smul, 0:umul
-    output wire [15:0]            alu2dsp_add_opd0_o,                //first operand for adder/subtractor
-    output wire [15:0]            alu2dsp_add_opd1_o,                //second operand for adder/subtractor (zero if no operator selected)
-    output wire [15:0]            alu2dsp_mul_opd0_o,                //first operand for multipliers
-    output wire [15:0]            alu2dsp_mul_opd1_o,                //second operand dor multipliers (zero if no operator selected)
-    input  wire [31:0]            dsp2alu_add_res_i,                 //result from adder
-    input  wire [31:0]            dsp2alu_mul_res_i,                 //result from multiplier
+    output wire                   alu2dsp_add_sel_o,                   //1:sub, 0:add
+    output wire                   alu2dsp_mul_sel_o,                   //1:smul, 0:umul
+    output wire [15:0]            alu2dsp_add_opd0_o,                  //first operand for adder/subtractor
+    output wire [15:0]            alu2dsp_add_opd1_o,                  //second operand for adder/subtractor (zero if no operator selected)
+    output wire [15:0]            alu2dsp_mul_opd0_o,                  //first operand for multipliers
+    output wire [15:0]            alu2dsp_mul_opd1_o,                  //second operand dor multipliers (zero if no operator selected)
+    input  wire [31:0]            dsp2alu_add_res_i,                   //result from adder
+    input  wire [31:0]            dsp2alu_mul_res_i,                   //result from multiplier
 
     //IR interface
-    input  wire [4:0]             ir2alu_opr_i,                      //ALU operator
-    input  wire [4:0]             ir2alu_opd_i,                      //immediate operand
-    input  wire                   ir2alu_opd_sel_i,                  //select (stacked)  operand
+    input  wire [4:0]             ir2alu_opr_i,                        //ALU operator
+    input  wire [4:0]             ir2alu_opd_i,                        //immediate operand
+    input  wire                   ir2alu_opd_sel_i,                    //0: PS1, 1: immediate
 
     //PRS interface
-    output wire [15:0]            alu2prs_ps0_next_o,                //new PS0 (TOS)
-    output wire [15:0]            alu2prs_ps1_next_o,                //new PS1 (TOS+1)
-    input  wire [15:0]            prs2alu_ps0_i,                     //current PS0 (TOS)
-    input  wire [15:0]            prs2alu_ps1_i);                    //current PS1 (TOS+1)
+    output wire [15:0]            alu2prs_ps0_next_o,                  //new PS0 (TOS)
+    output wire [15:0]            alu2prs_ps1_next_o,                  //new PS1 (TOS+1)
+    input  wire [15:0]            prs2alu_ps0_i,                       //current PS0 (TOS)
+    input  wire [15:0]            prs2alu_ps1_i);                      //current PS1 (TOS+1)
 
    //Internal signals
    //----------------
    //Intermediate operands
-   wire [15:0]                    uimm;                              //unsigned immediate operand   (1..31)
-   wire [15:0]                    simm;                              //signed immediate operand   (-16..-1,1..15)
-   wire [15:0]                    oimm;                              //shifted immediate oprtand  (-15..15)
+   wire [15:0]                    uimm;                                //unsigned immediate operand   (1..31)
+   wire [15:0]                    simm;                                //signed immediate operand   (-16..-1,1..15)
+   wire [15:0]                    oimm;                                //shifted immediate oprtand  (-15..15)
    //Adder
-   wire [31:0]                    add_out;                           //adder output
+   wire [31:0]                    add_out;                             //adder output
    //Comparator
-   wire                           cmp_eq;                            //equals comparator output
-   wire                           cmp_neq;                           //not-equals comparator output
-   wire                           cmp_lt_unsig;                      //unsigned lower_than comparator output
-   wire                           cmp_gt_sig;                        //signed greater-than comparator output
-   wire                           cmp_gt_unsig;                      //unsigned greater_than comparator output
-   wire                           cmp_lt_sig;                        //signed lower-than comparator output
-   wire                           cmp_muxed;                         //multiplexed comparator outputs
-   wire [31:0]                    cmp_out;                           //comparator output
+   wire                           cmp_eq;                              //equals comparator output
+   wire                           cmp_neq;                             //not-equals comparator output
+   wire                           cmp_ult;                             //unsigned lower_than comparator output
+   wire                           cmp_sgt;                             //signed greater-than comparator output
+   wire                           cmp_ugt;                             //unsigned greater_than comparator output
+   wire                           cmp_slt;                             //signed lower-than comparator output
+   wire                           cmp_res;                             //multiplexed comparator outputs
+   wire [31:0]                    cmp_out;                             //comparator output
+   //MAX/MIN value
+   wire                           max_sel;                             //0: PS1, 1:PS0
+   wire [15:0]                    max_res;                             //MAX/MIN value
+   wire [31:0]                    max_out;                             //MAX/MIN ALU output
    //Multiplier
-   wire [31:0]                    mul_out;                           //multiplier output
+   wire [31:0]                    mul_out;                             //multiplier output
    //Bitwise logic
-   wire [15:0]                    bl_op0;                            //first operand
-   wire [15:0]                    bl_and;                            //result of AND operation
-   wire [15:0]                    bl_xor;                            //result of XOR operation
-   wire [15:0]                    bl_or;                             //result of OR operation
-   wire [31:0]                    bl_out;                            //bit logic output
+   wire [15:0]                    bl_op0;                              //first operand
+   wire [15:0]                    bl_and;                              //result of AND operation
+   wire [15:0]                    bl_xor;                              //result of XOR operation
+   wire [15:0]                    bl_or;                               //result of OR operation
+   wire [31:0]                    bl_out;                              //bit logic output
    //Barrel shifter
-   wire [15:0]                    lsr_op0;                           //first operand
-   wire [15:0]                    lsr_op1;                           //second operand
-   wire                           lsr_msb;                           //MSB of first operand
-   wire [15:0]                    lsr_sh0;                           //shift 1 bit
-   wire [15:0]                    lsr_sh1;                           //shift 2 bits
-   wire [15:0]                    lsr_sh2;                           //shift 4 bits
-   wire [15:0]                    lsr_sh3;                           //shift 8 bits
-   wire [15:0]                    lsr_sh4;                           //shift 16 bits
-   wire [31:0]                    lsr_res;                           //result
-   wire [15:0]                    lsl_op0;                           //first operand
-   wire [15:0]                    lsl_op1;                           //second operand
-   wire [31:0]                    lsl_sh0;                           //shift 1 bit
-   wire [31:0]                    lsl_sh1;                           //shift 2 bits
-   wire [31:0]                    lsl_sh2;                           //shift 4 bits
-   wire [31:0]                    lsl_sh3;                           //shift 8 bits
-   wire [31:0]                    lsl_sh4;                           //shift 16 bits
-   wire [31:0]                    lsl_sh5;                           //shift 32 bits
-   wire [31:0]                    lsl_res;                           //result
-   wire [31:0]                    ls_out;                            //shifter output
+   wire [15:0]                    lsr_op0;                             //first operand
+   wire [15:0]                    lsr_op1;                             //second operand
+   wire                           lsr_msb;                             //MSB of first operand
+   wire [15:0]                    lsr_sh0;                             //shift 1 bit
+   wire [15:0]                    lsr_sh1;                             //shift 2 bits
+   wire [15:0]                    lsr_sh2;                             //shift 4 bits
+   wire [15:0]                    lsr_sh3;                             //shift 8 bits
+   wire [15:0]                    lsr_sh4;                             //shift 16 bits
+   wire [31:0]                    lsr_res;                             //result
+   wire [15:0]                    lsl_op0;                             //first operand
+   wire [15:0]                    lsl_op1;                             //second operand
+   wire [31:0]                    lsl_sh0;                             //shift 1 bit
+   wire [31:0]                    lsl_sh1;                             //shift 2 bits
+   wire [31:0]                    lsl_sh2;                             //shift 4 bits
+   wire [31:0]                    lsl_sh3;                             //shift 8 bits
+   wire [31:0]                    lsl_sh4;                             //shift 16 bits
+   wire [31:0]                    lsl_sh5;                             //shift 32 bits
+   wire [31:0]                    lsl_res;                             //result
+   wire [31:0]                    ls_out;                              //shifter output
    //Literal value
-   wire [31:0]                    lit_out;                           //literal value output
+   wire [31:0]                    lit_out;                             //literal value output
    //Processor status
-   wire [31:0]                    stat_out;                          //processor status output
+   wire [31:0]                    stat_out;                            //processor status output
    //ALU output
-   wire [31:0]                    alu_out;                           //ALU output
+   wire [31:0]                    alu_out;                             //ALU output
 
    //Immediate operands
    //------------------
-   assign uimm        = { 11'h000,               ir2alu_opd_i};      //unsigned immediate operand (1..31)
-   assign simm        = {{12{ ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]}; //signed immediate operand   (-16..-1,1..15)
-   assign oimm        = {{12{~ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]}; //shifted immediate oprtand  (-15..15)
+   assign uimm        = { 11'h000,               ir2alu_opd_i};        //unsigned immediate operand (1..31)
+   assign simm        = {{12{ ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]};   //signed immediate operand   (-16..-1,1..15)
+   assign oimm        = {{12{~ir2alu_opd_i[4]}}, ir2alu_opd_i[3:0]};   //shifted immediate oprtand  (-15..15)
 
    //Hard IP adder
    //-------------
    //Inputs
-   assign alu2dsp_add_sel_o   = |ir2alu_opr_i[3:1];                  //0:op1 + op0, 1:op1 + op0
-   assign alu2dsp_add_opd0_o  =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm          : prs2alu_ps0_i) :
-                                                   (ir2alu_opd_sel_i ? prs2alu_ps0_i : prs2alu_ps1_i);
-   assign alu2dsp_add_opd1_o  =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? prs2alu_ps0_i : prs2alu_ps1_i) :
-                                                   (ir2alu_opd_sel_i ? uimm          : prs2alu_ps0_i);
-   //Result
-   assign add_out             = ~|ir2alu_opr_i[4:2] ? dsp2alu_add_res_i : 32'h00000000;
+   assign alu2dsp_add_sel_o  = |ir2alu_opr_i[3:1] |                    //0:op1 + op0, 1:op1 - op0
+                               (ir2alu_opr_i[0] & prs2alu_ps0_i[15]);  //absolute value
+
+   assign alu2dsp_add_opd0_o =  ir2alu_opr_i[0] ? prs2alu_ps0_i :
+                                                  (ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i);
+
+   assign alu2dsp_add_opd1_o =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm : prs2alu_ps1_i) :
+                                                  prs2alu_ps0_i;
+
+   //Sum, difference, absolute value
+   //-------------------------------
+   assign add_out         = ~|(ir2alu_opr_i[4:2] ^ 3'b000) ?
+                            dsp2alu_add_res_i : 32'h00000000;
+
+   //MAX and MIN values
+   //------------------
+   assign max_sel         = ir2alu_opr_i[1] ^
+                            (ir2alu_opr_i[1] ? cmp_slt : cmp_ult);
+   assign max_res         = max_sel ? prs2alu_ps0_i : prs2alu_ps1_i;
+   assign max_out         = {16'h0000,
+                             (~|(ir2alu_opr_i[4:2] ^ 3'b001) ? max_res : 16'h0000)};
 
    //Comparator
    //----------
-   assign cmp_eq          = ~|dsp2alu_add_res_i[15:0];               //equals comparator output
-   assign cmp_neq         = ~cmp_eq;                                 //not-equals comparator output
-   assign cmp_lt_unsig    =   dsp2alu_add_res_i[16];                 //unsigned lower_than comparator output
-   assign cmp_gt_sig      =   dsp2alu_add_res_i[15];                 //signed greater-than comparator output
-   assign cmp_gt_unsig    =   ~|{cmp_lt_unsig, cmp_eq};              //unsigned greater_than comparator output
-   assign cmp_lt_sig      =   ~|{cmp_gt_sig,   cmp_eq};              //signed lower-than comparator output
-   assign cmp_muxed       = (~|{ir2alu_opr_i^5'b00100}     &  cmp_lt_unsig) |
-                            (~|{ir2alu_opr_i^5'b00101}     &  cmp_gt_sig)   |
-                            (~|{ir2alu_opr_i^5'b00110}     &  cmp_gt_unsig) |
-                            (~|{ir2alu_opr_i^5'b00111}     &  cmp_lt_sig)   |
-                            (~|{ir2alu_opr_i[4:1]^4'b0100} &  cmp_eq)       |
-                            (~|{ir2alu_opr_i[4:1]^4'b0101} &  cmp_neq);
+   assign cmp_eq          = ~|dsp2alu_add_res_i[15:0];                 //TRUE if op1 == op2
+   assign cmp_neq         = ~cmp_eq;                                   //TRUE if op1 <> op2
+   assign cmp_ult         = dsp2alu_add_res_i[16];                     //TRUE if op1 <  op2
+   assign cmp_slt         = dsp2alu_add_res_i[15];                     //TRUE if op1 <  op2
+   assign cmp_ugt         = ~|{cmp_ult, cmp_eq};                       //TRUE if op1 >  op2
+   assign cmp_sgt         = ~|{cmp_slt, cmp_eq};                       //TRUE if op1 >  op2
+
+
+   assign cmp_res         = (~|{ir2alu_opr_i[2:1]^2'b00}  &  cmp_eq)  |
+                            (~|{ir2alu_opr_i[2:1]^2'b01}  &  cmp_neq) |
+                            (~|{ir2alu_opr_i[2:0]^3'b100} &  cmp_ult) |
+                            (~|{ir2alu_opr_i[2:0]^3'b101} &  cmp_slt) |
+                            (~|{ir2alu_opr_i[2:0]^3'b110} &  cmp_ugt) |
+                            (~|{ir2alu_opr_i[2:0]^3'b011} &  cmp_sgt);
    //Result
-   assign cmp_out         = {2*16{cmp_muxed}};
+   assign cmp_out         = {32{~|(ir2alu_opr_i[4:3]^2'b01) & cmp_res}};
 
    //Hard IP multiplier
    //------------------
@@ -156,7 +176,7 @@ module N1_alu
    assign bl_or            = ~|{ir2alu_opr_i[1:0]^2'b10} ?
                              (ir2alu_opd_sel_i ? (prs2alu_ps0_i | uimm) : (prs2alu_ps0_i | prs2alu_ps1_i)) : 16'h0000;
    //Result
-   assign bl_out           = ~|{ir2alu_opr_i[4:2]^3'b100} ?
+   assign bl_out           = ~|{ir2alu_opr_i[4:2]^3'b101} ?
                               {16'h0000, bl_and | bl_xor | bl_or} : 32'h00000000;
 
    //Barrel shifter
@@ -207,7 +227,7 @@ module N1_alu
    assign lsl_res = ir2alu_opr_i[0] ?                                //shift 32 bits
                     lsl_sh4 : 32'h00000000;                          //
    //Result
-   assign ls_out  = ~|{ir2alu_opr_i[4:2]^3'b101} ?
+   assign ls_out  = ~|{ir2alu_opr_i[4:2]^3'b110} ?
                     (lsr_res | lsl_res) : 32'h00000000;
 
    //Literal value
@@ -219,6 +239,7 @@ module N1_alu
    //ALU output
    //----------
     assign alu_out = add_out  |
+                     max_out  |
                      cmp_out  |
                      mul_out  |
                      bl_out   |
