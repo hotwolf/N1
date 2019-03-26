@@ -152,7 +152,7 @@ module N1
     output wire                              prb_excpt_en_o,         //exception enable
     output wire                              prb_irq_en_o,           //interrupt enable
     //FC - Flow control
-    output wire [1:0]                        prb_fc_state_o,         //state variable
+    output wire [2:0]                        prb_fc_state_o,         //state variable
     output wire                              prb_fc_pbus_acc,        //ongoing bus access
     //IR - Instruction register
     output wire [15:0]                       prb_ir_o,               //current instruction register
@@ -208,7 +208,6 @@ module N1
    wire                                     fc2ir_force_0call;       //load 0 CALL instruction
    wire                                     fc2ir_force_call;        //load CALL instruction
    wire                                     fc2ir_force_drop;        //load DROP instruction
-   wire                                     fc2ir_force_0lit;        //load 0 LIT instruction
    wire                                     fc2ir_force_nop;         //load NOP instruction
    //FC -> PRS
    wire                                     fc2prs_hold;             //hold any state tran
@@ -450,7 +449,6 @@ module N1
       .fc2ir_force_0call_o      (fc2ir_force_0call),                 //load 0 CALL instruction
       .fc2ir_force_call_o       (fc2ir_force_call),                  //load CALL instruction
       .fc2ir_force_drop_o       (fc2ir_force_drop),                  //load DROP instruction
-      .fc2ir_force_0lit         (fc2ir_force_0lit),                  //load 0 LIT instruction
       .fc2ir_force_nop_o        (fc2ir_force_nop),                   //load NOP instruction
       .ir2fc_eow_i              (ir2fc_eow),                         //end of word (EOW bit set)
       .ir2fc_eow_postpone_i     (ir2fc_eow_postpone),                //EOW conflict detected
@@ -520,7 +518,6 @@ module N1
       .fc2ir_force_0call_i      (fc2ir_force_0call),                 //load 0 CALL instruction
       .fc2ir_force_call_i       (fc2ir_force_call),                  //load CALL instruction
       .fc2ir_force_drop_i       (fc2ir_force_drop),                  //load DROP instruction
-      .fc2ir_force_0lit_i       (fc2ir_force_0lit),                  //load 0 LIT instruction
       .fc2ir_force_nop_i        (fc2ir_force_nop),                   //load NOP instruction
 
       //PAGU interface

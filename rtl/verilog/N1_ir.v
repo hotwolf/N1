@@ -66,7 +66,6 @@ module N1_ir
     input  wire                   fc2ir_force_0call_i,                               //load 0 CALL instruction
     input  wire                   fc2ir_force_call_i,                                //load CALL instruction
     input  wire                   fc2ir_force_drop_i,                                //load DROP instruction
-    input  wire                   fc2ir_force_0lit_i,                                //load 0 LIT instruction
     input  wire                   fc2ir_force_nop_i,                                 //load NOP instruction
 
     //PAGU interface
@@ -164,7 +163,6 @@ module N1_ir
    localparam OPC_0JMP  = OPC_EOW | OPC_0CALL;                                       //JUMP to address 0
    localparam OPC_CALL  = 16'h7FFF;                                                  //indirect CALL
    localparam OPC_DROP  = 16'h06A0;                                                  //drop PS0
-   localparam OPC_0LIT  = 16'h1000;                                                  //push 0 to PS0
    localparam OPC_NOP   = 16'h0400;                                                  //no operation
 
    //Instruction register
@@ -175,7 +173,6 @@ module N1_ir
                     ({16{fc2ir_force_0call_i}} & OPC_0CALL)    |                     //load 0 CALL instruction
                     ({16{fc2ir_force_call_i}}  & OPC_CALL)     |                     //load CALL instruction
                     ({16{fc2ir_force_drop_i}}  & OPC_DROP)     |                     //load DROP instruction
-                    ({16{fc2ir_force_0lit_i}}  & OPC_0LIT)     |                     //load 0 LIT instruction
                     ({16{fc2ir_force_nop_i}}   & OPC_NOP);                           //load NOP instruction
 
    assign ir_we   = fc2ir_capture_i     |                                            //capture current IR
@@ -184,7 +181,6 @@ module N1_ir
                     fc2ir_force_0call_i |                                            //load 0 CALL instruction
                     fc2ir_force_call_i  |                                            //load CALL instruction
                     fc2ir_force_drop_i  |                                            //load DROP instruction
-                    fc2ir_force_0lit_i  |                                            //load 0 LIT instruction
                     fc2ir_force_nop_i;                                               //load NOP instruction
 
    always @(posedge async_rst_i or posedge clk_i)

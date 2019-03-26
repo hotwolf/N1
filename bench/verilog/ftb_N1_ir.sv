@@ -75,7 +75,6 @@ module ftb_N1_ir
     input  wire                   fc2ir_force_0call_i,             //load 0 CALL instruction
     input  wire                   fc2ir_force_call_i,              //load CALL instruction
     input  wire                   fc2ir_force_drop_i,              //load DROP instruction
-    input  wire                   fc2ir_force_0lit_i,              //load 0 LIT instruction
     input  wire                   fc2ir_force_nop_i,               //load NOP instruction
 
     //PAGU interface
@@ -151,7 +150,6 @@ module ftb_N1_ir
       .fc2ir_force_0call_i        (fc2ir_force_0call_i),           //load 0 CALL instruction
       .fc2ir_force_call_i         (fc2ir_force_call_i),            //load CALL instruction
       .fc2ir_force_drop_i         (fc2ir_force_drop_i),            //load DROP instruction
-      .fc2ir_force_0lit_i         (fc2ir_force_0lit_i),            //load 0 LIT instruction
       .fc2ir_force_nop_i          (fc2ir_force_nop_i),             //load NOP instruction
 
       //PAGU interface

@@ -58,7 +58,7 @@
 module N1_prs
   #(parameter   SP_WIDTH        =      12,                                         //width of the stack pointer
     parameter   IPS_DEPTH       =       8,                                         //depth of the intermediate parameter stack
-    parameter   IPS_DEPTH       =       8)                                         //depth of the intermediate return stack
+    parameter   IRS_DEPTH       =       8)                                         //depth of the intermediate return stack
 								                   
    (//Clock and reset						                   
     input wire                               clk_i,                                //module clock
@@ -94,15 +94,15 @@ module N1_prs
     //EXCPT interface						                   
     output wire                              prs2excpt_psuf_o,                     //parameter stack underflow
     output wire                              prs2excpt_rsuf_o,                     //return stack underflow
-    input  wire [15:0]                       excpt2prs_tc_i;                       //throw code
+    input  wire [15:0]                       excpt2prs_tc_i,                       //throw code
 								                   
     //FC interface						                   
     output reg                               prs2fc_hold_o,                        //stacks not ready
     output wire                              prs2fc_ps0_true_o,                    //PS0 in non-zero	
     input  wire                              fc2prs_hold_i,                        //hold any state tran
     input  wire                              fc2prs_dat2ps0_i,                     //capture read data
-    input  wire                              fc2prs_tc2ps0_i;                      //capture throw code
-    input  wire                              fc2prs_isr2ps0_i;                     //capture ISR
+    input  wire                              fc2prs_tc2ps0_i,                      //capture throw code
+    input  wire                              fc2prs_isr2ps0_i,                     //capture ISR
 							                   
     //IR interface						                   
     input  wire [15:0]                       ir2prs_lit_val_i,                     //literal value
