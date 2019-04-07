@@ -253,12 +253,12 @@ module N1
    wire                                     ir2prs_pc2rs0;           //PC          -> RS0
    wire                                     ir2prs_ps_rst;           //reset parameter stack
    wire                                     ir2prs_rs_rst;           //reset return stack
-   wire                                     ir2prs_psp_rd;           //read parameter stack pointer
-   wire                                     ir2prs_psp_wr;           //write parameter stack pointer
-   wire                                     ir2prs_rsp_rd;           //read return stack pointer
-   wire                                     ir2prs_rsp_wr;           //write return stack pointer
+   wire                                     ir2prs_psp_get;          //read parameter stack pointer
+   wire                                     ir2prs_psp_set;          //write parameter stack pointer
+   wire                                     ir2prs_rsp_get;          //read return stack pointer
+   wire                                     ir2prs_rsp_set;          //write return stack pointer
    wire [15:0]                              ir2prs_lit_val;          //literal value
-   wire [7:0]                               ir2prs_ups_tp;           //upper stack transition pattern
+   wire [7:0]                               ir2prs_us_tp;            //upper stack transition pattern
    wire [1:0]                               ir2prs_ips_tp;           //10:push, 01:pull
    wire [1:0]                               ir2prs_irs_tp;           //10:push, 01:pull
 
@@ -541,12 +541,12 @@ module N1
       .ir2prs_pc2rs0_o          (ir2prs_pc2rs0),                     //PC          -> RS0
       .ir2prs_ps_rst_o          (ir2prs_ps_rst),                     //reset parameter stack
       .ir2prs_rs_rst_o          (ir2prs_rs_rst),                     //reset return stack
-      .ir2prs_psp_rd_o          (ir2prs_psp_rd),                     //read parameter stack pointer
-      .ir2prs_psp_wr_o          (ir2prs_psp_wr),                     //write parameter stack pointer
-      .ir2prs_rsp_rd_o          (ir2prs_rsp_rd),                     //read return stack pointer
-      .ir2prs_rsp_wr_o          (ir2prs_rsp_wr),                     //write return stack pointer
+      .ir2prs_psp_get_o         (ir2prs_psp_get),                    //read parameter stack pointer
+      .ir2prs_psp_set_o         (ir2prs_psp_set),                    //write parameter stack pointer
+      .ir2prs_rsp_get_o         (ir2prs_rsp_get),                    //read return stack pointer
+      .ir2prs_rsp_set_o         (ir2prs_rsp_set),                    //write return stack pointer
       .ir2prs_lit_val_o         (ir2prs_lit_val),                    //literal value
-      .ir2prs_ups_tp_o          (ir2prs_ups_tp),                     //upper stack transition pattern
+      .ir2prs_us_tp_o           (ir2prs_us_tp),                      //upper stack transition pattern
       .ir2prs_ips_tp_o          (ir2prs_ips_tp),                     //10:push              (), 01:pull
       .ir2prs_irs_tp_o          (ir2prs_irs_tp),                     //10:push              (), 01:pull
 
@@ -636,12 +636,12 @@ module N1
       .ir2prs_pc2rs0_i		(ir2prs_pc2rs0),                     //PC          -> RS0
       .ir2prs_ps_rst_i		(ir2prs_ps_rst),                     //reset parameter stack
       .ir2prs_rs_rst_i		(ir2prs_rs_rst),                     //reset return stack
-      .ir2prs_psp_rd_i		(ir2prs_psp_rd),                     //read parameter stack pointer
-      .ir2prs_psp_wr_i		(ir2prs_psp_wr),                     //write parameter stack pointer
-      .ir2prs_rsp_rd_i		(ir2prs_rsp_rd),                     //read return stack pointer
-      .ir2prs_rsp_wr_i		(ir2prs_rsp_wr),                     //write return stack pointer
+      .ir2prs_psp_get_i		(ir2prs_psp_get),                    //read parameter stack pointer
+      .ir2prs_psp_set_i		(ir2prs_psp_set),                    //write parameter stack pointer
+      .ir2prs_rsp_get_i		(ir2prs_rsp_get),                    //read return stack pointer
+      .ir2prs_rsp_set_i		(ir2prs_rsp_set),                    //write return stack pointer
       .ir2prs_lit_val_i		(ir2prs_lit_val),                    //literal value
-      .ir2prs_ups_tp_i		(ir2prs_ups_tp),                     //upper stack transition pattern
+      .ir2prs_us_tp_i		(ir2prs_us_tp),                      //upper stack transition pattern
       .ir2prs_ips_tp_i		(ir2prs_ips_tp),                     //10:push, 01:pull
       .ir2prs_irs_tp_i		(ir2prs_irs_tp),                     //10:push, 01:pull
      

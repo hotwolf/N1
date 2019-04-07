@@ -84,7 +84,7 @@ module N1_sagu
    assign sagu2dsp_psp_offs_o   = (prs2sagu_push_i              ?  //push operation
                                    (prs2sagu_stack_sel_i        ?  //1:RS, 0:PS
                                     PS_RS_DIST[SP_WIDTH-1:0]    :  //safety distance
-                                    {{SP_WIDTH-1{1'b0}}, 1'b1}) :  //incremebnt
+                                    {{SP_WIDTH-1{1'b0}}, 1'b1}) :  //increment
                                    {SP_WIDTH{1'b0}})            |  //show PSP
 
                                   (prs2sagu_pull_i              ?  //push operation

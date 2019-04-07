@@ -89,12 +89,12 @@ module N1_ir
     output wire                   ir2prs_pc2rs0_o,                                   //PC          -> RS0
     output wire                   ir2prs_ps_rst_o,                                   //reset parameter stack
     output wire                   ir2prs_rs_rst_o,                                   //reset return stack
-    output wire                   ir2prs_psp_rd_o,                                   //read parameter stack pointer
-    output wire                   ir2prs_psp_wr_o,                                   //write parameter stack pointer
-    output wire                   ir2prs_rsp_rd_o,                                   //read return stack pointer
-    output wire                   ir2prs_rsp_wr_o,                                   //write return stack pointer
+    output wire                   ir2prs_psp_get_o,                                  //read parameter stack pointer
+    output wire                   ir2prs_psp_set_o,                                  //write parameter stack pointer
+    output wire                   ir2prs_rsp_get_o,                                  //read return stack pointer
+    output wire                   ir2prs_rsp_set_o,                                  //write return stack pointer
     output wire [15:0]            ir2prs_lit_val_o,                                  //literal value
-    output wire [7:0]             ir2prs_ups_tp_o,                                   //upper stack transition pattern
+    output wire [7:0]             ir2prs_us_tp_o,                                    //upper stack transition pattern
     output wire [1:0]             ir2prs_ips_tp_o,                                   //10:push, 01:pull
     output wire [1:0]             ir2prs_irs_tp_o,                                   //10:push, 01:pull
 
@@ -127,11 +127,11 @@ module N1_ir
    wire                           instr_ctrl;                                        //any control instruction
    wire                           instr_ctrl_conc;                                   //concurrent control instruction
    wire                           instr_ctrl_psp;                                    //sequential control instruction (PSP operation)
-   wire                           instr_ctrl_psp_rd;                                 //sequential control instruction (PSP read)
-   wire                           instr_ctrl_psp_wr;                                 //sequential control instruction (PSP write)
+   wire                           instr_ctrl_psp_get;                                //sequential control instruction (PSP read)
+   wire                           instr_ctrl_psp_set;                                //sequential control instruction (PSP write)
    wire                           instr_ctrl_rsp;                                    //sequential control instruction (RSP operation)
-   wire                           instr_ctrl_rsp_rd;                                 //sequential control instruction (RSP read)
-   wire                           instr_ctrl_rsp_wr;                                 //sequential control instruction (RSP WRITE)
+   wire                           instr_ctrl_rsp_get;                                //sequential control instruction (RSP read)
+   wire                           instr_ctrl_rsp_set;                                //sequential control instruction (RSP WRITE)
    wire                           instr_scyc;                                        //single cycle instruction
    //Embedded arguments
    wire [13:0]                    arg_aadr;                                          //absolute address
@@ -224,11 +224,11 @@ module N1_ir
    assign instr_ctrl               = ~|{ir_reg[14:9]  ^  6'b000000};                 //any control instruction
    assign instr_ctrl_conc          = ~|{ir_reg[14:8]  ^  7'b0000001};                //concurrent control instruction
    assign instr_ctrl_psp           =  ~|ir_reg[14:8] &    ir_reg[1];                 //sequential control instruction (PSP operation)
-   assign instr_ctrl_psp_rd        =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b11};      //sequential control instruction (PSP read)
-   assign instr_ctrl_psp_wr        =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b10};      //sequential control instruction (PSP write)
+   assign instr_ctrl_psp_get       =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b11};      //sequential control instruction (PSP read)
+   assign instr_ctrl_psp_set       =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b10};      //sequential control instruction (PSP write)
    assign instr_ctrl_rsp           =  ~|ir_reg[14:8] &   ~ir_reg[1];                 //sequential control instruction (RSP operation)
-   assign instr_ctrl_rsp_rd        =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b01};      //sequential control instruction (RSP read)
-   assign instr_ctrl_rsp_wr        =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b00};      //sequential control instruction (RSP WRITE)
+   assign instr_ctrl_rsp_get       =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b01};      //sequential control instruction (RSP read)
+   assign instr_ctrl_rsp_set       =  ~|ir_reg[14:8] & ~|{ir_reg[1:0] ^ 2'b00};      //sequential control instruction (RSP WRITE)
    assign instr_scyc               =  ~instr_jump_or_call &                          //no JUMP or CALL
                                       ~instr_bra &                                   //no BRANCH
                                       ~instr_mem;                                    //no memory I/O
@@ -290,7 +290,7 @@ module N1_ir
 
    //PRS
    assign ir2prs_lit_val_o        = {{4{arg_lit[11]}}, arg_lit};                     //literal value
-   assign ir2prs_ups_tp_o         = (((instr_jump_or_call &  aadr_sel) |             //JUMP or CALL with indirect addressing
+   assign ir2prs_us_tp_o          = (((instr_jump_or_call &  aadr_sel) |             //JUMP or CALL with indirect addressing
                                        instr_bra                       |             //single cell ALU instruction with stacked operands
                                       (instr_alu_1cell    &  opd_sel)  |             //single cell ALU instruction with stacked operands
                                       (instr_mem_wr       &  madr_sel)) ?            //write with indirect addressing
@@ -322,10 +322,10 @@ module N1_ir
    assign ir2prs_lit2ps0_o        = instr_lit;                                       //literal     -> PS0
    assign ir2prs_ps_rst_o         = instr_ctrl_conc & act_ps_rst;                    //reset parameter stack
    assign ir2prs_rs_rst_o         = instr_ctrl_conc & act_rs_rst;                    //reset return stack
-   assign ir2prs_psp_rd_o         = instr_ctrl_psp_rd;                               //read parameter stack pointer
-   assign ir2prs_psp_wr_o         = instr_ctrl_psp_wr;                               //write parameter stack pointer
-   assign ir2prs_rsp_rd_o         = instr_ctrl_rsp_rd;                               //read return stack pointer
-   assign ir2prs_rsp_wr_o         = instr_ctrl_rsp_wr;                               //write return stack pointer
+   assign ir2prs_psp_get_o        = instr_ctrl_psp_get;                              //read parameter stack pointer
+   assign ir2prs_psp_set_o        = instr_ctrl_psp_set;                              //write parameter stack pointer
+   assign ir2prs_rsp_get_o        = instr_ctrl_rsp_get;                              //read return stack pointer
+   assign ir2prs_rsp_set_o        = instr_ctrl_rsp_set;                              //write return stack pointer
 
    //Probe signals
    //-------------
