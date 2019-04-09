@@ -71,6 +71,7 @@ MODCONFS := 	$(sort	N1_alu.default \
 			N1_fc.default \
 			N1_ir.default \
 			N1_pagu.default \
+			N1_prs.default \
 			N1_sagu.default \
 		 )
 

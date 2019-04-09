@@ -125,7 +125,8 @@ module ftb_N1_prs
     input  wire                              sagu2prs_lrs_empty_i,                 //lower return stack is empty
 
     //Probe signals
-    output wire [3:0]                        prb_state_o,                          //current state
+    output wire [2:0]                        prb_state_task_o,                     //current FSM task
+    output wire [1:0]                        prb_state_sbus_o,                     //current stack bus state
     output wire [15:0]                       prb_rs0_o,                            //current RS0
     output wire [15:0]                       prb_ps0_o,                            //current PS0
     output wire [15:0]                       prb_ps1_o,                            //current PS1
@@ -225,7 +226,8 @@ module ftb_N1_prs
     .sagu2prs_lrs_empty_i       (sagu2prs_lrs_empty_i),                            //lower return stack is empty
 
     //Probe signals
-    .prb_state_o                (prb_state_o),                                     //current state
+    .prb_state_task_o           (prb_state_task_o),                                //current state
+    .prb_state_sbus_o           (prb_state_fsm_o),                                 //current state
     .prb_rs0_o                  (prb_rs0_o),                                       //current RS0
     .prb_ps0_o                  (prb_ps0_o),                                       //current PS0
     .prb_ps1_o                  (prb_ps1_o),                                       //current PS1
@@ -248,4 +250,4 @@ module ftb_N1_prs
 
 `endif //  `ifdef FORMAL
 
-endmodule // ftb_N1_sagu
+endmodule // ftb_N1_prs
