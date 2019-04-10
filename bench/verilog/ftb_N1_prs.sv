@@ -54,17 +54,20 @@ module ftb_N1_prs
     input wire                               sync_rst_i,                           //synchronous reset
 
     //Program bus (wishbone)
-    input  wire [15:0]                       pbus_dat_o,                           //write data bus
+    output wire [15:0]                       pbus_dat_o,                           //write data bus
     input  wire [15:0]                       pbus_dat_i,                           //read data bus
 
     //Stack bus (wishbone)
-    output reg                               sbus_cyc_o,                           //bus cycle indicator       +-
-    output reg                               sbus_stb_o,                           //access request            | initiator
-    output reg                               sbus_we_o,                            //write enable              | to
+    output wire                              sbus_cyc_o,                           //bus cycle indicator       +-
+    output wire                              sbus_stb_o,                           //access request            | initiator
+    output wire                              sbus_we_o,                            //write enable              | to
     output wire [15:0]                       sbus_dat_o,                           //write data bus            | target
     input  wire                              sbus_ack_i,                           //bus cycle acknowledge     +-
     input  wire                              sbus_stall_i,                         //access delay              | initiator to initiator
     input  wire [15:0]                       sbus_dat_i,                           //read data bus             +-
+
+    //Interrupt interface
+    input  wire [15:0]                       irq_req_i,                            //requested interrupt vector
 
     //Internal signals
     //----------------
@@ -76,8 +79,8 @@ module ftb_N1_prs
 
      //DSP interface
     input  wire [15:0]                       dsp2prs_pc_i,                         //program counter
-    input  wire ['SP_WIDTH-1:0]              dsp2prs_psp_i,                        //parameter stack pointer (AGU output)
-    input  wire ['SP_WIDTH-1:0]              dsp2prs_rsp_i,                        //return stack pointer (AGU output)
+    input  wire [`SP_WIDTH-1:0]              dsp2prs_psp_i,                        //parameter stack pointer (AGU output)
+    input  wire [`SP_WIDTH-1:0]              dsp2prs_rsp_i,                        //return stack pointer (AGU output)
 
     //EXCPT interface
     output wire                              prs2excpt_psuf_o,                     //parameter stack underflow
@@ -85,7 +88,7 @@ module ftb_N1_prs
     input  wire [15:0]                       excpt2prs_tc_i,                       //throw code
 
     //FC interface
-    output reg                               prs2fc_hold_o,                        //stacks not ready
+    output wire                              prs2fc_hold_o,                        //stacks not ready
     output wire                              prs2fc_ps0_true_o,                    //PS0 in non-zero
     input  wire                              fc2prs_hold_i,                        //hold any state tran
     input  wire                              fc2prs_dat2ps0_i,                     //capture read data
@@ -94,7 +97,7 @@ module ftb_N1_prs
 
     //IR interface
     input  wire [15:0]                       ir2prs_lit_val_i,                     //literal value
-    input  wire [7:0]                        ir2prs_ups_tp_i,                      //upper stack transition pattern
+    input  wire [7:0]                        ir2prs_us_tp_i,                       //upper stack transition pattern
     input  wire [1:0]                        ir2prs_ips_tp_i,                      //10:push, 01:pull
     input  wire [1:0]                        ir2prs_irs_tp_i,                      //10:push, 01:pull
     input  wire                              ir2prs_alu2ps0_i,                     //ALU output  -> PS0
@@ -106,21 +109,21 @@ module ftb_N1_prs
     input  wire                              ir2prs_pc2rs0_i,                      //PC          -> RS0
     input  wire                              ir2prs_ps_rst_i,                      //reset parameter stack
     input  wire                              ir2prs_rs_rst_i,                      //reset return stack
-    input  wire                              ir2prs_psp_rd_i,                      //read parameter stack pointer
-    input  wire                              ir2prs_psp_wr_i,                      //write parameter stack pointer
-    input  wire                              ir2prs_rsp_rd_i,                      //read return stack pointer
-    input  wire                              ir2prs_rsp_wr_i,                      //write return stack pointer
+    input  wire                              ir2prs_psp_get_i,                     //read parameter stack pointer
+    input  wire                              ir2prs_psp_set_i,                     //write parameter stack pointer
+    input  wire                              ir2prs_rsp_get_i,                     //read return stack pointer
+    input  wire                              ir2prs_rsp_set_i,                     //write return stack pointer
 
     //SAGU interface
-    output reg                               prs2sagu_hold_o,                      //maintain stack pointers
-    output reg                               prs2sagu_psp_rst_o,                   //reset PSP
-    output reg                               prs2sagu_rsp_rst_o,                   //reset RSP
+    output wire                              prs2sagu_hold_o,                      //maintain stack pointers
+    output wire                              prs2sagu_psp_rst_o,                   //reset PSP
+    output wire                              prs2sagu_rsp_rst_o,                   //reset RSP
     output wire                              prs2sagu_stack_sel_o,                 //1:RS, 0:PS
-    output reg                               prs2sagu_push_o,                      //increment stack pointer
-    output reg                               prs2sagu_pull_o,                      //decrement stack pointer
-    output reg                               prs2sagu_load_o,                      //load stack pointer
-    output wire ['SP_WIDTH-1:0]              prs2sagu_psp_next_o,                  //parameter stack load value
-    output wire ['SP_WIDTH-1:0]              prs2sagu_rsp_next_o,                  //return stack load value
+    output wire                              prs2sagu_push_o,                      //increment stack pointer
+    output wire                              prs2sagu_pull_o,                      //decrement stack pointer
+    output wire                              prs2sagu_load_o,                      //load stack pointer
+    output wire [`SP_WIDTH-1:0]              prs2sagu_psp_next_o,                  //parameter stack load value
+    output wire [`SP_WIDTH-1:0]              prs2sagu_rsp_next_o,                  //return stack load value
     input  wire                              sagu2prs_lps_empty_i,                 //lower parameter stack is empty
     input  wire                              sagu2prs_lrs_empty_i,                 //lower return stack is empty
 
@@ -137,17 +140,17 @@ module ftb_N1_prs
     output wire                              prb_ps1_tag_o,                        //current PS1 tag
     output wire                              prb_ps2_tag_o,                        //current PS2 tag
     output wire                              prb_ps3_tag_o,                        //current PS3 tag
-    output wire [(16*'IPS_DEPTH)-1:0]        prb_ips_o,                            //current IPS
-    output wire ['IPS_DEPTH-1:0]             prb_ips_tags_o,                       //current IPS
-    output wire [(16*'IRS_DEPTH)-1:0]        prb_irs_o,                            //current IRS
-    output wire ['IRS_DEPTH-1:0]             prb_irs_tags_o);                      //current IRS
+    output wire [(16*`IPS_DEPTH)-1:0]        prb_ips_o,                            //current IPS
+    output wire [`IPS_DEPTH-1:0]             prb_ips_tags_o,                       //current IPS
+    output wire [(16*`IRS_DEPTH)-1:0]        prb_irs_o,                            //current IRS
+    output wire [`IRS_DEPTH-1:0]             prb_irs_tags_o);                      //current IRS
 
    //Instantiation
    //=============
    N1_prs
-     #(.SP_WIDTH  ('SP_WIDTH)                                                      //width of the stack pointer
-       .IPS_DEPTH ('IPS_DEPTH)                                                     //depth of the intermediate parameter stack
-       .IRS_DEPTH ('IRS_DEPTH))                                                    //depth of the intermediate return stack
+     #(.SP_WIDTH  (`SP_WIDTH),                                                      //width of the stack pointer
+       .IPS_DEPTH (`IPS_DEPTH),                                                     //depth of the intermediate parameter stack
+       .IRS_DEPTH (`IRS_DEPTH))                                                    //depth of the intermediate return stack
    DUT
    (//Clock and reset
     .clk_i                      (clk_i),                                           //module clock
@@ -166,6 +169,9 @@ module ftb_N1_prs
     .sbus_ack_i                 (sbus_ack_i),                                      //bus cycle acknowledge     +-
     .sbus_stall_i               (sbus_stall_i),                                    //access delay              | initiator to initiator
     .sbus_dat_i                 (sbus_dat_i),                                      //read data bus             +-
+
+    //Interrupt interface
+    .irq_req_i                  (irq_req_i),                                       //requested interrupt vector
 
     //Internal signals
     //----------------
@@ -195,7 +201,7 @@ module ftb_N1_prs
 
     //IR interface
     .ir2prs_lit_val_i           (ir2prs_lit_val_i),                                //literal value
-    .ir2prs_ups_tp_i            (ir2prs_ups_tp_i),                                 //upper stack transition pattern
+    .ir2prs_us_tp_i             (ir2prs_us_tp_i),                                  //upper stack transition pattern
     .ir2prs_ips_tp_i            (ir2prs_ips_tp_i),                                 //10:push            (), 01:pull
     .ir2prs_irs_tp_i            (ir2prs_irs_tp_i),                                 //10:push            (), 01:pull
     .ir2prs_alu2ps0_i           (ir2prs_alu2ps0_i),                                //ALU output  -> PS0
@@ -207,10 +213,10 @@ module ftb_N1_prs
     .ir2prs_pc2rs0_i            (ir2prs_pc2rs0_i),                                 //PC          -> RS0
     .ir2prs_ps_rst_i            (ir2prs_ps_rst_i),                                 //reset parameter stack
     .ir2prs_rs_rst_i            (ir2prs_rs_rst_i),                                 //reset return stack
-    .ir2prs_psp_rd_i            (ir2prs_psp_rd_i),                                 //read parameter stack pointer
-    .ir2prs_psp_wr_i            (ir2prs_psp_wr_i),                                 //write parameter stack pointer
-    .ir2prs_rsp_rd_i            (ir2prs_rsp_rd_i),                                 //read return stack pointer
-    .ir2prs_rsp_wr_i            (ir2prs_rsp_wr_i),                                 //write return stack pointer
+    .ir2prs_psp_get_i           (ir2prs_psp_get_i),                                //read parameter stack pointer
+    .ir2prs_psp_set_i           (ir2prs_psp_set_i),                                //write parameter stack pointer
+    .ir2prs_rsp_get_i           (ir2prs_rsp_get_i),                                //read return stack pointer
+    .ir2prs_rsp_set_i           (ir2prs_rsp_set_i),                                //write return stack pointer
 
     //SAGU interface
     .prs2sagu_hold_o            (prs2sagu_hold_o),                                 //maintain stack pointers
@@ -227,7 +233,7 @@ module ftb_N1_prs
 
     //Probe signals
     .prb_state_task_o           (prb_state_task_o),                                //current state
-    .prb_state_sbus_o           (prb_state_fsm_o),                                 //current state
+    .prb_state_sbus_o           (prb_state_sbus_o),                                //current state
     .prb_rs0_o                  (prb_rs0_o),                                       //current RS0
     .prb_ps0_o                  (prb_ps0_o),                                       //current PS0
     .prb_ps1_o                  (prb_ps1_o),                                       //current PS1

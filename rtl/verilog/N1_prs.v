@@ -66,7 +66,7 @@ module N1_prs
     input wire                               sync_rst_i,                           //synchronous reset
 
     //Program bus (wishbone)
-    input  wire [15:0]                       pbus_dat_o,                           //write data bus
+    output  wire [15:0]                      pbus_dat_o,                           //write data bus
     input  wire [15:0]                       pbus_dat_i,                           //read data bus
 
     //Stack bus (wishbone)
@@ -77,6 +77,9 @@ module N1_prs
     input  wire                              sbus_ack_i,                           //bus cycle acknowledge     +-
     input  wire                              sbus_stall_i,                         //access delay              | initiator to initiator
     input  wire [15:0]                       sbus_dat_i,                           //read data bus             +-
+
+    //Interrupt interface
+    input  wire [15:0]                       irq_req_i,                            //requested interrupt vector
 
     //Internal signals
     //----------------
@@ -118,10 +121,10 @@ module N1_prs
     input  wire                              ir2prs_pc2rs0_i,                      //PC          -> RS0
     input  wire                              ir2prs_ps_rst_i,                      //reset parameter stack
     input  wire                              ir2prs_rs_rst_i,                      //reset return stack
-    input  wire                              ir2prs_psp_get_i,                      //read parameter stack pointer
-    input  wire                              ir2prs_psp_set_i,                      //write parameter stack pointer
-    input  wire                              ir2prs_rsp_get_i,                      //read return stack pointer
-    input  wire                              ir2prs_rsp_set_i,                      //write return stack pointer
+    input  wire                              ir2prs_psp_get_i,                     //read parameter stack pointer
+    input  wire                              ir2prs_psp_set_i,                     //write parameter stack pointer
+    input  wire                              ir2prs_rsp_get_i,                     //read return stack pointer
+    input  wire                              ir2prs_rsp_set_i,                     //write return stack pointer
 
     //SAGU interface
     output reg                               prs2sagu_hold_o,                      //maintain stack pointers
@@ -179,42 +182,42 @@ module N1_prs
    reg  [15:0]                               ps1_reg;                              //current PS1
    reg  [15:0]                               ps2_reg;                              //current PS2
    reg  [15:0]                               ps3_reg;                              //current PS3
-   reg  [15:0]                               rs0_next;                             //next RS0
-   reg  [15:0]                               ps0_next;                             //next PS0
-   reg  [15:0]                               ps1_next;                             //next PS1
-   reg  [15:0]                               ps2_next;                             //next PS2
-   reg  [15:0]                               ps3_next;                             //next PS3
+   wire [15:0]                               rs0_next;                             //next RS0
+   wire [15:0]                               ps0_next;                             //next PS0
+   wire [15:0]                               ps1_next;                             //next PS1
+   wire [15:0]                               ps2_next;                             //next PS2
+   wire [15:0]                               ps3_next;                             //next PS3
    reg                                       rs0_tag_reg;                          //current RS0 tag
    reg                                       ps0_tag_reg;                          //current PS0 tag
    reg                                       ps1_tag_reg;                          //current PS1 tag
    reg                                       ps2_tag_reg;                          //current PS2 tag
    reg                                       ps3_tag_reg;                          //current PS3 tag
-   reg                                       rs0_tag_next;                         //next RS0 tag
-   reg                                       ps0_tag_next;                         //next PS0 tag
-   reg                                       ps1_tag_next;                         //next PS1 tag
-   reg                                       ps2_tag_next;                         //next PS2 tag
-   reg                                       ps3_tag_next;                         //next PS3 tag
-   reg                                       rs0_we;                               //write enable
-   reg                                       ps0_we;                               //write enable
-   reg                                       ps1_we;                               //write enable
-   reg                                       ps2_we;                               //write enable
-   reg                                       ps3_we;                               //write enable
+   wire                                      rs0_tag_next;                         //next RS0 tag
+   wire                                      ps0_tag_next;                         //next PS0 tag
+   wire                                      ps1_tag_next;                         //next PS1 tag
+   wire                                      ps2_tag_next;                         //next PS2 tag
+   wire                                      ps3_tag_next;                         //next PS3 tag
+   wire                                      rs0_we;                               //write enable
+   wire                                      ps0_we;                               //write enable
+   wire                                      ps1_we;                               //write enable
+   wire                                      ps2_we;                               //write enable
+   wire                                      ps3_we;                               //write enable
    //Intermediate parameter stack
    reg  [(16*IPS_DEPTH)-1:0]                 ips_reg;                              //current IPS
-   reg  [(16*IPS_DEPTH)-1:0]                 ips_next;                             //next IPS
+   wire [(16*IPS_DEPTH)-1:0]                 ips_next;                             //next IPS
    reg  [IPS_DEPTH-1:0]                      ips_tags_reg;                         //current IPS
-   reg  [IPS_DEPTH-1:0]                      ips_tags_next;                        //next IPS
-   reg                                       ips_we;                               //write enable
+   wire [IPS_DEPTH-1:0]                      ips_tags_next;                        //next IPS
+   wire                                      ips_we;                               //write enable
    wire                                      ips_empty;                            //PS4 contains no data
    wire                                      ips_almost_empty;                     //PS5 contains no data
    wire                                      ips_full;                             //PSn contains data
    wire                                      ips_almost_full;                      //PSn-1 contains data
    //Intermediate return stack
    reg  [(16*IRS_DEPTH)-1:0]                 irs_reg;                              //current IRS
-   reg  [(16*IRS_DEPTH)-1:0]                 irs_next;                             //next IRS
+   wire [(16*IRS_DEPTH)-1:0]                 irs_next;                             //next IRS
    reg  [IRS_DEPTH-1:0]                      irs_tags_reg;                         //current IRS
-   reg  [IRS_DEPTH-1:0]                      irs_tags_next;                        //next IRS
-   reg                                       irs_we;                               //write enable
+   wire [IRS_DEPTH-1:0]                      irs_tags_next;                        //next IRS
+   wire                                      irs_we;                               //write enable
    wire                                      irs_empty;                            //PS1 contains no data
    wire                                      irs_almost_empty;                     //PS2 contains no data
    wire                                      irs_full;                             //PSn contains data
@@ -225,106 +228,106 @@ module N1_prs
    //RS0
    assign rs0_next     = (fsm_rs_shift_up      ? irs_reg[15:0]      : 16'h0000) |  //RS1 -> RS0
                          ({16{fsm_idle}} &
-                          ((ir2prs_ups_tp_i[0] ? ps0_reg            : 16'h0000) |  //PS0 -> RS0
+                          ((ir2prs_us_tp_i[0]  ? ps0_reg            : 16'h0000) |  //PS0 -> RS0
                            (ir2prs_irs_tp_i[0] ? irs_reg[15:0]      : 16'h0000) |  //RS1 -> RS0
                            (ir2prs_pc2rs0_i    ? dsp2prs_pc_i       : 16'h0000))); //PC  -> RS0
    assign rs0_tag_next = (fsm_rs_shift_up      & irs_tags_reg[0])               |  //RS1 -> RS0
                          (fsm_idle             &
-                          ((ir2prs_ups_tp_i[0] & ps0_tag_reg)                   |  //PS0 -> RS0
+                          ((ir2prs_us_tp_i[0]  & ps0_tag_reg)                   |  //PS0 -> RS0
                            (ir2prs_irs_tp_i[0] & irs_tags_reg[0])               |  //RS1 -> RS0
                             ir2prs_pc2rs0_i));                                     //PC  -> RS0
    assign rs0_we       = fsm_rs_shift_down                                      |  //0   -> RS0
                          fsm_rs_shift_up                                        |  //RS1 -> RS0
                          (fsm_idle & ~fc2prs_hold_i &
                           (ir2prs_rs_rst_i                                      |  //reset RS
-                           ir2prs_ups_tp_i[0]                                   |  //PS0 -> RS0
+                           ir2prs_us_tp_i[0]                                    |  //PS0 -> RS0
                            ir2prs_irs_tp_i[0]                                   |  //RS1 -> RS0
-                            ir2prs_pc2rs0_i));                                     //PC  -> RS0
+                           ir2prs_pc2rs0_i));                                      //PC  -> RS0
 
    //PS0
    assign ps0_next     = (fsm_ps_shift_up      ? ps1_reg            : 16'h0000) |  //PS1 -> PS0
                          ({16{fsm_idle}} &
-                          ((ir2prs_ups_tp_i[1] ? rs0_reg            : 16'h0000) |  //RS0 -> PS0
-                           (ir2prs_ups_tp_i[2] ? ps1_reg            : 16'h0000) |  //PS1 -> PS0
+                          ((ir2prs_us_tp_i[1]  ? rs0_reg            : 16'h0000) |  //RS0 -> PS0
+                           (ir2prs_us_tp_i[2]  ? ps1_reg            : 16'h0000) |  //PS1 -> PS0
                            (ir2prs_alu2ps0_i   ? alu2prs_ps0_next_i : 16'h0000) |  //ALU -> PS0
                            (ir2prs_lit2ps0_i   ? ir2prs_lit_val_i   : 16'h0000) |  //LIT -> PS0
                            (fc2prs_dat2ps0_i   ? pbus_dat_i         : 16'h0000) |  //DAT -> PS0
-                           (fc2prs_tc2ps0_i    ? excpt2prs_tc       : 16'h0000) |  //TC  -> PS0
+                           (fc2prs_tc2ps0_i    ? excpt2prs_tc_i     : 16'h0000) |  //TC  -> PS0
                            (ir2prs_isr2ps0_i   ? irq_req_i          : 16'h0000))); //ISR -> PS0
    assign ps0_tag_next = (fsm_ps_shift_up      & ps1_tag_reg)                   |  //PS1 -> PS0
-                         ({16{fsm_idle}}       &
-                          ((ir2prs_ups_tp_i[1] & rs0_tag_reg)                   |  //RS0 -> PS0
-                           (ir2prs_ups_tp_i[2] & ps1_tag_reg)                   |  //PS1 -> PS0
+                         (fsm_idle             &
+                          ((ir2prs_us_tp_i[1]  & rs0_tag_reg)                   |  //RS0 -> PS0
+                           (ir2prs_us_tp_i[2]  & ps1_tag_reg)                   |  //PS1 -> PS0
                             ir2prs_alu2ps0_i                                    |  //ALU -> PS0
                             ir2prs_dat2ps0_i                                    |  //DAT -> PS0
                             ir2prs_lit2ps0_i                                    |  //LIT -> PS0
-                            ir2prs_vec2ps0_i));                                    //VEC -> PS0
+                            ir2prs_isr2ps0_i));                                    //ISR -> PS0
    assign ps0_we       = fsm_ps_shift_down                                      |  //0   -> PS0
                          fsm_ps_shift_up                                        |  //PS1 -> PS0
                          (fsm_idle & ~fc2prs_hold_i &
                           (ir2prs_ps_rst_i                                      |  //reset PS
-                           ir2prs_ups_tp_i[1]                                   |  //RS0 -> PS0
-                           ir2prs_ups_tp_i[2]                                   |  //PS1 -> PS0
+                           ir2prs_us_tp_i[1]                                    |  //RS0 -> PS0
+                           ir2prs_us_tp_i[2]                                    |  //PS1 -> PS0
                            ir2prs_alu2ps0_i                                     |  //ALU -> PS0
                            ir2prs_dat2ps0_i                                     |  //DAT -> PS0
                            ir2prs_lit2ps0_i                                     |  //LIT -> PS0
-                           ir2prs_vec2ps0_i));                                     //VEC -> PS0
+                           ir2prs_isr2ps0_i));                                     //ISR -> PS0
 
    //PS1
    assign ps1_next     = (fsm_ps_shift_down    ? ps0_reg            : 16'h0000) |  //PS0 -> PS1
                          (fsm_ps_shift_up      ? ps2_reg            : 16'h0000) |  //PS2 -> PS1
                          ({16{fsm_idle}} &
-                          ((ir2prs_ups_tp_i[3] ? ps0_reg            : 16'h0000) |  //PS0 -> PS1
-                           (ir2prs_ups_tp_i[4] ? ps2_reg            : 16'h0000) |  //PS2 -> PS1
+                          ((ir2prs_us_tp_i[3]  ? ps0_reg            : 16'h0000) |  //PS0 -> PS1
+                           (ir2prs_us_tp_i[4]  ? ps2_reg            : 16'h0000) |  //PS2 -> PS1
                            (ir2prs_alu2ps1_i   ? alu2prs_ps1_next_i : 16'h0000))); //ALU -> PS1
    assign ps1_tag_next = (fsm_ps_shift_down    & ps0_tag_reg)                   |  //PS0 -> PS1
                          (fsm_ps_shift_up      & ps2_tag_reg)                   |  //PS2 -> PS1
-                         ({16{fsm_idle}}       &
-                          ((ir2prs_ups_tp_i[3] & ps0_tag_reg)                   |  //PS0 -> PS1
-                           (ir2prs_ups_tp_i[4] & ps2_tag_reg)                   |  //PS2 -> PS1
-                            ir2prs_alu2ps1_i));                                 |  //ALU -> PS1
+                         (fsm_idle             &
+                          ((ir2prs_us_tp_i[3]  & ps0_tag_reg)                   |  //PS0 -> PS1
+                           (ir2prs_us_tp_i[4]  & ps2_tag_reg)                   |  //PS2 -> PS1
+                            ir2prs_alu2ps1_i));                                    //ALU -> PS1
    assign ps1_we       = fsm_ps_shift_down                                      |  //PS0 -> PS1
                          fsm_ps_shift_up                                        |  //PS2 -> PS1
                          (fsm_idle & ~fc2prs_hold_i &
                           (ir2prs_ps_rst_i                                      |  //reset PS
-                           ir2prs_ups_tp_i[3]                                   |  //PS0 -> PS1
-                           ir2prs_ups_tp_i[4]                                   |  //PS2 -> PS1
+                           ir2prs_us_tp_i[3]                                    |  //PS0 -> PS1
+                           ir2prs_us_tp_i[4]                                    |  //PS2 -> PS1
                            ir2prs_alu2ps1_i));                                     //ALU -> PS1
 
    //PS2
    assign ps2_next     = (fsm_ps_shift_down    ? ps1_reg            : 16'h0000) |  //PS1 -> PS2
                          (fsm_ps_shift_up      ? ps3_reg            : 16'h0000) |  //PS3 -> PS2
                          ({16{fsm_idle}} &
-                          ((ir2prs_ups_tp_i[5] ? ps1_reg            : 16'h0000) |  //PS1 -> PS2
-                           (ir2prs_ups_tp_i[6] ? ps3_reg            : 16'h0000))); //PS3 -> PS2
+                          ((ir2prs_us_tp_i[5]  ? ps1_reg            : 16'h0000) |  //PS1 -> PS2
+                           (ir2prs_us_tp_i[6]  ? ps3_reg            : 16'h0000))); //PS3 -> PS2
    assign ps2_tag_next = (fsm_ps_shift_down    & ps1_tag_reg)                   |  //PS1 -> PS2
                          (fsm_ps_shift_up      & ps3_tag_reg)                   |  //PS3 -> PS2
-                         ({16{fsm_idle}}       &
-                          ((ir2prs_ups_tp_i[5] & ps1_tag_reg)                   |  //PS1 -> PS2
-                           (ir2prs_ups_tp_i[6] & ps3_tag_reg)));                |  //PS3 -> PS2
+                         (fsm_idle             &
+                          ((ir2prs_us_tp_i[5]  & ps1_tag_reg)                   |  //PS1 -> PS2
+                           (ir2prs_us_tp_i[6]  & ps3_tag_reg)));                   //PS3 -> PS2
    assign ps2_we       = fsm_ps_shift_down                                      |  //PS1 -> PS2
                          fsm_ps_shift_up                                        |  //PS3 -> PS2
                          (fsm_idle & ~fc2prs_hold_i &
                           (ir2prs_ps_rst_i                                      |  //reset PS
-                           ir2prs_ups_tp_i[5]                                   |  //PS1 -> PS2
-                           ir2prs_ups_tp_i[6]));                                   //PS3 -> PS2
+                           ir2prs_us_tp_i[5]                                    |  //PS1 -> PS2
+                           ir2prs_us_tp_i[6]));                                    //PS3 -> PS2
 
    //PS3
    assign ps3_next     = (fsm_ps_shift_down    ? ps2_reg            : 16'h0000) |  //PS2 -> PS3
                          (fsm_ps_shift_up      ? ips_reg[15:0]      : 16'h0000) |  //PS4 -> PS3
                          ({16{fsm_idle}}       &
-                          ((ir2prs_ups_tp_i[7] ? ps2_reg            : 16'h0000) |  //PS2 -> PS3
+                          ((ir2prs_us_tp_i[7]  ? ps2_reg            : 16'h0000) |  //PS2 -> PS3
                            (ir2prs_ips_tp_i[0] ? ips_reg[15:0]      : 16'h0000))); //PS4 -> PS3
    assign ps3_tag_next = (fsm_ps_shift_down    & ps2_tag_reg)                   |  //PS2 -> PS3
                          (fsm_ps_shift_up      & ips_tags_reg[0])               |  //PS4 -> PS3
-                         ({16{fsm_idle}} &
-                          ((ir2prs_ups_tp_i[7] & ps2_tag_reg)                   |  //PS2 -> PS3
-                           (ir2prs_ips_tp_i[0] & ips_tags_reg[0])));            |  //PS4 -> PS3
+                         (fsm_idle             &
+                          ((ir2prs_us_tp_i[7]  & ps2_tag_reg)                   |  //PS2 -> PS3
+                           (ir2prs_ips_tp_i[0] & ips_tags_reg[0])));               //PS4 -> PS3
    assign ps3_we       = fsm_ps_shift_down                                      |  //PS2 -> PS3
                          fsm_ps_shift_up                                        |  //PS4 -> PS3
                          (fsm_idle & ~fc2prs_hold_i &
                           (ir2prs_ps_rst_i                                      |  //reset PS
-                           ir2prs_ups_tp_i[7]                                   |  //PS2 -> PS3
+                           ir2prs_us_tp_i[7]                                    |  //PS2 -> PS3
                            ir2prs_ips_tp_i[0]));                                   //PS4 -> PS3
 
    //Flipflops
@@ -381,7 +384,8 @@ module N1_prs
                            {{IPS_DEPTH-1{16'h0000}}, sbus_dat_i}                :  //DAT -> PS4
                            {IPS_DEPTH{16'h0000}})                               |  //
                           (fsm_psp2ps4 ?                                           //fetch PSP
-                           {{IPS_DEPTH-1{16'h0000}}, dsp2prs_psp_next_i}        :  //DAT -> PS4
+                           {{IPS_DEPTH-1{16'h0000}},                               //DAT -> PS4
+                            {16-SP_WIDTH{1'b0}}, dsp2prs_psp_i}                 :  //
                            {IPS_DEPTH{16'h0000}})                               |  //
                           (fsm_ips_clr_bottom ?                                    //clear IPS bottom cell
                            ips_reg                                              :  //
@@ -462,7 +466,8 @@ module N1_prs
                            {{IRS_DEPTH-1{16'h0000}}, sbus_dat_i}                :  //DAT -> RS4
                            {IRS_DEPTH{16'h0000}})                               |  //
                           (fsm_rsp2rs1 ?                                           //get RSP
-                           {{IRS_DEPTH-1{16'h0000}}, dsp2prs_rsp_next_i}        :  //DAT -> RS4
+                           {{IRS_DEPTH-1{16'h0000}},                               //DAT -> RS4
+                            {16-SP_WIDTH{1'b0}}, dsp2prs_rsp_i}                 :  //
                            {IRS_DEPTH{16'h0000}})                               |  //
                           (fsm_irs_clr_bottom ?                                    //clear IRS bottom cell
                            ips_reg                                              :  //
@@ -486,7 +491,7 @@ module N1_prs
                           (fsm_rsp2rs1 ?                                           //get RSP
                            {{IRS_DEPTH-1{1'b0}}, 1'b1}                          :  //DAT -> RS4
                            {IRS_DEPTH{1'b0}})                                   |  //
-                          (fsm_rclr_bottom ?                                       //clear IPR bottom cell
+                          (fsm_irs_clr_bottom ?                                    //clear IPR bottom cell
                            {{1'b0},irs_tags_reg[IRS_DEPTH-2:0]}                 :  //
                            {IRS_DEPTH{1'b0}})                                   |  //
                           ({IRS_DEPTH{fsm_idle}} &                                 //
@@ -495,7 +500,7 @@ module N1_prs
                             {IRS_DEPTH{1'b0}})                                  |  //
                            (ir2prs_irs_tp_i[0] ?                                   //shift up
                             {1'b0, irs_tags_reg[IRS_DEPTH-1:1]}                 :  //RSn+1 -> RSn
-                            {IRS_DEPTH{1'b0}}));                                |  //
+                            {IRS_DEPTH{1'b0}}));                                   //
    assign irs_we        = fsm_rs_shift_down                                     |  //shift down
                           fsm_rs_shift_up                                       |  //shift up
                           fsm_dat2rs1                                           |  //fetch read data
@@ -588,12 +593,12 @@ module N1_prs
         state_sbus_next         = state_sbus_reg;                                  //keep stack bus state
 
         //Exceptions
-        prs2excpt_psuf_o = (rs0_tag_reg & ~ps0_tag_reg & &ir2prs_ups_tp_i[1:0])|   //invalid PS0 <-> RS0 swap
-                           (              ~ps0_tag_reg &  ir2prs_ups_tp_i[2]  )|   //invalid shift to PS0
-                           (ps0_tag_reg & ~ps1_tag_reg & &ir2prs_ups_tp_i[3:2])|   //invalid PS1 <-> PS0 swap
-                           (ps1_tag_reg & ~ps2_tag_reg & &ir2prs_ups_tp_i[5:4])|   //invalid PS2 <-> PS1 swap
-                           (ps2_tag_reg & ~ps3_tag_reg & &ir2prs_ups_tp_i[7:6]);   //invalid PS3 <-> PS2 swap
-        prs2excpt_rsuf_o = (ps0_tag_reg & ~rs0_tag_reg & &ir2prs_ups_tp_i[1:0])|   //invalid RS0 <-> PS0 swap;
+        prs2excpt_psuf_o = (rs0_tag_reg & ~ps0_tag_reg & &ir2prs_us_tp_i[1:0])|    //invalid PS0 <-> RS0 swap
+                           (              ~ps0_tag_reg &  ir2prs_us_tp_i[2]  )|    //invalid shift to PS0
+                           (ps0_tag_reg & ~ps1_tag_reg & &ir2prs_us_tp_i[3:2])|    //invalid PS1 <-> PS0 swap
+                           (ps1_tag_reg & ~ps2_tag_reg & &ir2prs_us_tp_i[5:4])|    //invalid PS2 <-> PS1 swap
+                           (ps2_tag_reg & ~ps3_tag_reg & &ir2prs_us_tp_i[7:6]);    //invalid PS3 <-> PS2 swap
+        prs2excpt_rsuf_o = (ps0_tag_reg & ~rs0_tag_reg & &ir2prs_us_tp_i[1:0])|    //invalid RS0 <-> PS0 swap;
                            (              ~rs0_tag_reg &  ir2prs_irs_tp_i[0]  );   //invalid shift to RS0
 
 
@@ -866,7 +871,7 @@ module N1_prs
                     //Copy RSP to RS4
                     else
                       begin
-                         fsm_rsp2rs4                  = 1'b1;                      //capture RSP
+                         fsm_rsp2rs1                  = 1'b1;                      //capture RSP
                          state_task_next              = STATE_TASK_RS_FILL;        //refill IRS
                       end // else: !if(|{irs_tags_reg[IRS_DEPTH-1:0],rs0_tag_reg})
                  end // case: STATE_TASK_RS_EMPTY_GET_SP
@@ -1003,14 +1008,14 @@ module N1_prs
    //Stack data outputs
    //------------------
    assign pbus_dat_o            = ps0_reg;                                         //write data bus
-   assign sbus_dat_o            = prs2sagu_stack_sel ?                             //1:RS, 0:PS
+   assign sbus_dat_o            = prs2sagu_stack_sel_o ?                           //1:RS, 0:PS
                                   irs_reg[(16*IRS_DEPTH)-1:16*(IRS_DEPTH-1)] :     //unload RS
                                   ips_reg[(16*IPS_DEPTH)-1:16*(IPS_DEPTH-1)];      //unload PS
    assign prs2alu_ps0_o         = ps0_reg;                                         //current PS0 (TOS)
    assign prs2alu_ps1_o         = ps1_reg;                                         //current PS1 (TOS+1)
    assign prs2fc_ps0_true_o     = |ps0_reg;                                        //PS0 in non-zero
-   assign prs2sagu_psp_next_o   = ips_reg[(16*IPS_DEPTH)-1:16*(IPS_DEPTH-1)];      //parameter stack load value
-   assign prs2sagu_rsp_next_o   = irs_reg[(16*IRS_DEPTH)-1:16*(IRS_DEPTH-1)];      //return stack load value
+   assign prs2sagu_psp_next_o   = ips_reg[(16*(IPS_DEPTH-1))+SP_WIDTH-1:16*(IPS_DEPTH-1)];//parameter stack load value
+   assign prs2sagu_rsp_next_o   = irs_reg[(16*(IRS_DEPTH-1))+SP_WIDTH-1:16*(IRS_DEPTH-1)];//return stack load value
 
    //Probe signals
    //-------------

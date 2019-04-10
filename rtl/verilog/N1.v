@@ -180,8 +180,8 @@ module N1
    wire [31:0]                              dsp2alu_mul_res;         //result from multiplier
    //DSP -> PRS
    wire [15:0]                              dsp2prs_pc;              //program counter
-   wire [15:0]                              dsp2prs_psp;             //parameter stack pointer (AGU output)
-   wire [15:0]                              dsp2prs_rsp;             //return stack pointer (AGU output)
+   wire [SP_WIDTH-1:0]                      dsp2prs_psp;             //parameter stack pointer (AGU output)
+   wire [SP_WIDTH-1:0]                      dsp2prs_rsp;             //return stack pointer (AGU output)
    //DSP -> SAGU
    wire [SP_WIDTH-1:0]                      dsp2sagu_psp;            //parameter stack pointer
    wire [SP_WIDTH-1:0]                      dsp2sagu_rsp;            //return stack pointer
