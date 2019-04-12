@@ -48,8 +48,8 @@ EDITOR        := $(shell which emacs || which xemacs || which nano || which vi)
 endif	      
 VERILATOR     := verilator -sv --lint-only 
 IVERILOG      := iverilog -t null
-YOSYS         := yosys -q
-#YOSYS         := yosys
+#YOSYS         := yosys -q
+YOSYS         := yosys
 SBY           := sby -f
 PERL          := perl
 GTKWAVE       := gtkwave      

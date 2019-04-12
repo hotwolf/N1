@@ -18,7 +18,7 @@
 #    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 ###############################################################################
 # Description:                                                                #
-#    This is a synthesis script for the N1 processor in default               #
+#    This is a synthesis script for the N1 processor in "default"             #
 #    configuration.                                                           #
 #                                                                             #
 ###############################################################################
@@ -28,6 +28,7 @@
 ###############################################################################
 
 #Read design
+read_verilog -sv -DCONF_DEFAULT ./bench/verilog/ftb_N1.sv
 read_verilog ./rtl/verilog/N1.v
 read_verilog ./rtl/verilog/N1_alu.v
 read_verilog ./rtl/verilog/N1_dsp_synth.v
@@ -37,9 +38,8 @@ read_verilog ./rtl/verilog/N1_ir.v
 read_verilog ./rtl/verilog/N1_pagu.v
 read_verilog ./rtl/verilog/N1_prs.v
 read_verilog ./rtl/verilog/N1_sagu.v
-hierarchy -check -top N1
+hierarchy -check -top ftb_N1
 
 #Synthesize
 synth_ice40
 
-shell

@@ -135,10 +135,8 @@ module N1_prs
     output reg                               prs2sagu_push_o,                      //increment stack pointer
     output reg                               prs2sagu_pull_o,                      //decrement stack pointer
     output reg                               prs2sagu_load_o,                      //load stack pointer
-    output wire [SP_WIDTH-1:0]               prs2sagu_psp_next_o,                  //parameter stack load value
-    output wire [SP_WIDTH-1:0]               prs2sagu_rsp_next_o,                  //return stack load value
-    input  wire                              sagu2prs_lps_empty_i,                 //lower parameter stack is empty
-    input  wire                              sagu2prs_lrs_empty_i,                 //lower return stack is empty
+    output wire [SP_WIDTH-1:0]               prs2sagu_psp_load_val_o,              //parameter stack load value
+    output wire [SP_WIDTH-1:0]               prs2sagu_rsp_load_val_o,              //return stack load value
 
     //Probe signals
     output wire [2:0]                        prb_state_task_o,                     //current state
@@ -223,6 +221,10 @@ module N1_prs
    wire                                      irs_almost_empty;                     //PS2 contains no data
    wire                                      irs_full;                             //PSn contains data
    wire                                      irs_almost_full;                      //PSn-1 contains data
+   //Lower parameter stack
+   wire                                      lps_empty;                            //PSP is zero
+   //Lower return stack
+   wire                                      lrs_empty;                            //RSP is zero
 
    //Upper stack
    //-----------
@@ -536,6 +538,14 @@ module N1_prs
    assign irs_full         =  irs_tags_reg[IRS_DEPTH-1];                           //PSn contains data
    assign irs_almost_full  =  irs_tags_reg[IRS_DEPTH-2];                           //PSn-1 contains data
 
+   //Lower parameter stack
+   //---------------------
+   assign lps_empty        = ~|dsp2prs_psp_i;                                      //PSP is zero
+
+   //Lower return stack
+   //------------------
+   assign lrs_empty        = ~|dsp2prs_rsp_i;                                      //RSP is zero
+
    //Finite state machine
    //--------------------
    //State encoding (current task)
@@ -621,10 +631,10 @@ module N1_prs
                     state_task_next           = STATE_TASK_READY;                  //for logic optimization
 
                     //Detect early load or unload conditions
-                    if ((~sagu2prs_lrs_empty_i &
+                    if ((~lrs_empty &
                          irs_almost_empty & ir2prs_irs_tp_i[0]) |                  //IRS early load condition
                         (irs_almost_full  & ir2prs_irs_tp_i[1]) |                  //IRS early unload condition
-                        (~sagu2prs_lps_empty_i &
+                        (~lps_empty &
                          ips_almost_empty & ir2prs_ips_tp_i[0]) |                  //IPS early load condition
                         (ips_almost_full  & ir2prs_ips_tp_i[1]))                   //IPS early unload condition
                       begin
@@ -632,15 +642,15 @@ module N1_prs
                                            STATE_TASK_MANAGE_LS;                   //
 
                          //Initiate early load accesses
-                         if ((~sagu2prs_lrs_empty_i &
+                         if ((~lrs_empty &
                               irs_almost_empty & ir2prs_irs_tp_i[0]) |             //IRS early load condition
-                             (~sagu2prs_lps_empty_i &
+                             (~lps_empty &
                               ips_almost_empty & ir2prs_ips_tp_i[0]))              //IPS early load condition
                            begin
                               sbus_stb_o      = 1'b1;                              //request sbus access
                               prs2sagu_hold_o =  sbus_stall_i;                     //update stack pointers
                               prs2sagu_pull_o = ~sbus_stall_i;                     //decrement stack pointer
-                              if (~sagu2prs_lrs_empty_i &
+                              if (~lrs_empty &
                                   irs_almost_empty & ir2prs_irs_tp_i[0])           //IRS early load condition
                                 begin
                                    prs2sagu_stack_sel_o = 1'b1;                    //select RS immediately
@@ -691,7 +701,7 @@ module N1_prs
 
                     //Manage lower return stack
                     if ((~|(state_sbus_reg ^ STATE_SBUS_READ_RS) &                 //IRS load condition
-                         ~sagu2prs_lrs_empty_i & irs_empty)       |                //
+                         ~lrs_empty & irs_empty)                  |                //
                         irs_full)                                                  //IRS unload condition
                       begin
                          sbus_stb_o                   = 1'b1;                      //request sbus access
@@ -708,7 +718,7 @@ module N1_prs
                                    fsm_irs_clr_bottom = 1'b1;                      //clear IRS bottom cell
                                    state_sbus_next = STATE_SBUS_WRITE;             //IRS -> SBUS
                                    if ((~|(state_sbus_reg ^ STATE_SBUS_READ_PS) &  //IRS load condition
-                                        ~sagu2prs_lps_empty_i & ips_empty)       | //
+                                        ~lps_empty & ips_empty)                  | //
                                        ips_full)                                   //IRS unload condition
                                      state_task_next  = STATE_TASK_MANAGE_LS;      //manage LPS
                                    else
@@ -730,7 +740,7 @@ module N1_prs
                     //Manage lower parameter stack
                     else
                     if ((~|(state_sbus_reg ^ STATE_SBUS_READ_PS) &                 //IRS load condition
-                         ~sagu2prs_lps_empty_i & ips_empty)       |                //
+                         ~lps_empty & ips_empty)                  |                //
                         ips_full)                                                  //IRS unload condition
                       begin
 
@@ -932,7 +942,7 @@ module N1_prs
                     else
                       begin
                          //Load IPS
-                         if (sagu2prs_lps_empty_i)
+                         if (lps_empty)
                            begin
                               sbus_stb_o                = 1'b1;                    //access request
                               if (~sbus_stall_i)
@@ -947,7 +957,7 @@ module N1_prs
                          else
                            begin
                               fsm_ps_shift_up           = 1'b1;                    //shift PS downwards (IPS -> UPS)
-                           end // else: !if(sagu2prs_lps_empty_i)
+                           end // else: !if(lps_empty)
                       end // else: !if(ps0_tag_reg)
                  end // case: STATE_TASK_PS_FILL
 
@@ -963,7 +973,7 @@ module N1_prs
                     else
                       begin
                          //Load IRS
-                         if (sagu2prs_lrs_empty_i)
+                         if (lrs_empty)
                            begin
                               sbus_stb_o                = 1'b1;                    //access request
                               if (~sbus_stall_i)
@@ -978,7 +988,7 @@ module N1_prs
                          else
                            begin
                               fsm_rs_shift_up           = 1'b1;                    //shift RS downwards (IRS -> URS)
-                           end // else: !if(sagu2prs_lrs_empty_i)
+                           end // else: !if(lrs_empty)
                       end // else: !if(rs0_tag_reg)
                  end // case: STATE_TASK_RS_FILL
 
@@ -1008,32 +1018,34 @@ module N1_prs
 
    //Stack data outputs
    //------------------
-   assign pbus_dat_o            = ps0_reg;                                         //write data bus
-   assign prs2alu_ps0_o         = ps0_reg;                                         //current PS0 (TOS)
-   assign prs2alu_ps1_o         = ps1_reg;                                         //current PS1 (TOS+1)
-   assign prs2fc_ps0_true_o     = |ps0_reg;                                        //PS0 in non-zero
-   assign prs2pagu_ps0_o        = ps0_reg;                                         //PS0
-   assign prs2pagu_rs0_o        = rs0_reg;                                         //RS0
-   assign prs2sagu_psp_next_o   = ips_reg[(16*(IPS_DEPTH-1))+SP_WIDTH-1:16*(IPS_DEPTH-1)];//parameter stack load value
-   assign prs2sagu_rsp_next_o   = irs_reg[(16*(IRS_DEPTH-1))+SP_WIDTH-1:16*(IRS_DEPTH-1)];//return stack load value
+   assign pbus_dat_o              = ps0_reg;                                       //write data bus
+   assign prs2alu_ps0_o           = ps0_reg;                                       //current PS0 (TOS)
+   assign prs2alu_ps1_o           = ps1_reg;                                       //current PS1 (TOS+1)
+   assign prs2fc_ps0_true_o       = |ps0_reg;                                      //PS0 in non-zero
+   assign prs2pagu_ps0_o          = ps0_reg;                                       //PS0
+   assign prs2pagu_rs0_o          = rs0_reg;                                       //RS0
+   assign prs2sagu_psp_load_val_o =
+                           ips_reg[(16*(IPS_DEPTH-1))+SP_WIDTH-1:16*(IPS_DEPTH-1)];//parameter stack load value
+   assign prs2sagu_rsp_load_val_o =
+                           irs_reg[(16*(IRS_DEPTH-1))+SP_WIDTH-1:16*(IRS_DEPTH-1)];//return stack load value
 
    //Probe signals
    //-------------
-   assign prb_state_task_o      = state_task_reg;                                  //current FSM task
-   assign prb_state_sbus_o      = state_sbus_reg;                                  //current stack bus state
-   assign prb_rs0_o             = rs0_reg;                                         //current RS0
-   assign prb_ps0_o             = ps0_reg;                                         //current PS0
-   assign prb_ps1_o             = ps1_reg;                                         //current PS1
-   assign prb_ps2_o             = ps2_reg;                                         //current PS2
-   assign prb_ps3_o             = ps3_reg;                                         //current PS3
-   assign prb_rs0_tag_o         = rs0_tag_reg;                                     //current RS0 tag
-   assign prb_ps0_tag_o         = ps0_tag_reg;                                     //current PS0 tag
-   assign prb_ps1_tag_o         = ps1_tag_reg;                                     //current PS1 tag
-   assign prb_ps2_tag_o         = ps2_tag_reg;                                     //current PS2 tag
-   assign prb_ps3_tag_o         = ps3_tag_reg;                                     //current PS3 tag
-   assign prb_ips_o             = ips_reg;                                         //current IPS
-   assign prb_ips_tags_o        = ips_tags_reg;                                    //current IPS
-   assign prb_irs_o             = irs_reg;                                         //current IRS
-   assign prb_irs_tags_o        = irs_tags_reg;                                    //current IRS
+   assign prb_state_task_o        = state_task_reg;                                //current FSM task
+   assign prb_state_sbus_o        = state_sbus_reg;                                //current stack bus state
+   assign prb_rs0_o               = rs0_reg;                                       //current RS0
+   assign prb_ps0_o               = ps0_reg;                                       //current PS0
+   assign prb_ps1_o               = ps1_reg;                                       //current PS1
+   assign prb_ps2_o               = ps2_reg;                                       //current PS2
+   assign prb_ps3_o               = ps3_reg;                                       //current PS3
+   assign prb_rs0_tag_o           = rs0_tag_reg;                                   //current RS0 tag
+   assign prb_ps0_tag_o           = ps0_tag_reg;                                   //current PS0 tag
+   assign prb_ps1_tag_o           = ps1_tag_reg;                                   //current PS1 tag
+   assign prb_ps2_tag_o           = ps2_tag_reg;                                   //current PS2 tag
+   assign prb_ps3_tag_o           = ps3_tag_reg;                                   //current PS3 tag
+   assign prb_ips_o               = ips_reg;                                       //current IPS
+   assign prb_ips_tags_o          = ips_tags_reg;                                  //current IPS
+   assign prb_irs_o               = irs_reg;                                       //current IRS
+   assign prb_irs_tags_o          = irs_tags_reg;                                  //current IRS
 
 endmodule // N1_prs

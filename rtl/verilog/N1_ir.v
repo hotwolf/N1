@@ -50,6 +50,12 @@ module N1_ir
     output wire [4:0]             ir2alu_opd_o,                                      //immediate operand
     output wire                   ir2alu_opd_sel_o,                                  //select immediate operand
 
+    //EXCPT interface
+    output wire                   ir2excpt_excpt_en_o,                               //enable exceptions
+    output wire                   ir2excpt_excpt_dis_o,                              //disable exceptions
+    output wire                   ir2excpt_irq_en_o,                                 //enable interrupts
+    output wire                   ir2excpt_irq_dis_o,                                //disable interrupts
+
     //FC interface
     output wire                   ir2fc_eow_o,                                       //end of word (EOW bit set)
     output wire                   ir2fc_eow_postpone_o,                              //EOW conflict detected
@@ -73,7 +79,6 @@ module N1_ir
     output wire                   ir2pagu_eow_postpone_o,                            //postpone EOW
     output wire                   ir2pagu_jmp_or_cal_o,                              //jump or call instruction
     output wire                   ir2pagu_bra_o,                                     //conditional branch
-    output wire                   ir2pagu_rty_o,                                     //retry instruction
     output wire                   ir2pagu_scyc_o,                                    //single cycle instruction
     output wire                   ir2pagu_mem_o,                                     //memory I/O
     output wire                   ir2pagu_aadr_sel_o,                                //select (indirect) absolute address
@@ -271,22 +276,34 @@ module N1_ir
    assign ir2alu_opd_o            = arg_opd;                                         //immediate operand
    assign ir2alu_opd_sel_o        = opd_sel;                                         //select immediate operand
 
+   //EXCPT interface
+   assign ir2excpt_excpt_en_o     = act_excpt_en;                                    //enable exceptions
+   assign ir2excpt_excpt_dis_o    = act_excpt_dis;                                   //disable exceptions
+   assign ir2excpt_irq_en_o       = act_irq_en;                                      //enable interrupts
+   assign ir2excpt_irq_dis_o      = act_irq_dis;                                     //disable interrupts
+
    //FC
    assign ir2fc_eow_o             = instr_eow;                                       //end of word (EOW bit set)
    assign ir2fc_eow_postpone_o    = eow_postpone;                                    //postpone EOW execution
-   assign ir2fc_bra_o             = instr_bra;                                       //conditional BRANCH
    assign ir2fc_jump_or_call_o    = instr_jump_or_call;                              //JUMP or CALL instruction
+   assign ir2fc_bra_o             = instr_bra;                                       //conditional BRANCH
+   assign ir2fc_scyc_o            = instr_scyc;                                      //single cycle instruction
    assign ir2fc_mem_o             = instr_mem;                                       //memory I/O
    assign ir2fc_mem_rd_o          = ir_reg[8];                                       //memory read
    assign ir2fc_madr_sel_o        = madr_sel;                                        //direct memory addressing
-   assign ir2fc_scyc_o            = instr_scyc;                                      //single cycle instruction
 
    //PAGU
+   assign ir2pagu_eow_o           = instr_eow;                                       //end of word (EOW bit)
+   assign ir2pagu_eow_postpone_o  = eow_postpone;                                    //postpone EOW
+   assign ir2pagu_jmp_or_cal_o    = instr_jump_or_call;                              //jump or call instruction
+   assign ir2pagu_bra_o           = instr_bra;                                       //conditional branch
+   assign ir2pagu_scyc_o          = instr_scyc;                                      //single cycle instruction
+   assign ir2pagu_mem_o           = instr_mem;                                       //memory I/O
+   assign ir2pagu_aadr_sel_o      = aadr_sel;                                        //select direct absolute address
+   assign ir2pagu_madr_sel_o      = madr_sel;                                        //select direct memory address
    assign ir2pagu_aadr_o          = arg_aadr;                                        //direct absolute address
    assign ir2pagu_radr_o          = arg_radr;                                        //direct relative address
    assign ir2pagu_madr_o          = arg_madr;                                        //direct memory address
-   assign ir2pagu_aadr_sel_o      = aadr_sel;                                        //select direct absolute address
-   assign ir2pagu_madr_sel_o      = madr_sel;                                        //select direct memory address
 
    //PRS
    assign ir2prs_lit_val_o        = {{4{arg_lit[11]}}, arg_lit};                     //literal value

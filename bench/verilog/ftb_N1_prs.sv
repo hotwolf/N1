@@ -124,10 +124,8 @@ module ftb_N1_prs
     output wire                              prs2sagu_push_o,                      //increment stack pointer
     output wire                              prs2sagu_pull_o,                      //decrement stack pointer
     output wire                              prs2sagu_load_o,                      //load stack pointer
-    output wire [`SP_WIDTH-1:0]              prs2sagu_psp_next_o,                  //parameter stack load value
-    output wire [`SP_WIDTH-1:0]              prs2sagu_rsp_next_o,                  //return stack load value
-    input  wire                              sagu2prs_lps_empty_i,                 //lower parameter stack is empty
-    input  wire                              sagu2prs_lrs_empty_i,                 //lower return stack is empty
+    output wire [`SP_WIDTH-1:0]              prs2sagu_psp_load_val_o,              //parameter stack load value
+    output wire [`SP_WIDTH-1:0]              prs2sagu_rsp_load_val_o,              //return stack load value
 
     //Probe signals
     output wire [2:0]                        prb_state_task_o,                     //current FSM task
@@ -185,8 +183,8 @@ module ftb_N1_prs
 
      //DSP interface
     .dsp2prs_pc_i               (dsp2prs_pc_i),                                    //program counter
-    .dsp2prs_psp_i              (dsp2prs_psp_i),                                   //parameter stack pointer (AGU output)
-    .dsp2prs_rsp_i              (dsp2prs_rsp_i),                                   //return stack pointer (AGU output)
+    .dsp2prs_psp_i              (dsp2prs_psp_i),                                   //parameter stack pointer
+    .dsp2prs_rsp_i              (dsp2prs_rsp_i),                                   //return stack pointer
 
     //EXCPT interface
     .prs2excpt_psuf_o           (prs2excpt_psuf_o),                                //parameter stack underflow
@@ -204,8 +202,8 @@ module ftb_N1_prs
     //IR interface
     .ir2prs_lit_val_i           (ir2prs_lit_val_i),                                //literal value
     .ir2prs_us_tp_i             (ir2prs_us_tp_i),                                  //upper stack transition pattern
-    .ir2prs_ips_tp_i            (ir2prs_ips_tp_i),                                 //10:push            (), 01:pull
-    .ir2prs_irs_tp_i            (ir2prs_irs_tp_i),                                 //10:push            (), 01:pull
+    .ir2prs_ips_tp_i            (ir2prs_ips_tp_i),                                 //10:push, 01:pull
+    .ir2prs_irs_tp_i            (ir2prs_irs_tp_i),                                 //10:push, 01:pull
     .ir2prs_alu2ps0_i           (ir2prs_alu2ps0_i),                                //ALU output  -> PS0
     .ir2prs_alu2ps1_i           (ir2prs_alu2ps1_i),                                //ALU output  -> PS1
     .ir2prs_lit2ps0_i           (ir2prs_lit2ps0_i),                                //literal     -> PS0
@@ -229,10 +227,8 @@ module ftb_N1_prs
     .prs2sagu_push_o            (prs2sagu_push_o),                                 //increment stack pointer
     .prs2sagu_pull_o            (prs2sagu_pull_o),                                 //decrement stack pointer
     .prs2sagu_load_o            (prs2sagu_load_o),                                 //load stack pointer
-    .prs2sagu_psp_next_o        (prs2sagu_psp_next_o),                             //parameter stack load value
-    .prs2sagu_rsp_next_o        (prs2sagu_rsp_next_o),                             //return stack load value
-    .sagu2prs_lps_empty_i       (sagu2prs_lps_empty_i),                            //lower parameter stack is empty
-    .sagu2prs_lrs_empty_i       (sagu2prs_lrs_empty_i),                            //lower return stack is empty
+    .prs2sagu_psp_load_val_o    (prs2sagu_psp_load_val_o),                         //parameter stack load value
+    .prs2sagu_rsp_load_val_o    (prs2sagu_rsp_load_val_o),                         //return stack load value
 
     //Probe signals
     .prb_state_task_o           (prb_state_task_o),                                //current state

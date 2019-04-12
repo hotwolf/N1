@@ -195,11 +195,11 @@ module N1
    wire [31:0]                              dsp2alu_mul_res;         //result from multiplier
    //DSP -> PRS
    wire [15:0]                              dsp2prs_pc;              //program counter
-   wire [SP_WIDTH-1:0]                      dsp2prs_psp;             //parameter stack pointer (AGU output)
-   wire [SP_WIDTH-1:0]                      dsp2prs_rsp;             //return stack pointer (AGU output)
+   wire [SP_WIDTH-1:0]                      dsp2prs_psp;             //parameter stack pointer
+   wire [SP_WIDTH-1:0]                      dsp2prs_rsp;             //return stack pointer
    //DSP -> SAGU
-   wire [SP_WIDTH-1:0]                      dsp2sagu_psp;            //parameter stack pointer
-   wire [SP_WIDTH-1:0]                      dsp2sagu_rsp;            //return stack pointer
+   wire [SP_WIDTH-1:0]                      dsp2sagu_psp_next;       //parameter stack pointer
+   wire [SP_WIDTH-1:0]                      dsp2sagu_rsp_next;       //return stack pointer
 
    //EXCPT - Exception aggregator
    //EXCPT -> FC
@@ -246,6 +246,7 @@ module N1
    wire                                     ir2fc_madr_sel;          //select (indirect) data address
    //IR -> EXCPT
    wire                                     ir2excpt_excpt_en;       //enable exceptions
+   wire                                     ir2excpt_excpt_dis;      //disable exceptions
    wire                                     ir2excpt_irq_en;         //enable interrupts
    wire                                     ir2excpt_irq_dis;        //disable interrupts
    //IR -> PAGU
@@ -253,7 +254,6 @@ module N1
    wire                                     ir2pagu_eow_postpone;    //postpone EOW
    wire                                     ir2pagu_jmp_or_cal;      //jump or call instruction
    wire                                     ir2pagu_bra;             //conditional branch
-   wire                                     ir2pagu_rty;             //retry instruction
    wire                                     ir2pagu_scyc;            //single cycle instruction
    wire                                     ir2pagu_mem;             //memory I/O
    wire                                     ir2pagu_aadr_sel;        //select (indirect) absolute address
@@ -305,25 +305,22 @@ module N1
    wire                                     prs2sagu_push;           //increment stack pointer
    wire                                     prs2sagu_pull;           //decrement stack pointer
    wire                                     prs2sagu_load;           //load stack pointer
-   wire [SP_WIDTH-1:0]                      prs2sagu_psp_next;       //parameter stack load value
-   wire [SP_WIDTH-1:0]                      prs2sagu_rsp_next;       //return stack load value
+   wire [SP_WIDTH-1:0]                      prs2sagu_psp_load_val;   //parameter stack load value
+   wire [SP_WIDTH-1:0]                      prs2sagu_rsp_load_val;   //return stack load value
 
    //SAGU - Stack bus address generation unit
    //SAGU -> DSP
    wire                                     sagu2dsp_psp_hold;       //maintain PSP
    wire                                     sagu2dsp_psp_op_sel;     //1:set new PSP, 0:add offset to PSP
    wire [SP_WIDTH-1:0]                      sagu2dsp_psp_offs;       //PSP offset
-   wire [SP_WIDTH-1:0]                      sagu2dsp_psp_next;       //new PSP
+   wire [SP_WIDTH-1:0]                      sagu2dsp_psp_load_val;   //new PSP
    wire                                     sagu2dsp_rsp_hold;       //maintain RSP
    wire                                     sagu2dsp_rsp_op_sel;     //1:set new RSP, 0:add offset to RSP
    wire [SP_WIDTH-1:0]                      sagu2dsp_rsp_offs;       //relative address
-   wire [SP_WIDTH-1:0]                      sagu2dsp_rsp_next;       //absolute address
+   wire [SP_WIDTH-1:0]                      sagu2dsp_rsp_load_val;   //absolute address
    //SAGU -> EXCPT
    wire                                     sagu2excpt_psof;         //PS overflow
    wire                                     sagu2excpt_rsof;         //RS overflow
-   //SAGU -> PRS
-   wire                                     sagu2prs_lps_empty;      //lower parameter stack is empty
-   wire                                     sagu2prs_lrs_empty;      //lower return stack is empty
 
    //ALU - Arithmetic logic unit
    //---------------------------
@@ -383,58 +380,59 @@ module N1
 
       //PRS interface
       .dsp2prs_pc_o             (dsp2prs_pc),                        //program counter
-      .dsp2prs_psp_o            (dsp2prs_psp),                       //parameter stack pointer (AGU output)
-      .dsp2prs_rsp_o            (dsp2prs_rsp),                       //return stack pointer (AGU output)
+      .dsp2prs_psp_o            (dsp2prs_psp),                       //parameter stack pointer
+      .dsp2prs_rsp_o            (dsp2prs_rsp),                       //return stack pointer
 
       //SAGU interface
-      .dsp2sagu_psp_o           (dsp2sagu_psp),                      //parameter stack pointer
-      .dsp2sagu_rsp_o           (dsp2sagu_rsp),                      //return stack pointer
+      .dsp2sagu_psp_next_o      (dsp2sagu_psp_next),                 //parameter stack pointer
+      .dsp2sagu_rsp_next_o      (dsp2sagu_rsp_next),                 //return stack pointer
       .sagu2dsp_psp_hold_i      (sagu2dsp_psp_hold),                 //maintain PSP
       .sagu2dsp_psp_op_sel_i    (sagu2dsp_psp_op_sel),               //1:set new PSP, 0:add offset to PSP
       .sagu2dsp_psp_offs_i      (sagu2dsp_psp_offs),                 //PSP offset
-      .sagu2dsp_psp_next_i      (sagu2dsp_psp_next),                 //new PSP
+      .sagu2dsp_psp_load_val_i  (sagu2dsp_psp_load_val),             //new PSP
       .sagu2dsp_rsp_hold_i      (sagu2dsp_rsp_hold),                 //maintain RSP
       .sagu2dsp_rsp_op_sel_i    (sagu2dsp_rsp_op_sel),               //1:set new RSP, 0:add offset to RSP
       .sagu2dsp_rsp_offs_i      (sagu2dsp_rsp_offs),                 //relative address
-      .sagu2dsp_rsp_next_i      (sagu2dsp_rsp_next));                //absolute address
+      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val));            //absolute address
 
    //EXCPT - Exception aggregator
    //----------------------------
    N1_excpt
    excpt
-   (//Clock and reset
-    .clk_i                      (clk_i),                             //module clock
-    .async_rst_i                (async_rst_i),                       //asynchronous reset
-    .sync_rst_i                 (sync_rst_i),                        //synchronous reset
+     (//Clock and reset
+      .clk_i                    (clk_i),                             //module clock
+      .async_rst_i              (async_rst_i),                       //asynchronous reset
+      .sync_rst_i               (sync_rst_i),                        //synchronous reset
 
-    //Interrupt interface
-    .irq_req_i                  (irq_req_i),                         //requested ISR
+      //Interrupt interface
+      .irq_req_i                (irq_req_i),                         //requested ISR
 
-    //FC interface
-    .excpt2fc_excpt_o           (excpt2fc_excpt),                    //exception to be handled
-    .excpt2fc_irq_o             (excpt2fc_irq),                      //exception to be handled
-    .fc2excpt_excpt_clr_i       (fc2excpt_excpt_clr),                //clear and disable exceptions
-    .fc2excpt_irq_dis_i         (fc2excpt_irq_dis),                  //disable interrupts
-    .fc2excpt_buserr_i          (fc2excpt_buserr),                   //pbus error
+      //FC interface
+      .excpt2fc_excpt_o         (excpt2fc_excpt),                    //exception to be handled
+      .excpt2fc_irq_o           (excpt2fc_irq),                      //exception to be handled
+      .fc2excpt_excpt_clr_i     (fc2excpt_excpt_clr),                //clear and disable exceptions
+      .fc2excpt_irq_dis_i       (fc2excpt_irq_dis),                  //disable interrupts
+      .fc2excpt_buserr_i        (fc2excpt_buserr),                   //pbus error
 
-    //IR interface
-    .ir2excpt_excpt_en_i        (ir2excpt_excpt_en),                 //enable exceptions
-    .ir2excpt_irq_en_i          (ir2excpt_irq_en),                   //enable interrupts
-    .ir2excpt_irq_dis_i         (ir2excpt_irq_dis),                  //disable interrupts
+      //IR interface
+      .ir2excpt_excpt_en_i      (ir2excpt_excpt_en),                 //enable exceptions
+      .ir2excpt_excpt_dis_i     (ir2excpt_excpt_dis),                //disable exceptions
+      .ir2excpt_irq_en_i        (ir2excpt_irq_en),                   //enable interrupts
+      .ir2excpt_irq_dis_i       (ir2excpt_irq_dis),                  //disable interrupts
 
-    //PRS interface
-    .excpt2prs_tc_o             (excpt2prs_tc),                      //throw code
-    .prs2excpt_psuf_i           (prs2excpt_psuf),                    //PS underflow
-    .prs2excpt_rsuf_i           (prs2excpt_rsuf),                    //RS underflow
+      //PRS interface
+      .excpt2prs_tc_o           (excpt2prs_tc),                      //throw code
+      .prs2excpt_psuf_i         (prs2excpt_psuf),                    //PS underflow
+      .prs2excpt_rsuf_i         (prs2excpt_rsuf),                    //RS underflow
 
-    //SAGU interface
-    .sagu2excpt_psof_i          (sagu2excpt_psof),                   //PS overflow
-    .sagu2excpt_rsof_i          (sagu2excpt_rsof),                   //RS overflow
+      //SAGU interface
+      .sagu2excpt_psof_i        (sagu2excpt_psof),                   //PS overflow
+      .sagu2excpt_rsof_i        (sagu2excpt_rsof),                   //RS overflow
 
-    //Probe signals
-    .prb_excpt_o                (prb_excpt_o),                       //exception tracker
-    .prb_excpt_en_o             (prb_excpt_en_o),                    //exception enable
-    .prb_irq_en_o               (prb_irq_en_o));                     //interrupt enable
+      //Probe signals
+      .prb_excpt_o              (prb_excpt_o),                       //exception tracker
+      .prb_excpt_en_o           (prb_excpt_en_o),                    //exception enable
+      .prb_irq_en_o             (prb_irq_en_o));                     //interrupt enable
 
    //FC - Flow control
    //-----------------
@@ -518,6 +516,12 @@ module N1
       .ir2alu_opd_o             (ir2alu_opd),                        //immediate operand
       .ir2alu_opd_sel_o         (ir2alu_opd_sel),                    //select immediate operand
 
+      //EXCPT interface
+      .ir2excpt_excpt_en_o      (ir2excpt_excpt_en),                 //enable exceptions
+      .ir2excpt_excpt_dis_o     (ir2excpt_excpt_dis),                //disable exceptions
+      .ir2excpt_irq_en_o        (ir2excpt_irq_en),                   //enable interrupts
+      .ir2excpt_irq_dis_o       (ir2excpt_irq_dis),                  //disable interrupts
+
       //FC interface
       .ir2fc_eow_o              (ir2fc_eow),                         //end of word (EOW bit set)
       .ir2fc_eow_postpone_o     (ir2fc_eow_postpone),                //EOW conflict detected
@@ -541,7 +545,6 @@ module N1
       .ir2pagu_eow_postpone_o   (ir2pagu_eow_postpone),              //postpone EOW
       .ir2pagu_jmp_or_cal_o     (ir2pagu_jmp_or_cal),                //jump or call instruction
       .ir2pagu_bra_o            (ir2pagu_bra),                       //conditional branch
-      .ir2pagu_rty_o            (ir2pagu_rty),                       //retry instruction
       .ir2pagu_scyc_o           (ir2pagu_scyc),                      //single cycle instruction
       .ir2pagu_mem_o            (ir2pagu_mem),                       //memory I/O
       .ir2pagu_aadr_sel_o       (ir2pagu_aadr_sel),                  //select (indirect) absolute address
@@ -651,8 +654,8 @@ module N1
       //IR interface
       .ir2prs_lit_val_i         (ir2prs_lit_val),                    //literal value
       .ir2prs_us_tp_i           (ir2prs_us_tp),                      //upper stack transition pattern
-      .ir2prs_ips_tp_i          (ir2prs_ips_tp),                     //10:push          (), 01:pull
-      .ir2prs_irs_tp_i          (ir2prs_irs_tp),                     //10:push          (), 01:pull
+      .ir2prs_ips_tp_i          (ir2prs_ips_tp),                     //10:push, 01:pull
+      .ir2prs_irs_tp_i          (ir2prs_irs_tp),                     //10:push, 01:pull
       .ir2prs_alu2ps0_i         (ir2prs_alu2ps0),                    //ALU output  -> PS0
       .ir2prs_alu2ps1_i         (ir2prs_alu2ps1),                    //ALU output  -> PS1
       .ir2prs_lit2ps0_i         (ir2prs_lit2ps0),                    //literal     -> PS0
@@ -676,10 +679,8 @@ module N1
       .prs2sagu_push_o          (prs2sagu_push),                     //increment stack pointer
       .prs2sagu_pull_o          (prs2sagu_pull),                     //decrement stack pointer
       .prs2sagu_load_o          (prs2sagu_load),                     //load stack pointer
-      .prs2sagu_psp_next_o      (prs2sagu_psp_next),                 //parameter stack load value
-      .prs2sagu_rsp_next_o      (prs2sagu_rsp_next),                 //return stack load value
-      .sagu2prs_lps_empty_i     (sagu2prs_lps_empty),                //lower parameter stack is empty
-      .sagu2prs_lrs_empty_i     (sagu2prs_lrs_empty),                //lower return stack is empty
+      .prs2sagu_psp_load_val_o  (prs2sagu_psp_load_val),             //parameter stack load value
+      .prs2sagu_rsp_load_val_o  (prs2sagu_rsp_load_val),             //return stack load value
 
       //Probe signals
       .prb_state_task_o         (prb_state_task_o),                  //current state
@@ -714,21 +715,19 @@ module N1
       .sagu2dsp_psp_hold_o      (sagu2dsp_psp_hold),                 //maintain PSP
       .sagu2dsp_psp_op_sel_o    (sagu2dsp_psp_op_sel),               //1:set new PSP, 0:add offset to PSP
       .sagu2dsp_psp_offs_o      (sagu2dsp_psp_offs),                 //PSP offset
-      .sagu2dsp_psp_next_o      (sagu2dsp_psp_next),                 //new PSP
+      .sagu2dsp_psp_load_val_o  (sagu2dsp_psp_load_val),             //new PSP
       .sagu2dsp_rsp_hold_o      (sagu2dsp_rsp_hold),                 //maintain RSP
       .sagu2dsp_rsp_op_sel_o    (sagu2dsp_rsp_op_sel),               //1:set new RSP, 0:add offset to RSP
       .sagu2dsp_rsp_offs_o      (sagu2dsp_rsp_offs),                 //relative address
-      .sagu2dsp_rsp_next_o      (sagu2dsp_rsp_next),                 //absolute address
-      .dsp2sagu_psp_i           (dsp2sagu_psp),                      //parameter stack pointer
-      .dsp2sagu_rsp_i           (dsp2sagu_rsp),                      //return stack pointer
+      .sagu2dsp_rsp_load_val_o  (sagu2dsp_rsp_load_val),             //absolute address
+      .dsp2sagu_psp_next_i      (dsp2sagu_psp_next),                 //parameter stack pointer
+      .dsp2sagu_rsp_next_i      (dsp2sagu_rsp_next),                 //return stack pointer
 
       //EXCPT  interface
       .sagu2excpt_psof_o        (sagu2excpt_psof),                   //PS overflow
       .sagu2excpt_rsof_o        (sagu2excpt_rsof),                   //RS overflow
 
       //PRS interface
-      .sagu2prs_lps_empty_o     (sagu2prs_lps_empty),                //lower parameter stack is empty
-      .sagu2prs_lrs_empty_o     (sagu2prs_lrs_empty),                //lower return stack is empty
       .prs2sagu_hold_i          (prs2sagu_hold),                     //maintain stack pointers
       .prs2sagu_psp_rst_i       (prs2sagu_psp_rst),                  //reset PSP
       .prs2sagu_rsp_rst_i       (prs2sagu_rsp_rst),                  //reset RSP
@@ -736,7 +735,7 @@ module N1
       .prs2sagu_push_i          (prs2sagu_push),                     //increment stack pointer
       .prs2sagu_pull_i          (prs2sagu_pull),                     //decrement stack pointer
       .prs2sagu_load_i          (prs2sagu_load),                     //load stack pointer
-      .prs2sagu_psp_next_i      (prs2sagu_psp_next),                 //parameter stack load value
-      .prs2sagu_rsp_next_i      (prs2sagu_rsp_next));                //return stack load value
+      .prs2sagu_psp_load_val_i  (prs2sagu_psp_load_val),             //parameter stack load value
+      .prs2sagu_rsp_load_val_i  (prs2sagu_rsp_load_val));            //return stack load value
 
 endmodule // N1

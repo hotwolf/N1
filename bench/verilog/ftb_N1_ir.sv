@@ -34,6 +34,11 @@
 `ifdef CONF_DEFAULT
 `endif
 
+//iCE40UP5K configuration
+//-----------------------
+`ifdef CONF_ICE40UP5K
+`endif
+
 //Fall back
 //---------
 
@@ -59,6 +64,12 @@ module ftb_N1_ir
     output wire [4:0]             ir2alu_opd_o,                    //immediate operand
     output wire                   ir2alu_opd_sel_o,                //select immediate operand
 
+    //EXCPT interface
+    output wire                   ir2excpt_excpt_en_o,             //enable exceptions
+    output wire                   ir2excpt_excpt_dis_o,            //disable exceptions
+    output wire                   ir2excpt_irq_en_o,               //enable interrupts
+    output wire                   ir2excpt_irq_dis_o,              //disable interrupts
+
     //FC interface
     output wire                   ir2fc_eow_o,                     //end of word (EOW bit set)
     output wire                   ir2fc_eow_postpone_o,            //EOW conflict detected
@@ -82,7 +93,6 @@ module ftb_N1_ir
     output wire                   ir2pagu_eow_postpone_o,          //postpone EOW
     output wire                   ir2pagu_jmp_or_cal_o,            //jump or call instruction
     output wire                   ir2pagu_bra_o,                   //conditional branch
-    output wire                   ir2pagu_rty_o,                   //retry instruction
     output wire                   ir2pagu_scyc_o,                  //single cycle instruction
     output wire                   ir2pagu_mem_o,                   //memory I/O
     output wire                   ir2pagu_aadr_sel_o,              //select (indirect) absolute address
@@ -134,6 +144,12 @@ module ftb_N1_ir
       .ir2alu_opd_o               (ir2alu_opd_o),                  //immediate operand
       .ir2alu_opd_sel_o           (ir2alu_opd_sel_o),              //select immediate operand
 
+      //EXCPT interface
+      .ir2excpt_excpt_en_o        (ir2excpt_excpt_en_o),           //enable exceptions
+      .ir2excpt_excpt_dis_o       (ir2excpt_excpt_dis_o),          //disable exceptions
+      .ir2excpt_irq_en_o          (ir2excpt_irq_en_o),             //enable interrupts
+      .ir2excpt_irq_dis_o         (ir2excpt_irq_dis_o),            //disable interrupts
+
       //FC interface
       .ir2fc_eow_o                (ir2fc_eow_o),                   //end of word (EOW bit set)
       .ir2fc_eow_postpone_o       (ir2fc_eow_postpone_o),          //EOW conflict detected
@@ -157,7 +173,6 @@ module ftb_N1_ir
       .ir2pagu_eow_postpone_o     (ir2pagu_eow_postpone_o),        //postpone EOW
       .ir2pagu_jmp_or_cal_o       (ir2pagu_jmp_or_cal_o),          //jump or call instruction
       .ir2pagu_bra_o              (ir2pagu_bra_o),                 //conditional branch
-      .ir2pagu_rty_o              (ir2pagu_rty_o),                 //retry instruction
       .ir2pagu_scyc_o             (ir2pagu_scyc_o),                //single cycle instruction
       .ir2pagu_mem_o              (ir2pagu_mem_o),                 //memory I/O
       .ir2pagu_aadr_sel_o         (ir2pagu_aadr_sel_o),            //select (indirect) absolute address

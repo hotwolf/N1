@@ -58,6 +58,7 @@ module ftb_N1_excpt
 
     //IR interface
     input  wire                      ir2excpt_excpt_en_i,    //enable exceptions
+    input  wire                      ir2excpt_excpt_dis_i,   //disable exceptions
     input  wire                      ir2excpt_irq_en_i,      //enable interrupts
     input  wire                      ir2excpt_irq_dis_i,     //disable interrupts
 
@@ -96,6 +97,7 @@ module ftb_N1_excpt
 
     //IR interface
     .ir2excpt_excpt_en_i             (ir2excpt_excpt_en_i),  //enable exceptions
+    .ir2excpt_excpt_dis_i            (ir2excpt_excpt_dis_i), //disable exceptions
     .ir2excpt_irq_en_i               (ir2excpt_irq_en_i),    //enable interrupts
     .ir2excpt_irq_dis_i              (ir2excpt_irq_dis_i),   //disable interrupts
 
