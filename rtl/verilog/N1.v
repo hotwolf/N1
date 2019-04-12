@@ -153,12 +153,27 @@ module N1
     output wire                              prb_irq_en_o,           //interrupt enable
     //FC - Flow control
     output wire [2:0]                        prb_fc_state_o,         //state variable
-    output wire                              prb_fc_pbus_acc,        //ongoing bus access
+    output wire                              prb_fc_pbus_acc_o,      //ongoing bus access
     //IR - Instruction register
     output wire [15:0]                       prb_ir_o,               //current instruction register
     output wire [15:0]                       prb_ir_stash_o,         //stashed instruction register
-
-   );
+    //Probe signals
+    output wire [2:0]                        prb_state_task_o,       //current state
+    output wire [1:0]                        prb_state_sbus_o,       //current state
+    output wire [15:0]                       prb_rs0_o,              //current RS0
+    output wire [15:0]                       prb_ps0_o,              //current PS0
+    output wire [15:0]                       prb_ps1_o,              //current PS1
+    output wire [15:0]                       prb_ps2_o,              //current PS2
+    output wire [15:0]                       prb_ps3_o,              //current PS3
+    output wire                              prb_rs0_tag_o,          //current RS0 tag
+    output wire                              prb_ps0_tag_o,          //current PS0 tag
+    output wire                              prb_ps1_tag_o,          //current PS1 tag
+    output wire                              prb_ps2_tag_o,          //current PS2 tag
+    output wire                              prb_ps3_tag_o,          //current PS3 tag
+    output wire [(16*IPS_DEPTH)-1:0]         prb_ips_o,              //current IPS
+    output wire [IPS_DEPTH-1:0]              prb_ips_tags_o,         //current IPS
+    output wire [(16*IRS_DEPTH)-1:0]         prb_irs_o,              //current IRS
+    output wire [IRS_DEPTH-1:0]              prb_irs_tags_o);        //current IRS
 
    //Internal interfaces
    //-------------------
@@ -195,11 +210,11 @@ module N1
 
    //FC - Flow control
    //FC -> DSP
-   wire                                     fc2dsp_pc_hold,          //maintain PC
+   wire                                     fc2dsp_pc_hold;          //maintain PC
    //FC -> EXCPT
-   wire                                     fc2excpt_excpt_clr,      //clear and disable exceptions
-   wire                                     fc2excpt_irq_dis,        //disable interrupts
-   wire                                     fc2excpt_buserr,         //invalid pbus access
+   wire                                     fc2excpt_excpt_clr;      //clear and disable exceptions
+   wire                                     fc2excpt_irq_dis;        //disable interrupts
+   wire                                     fc2excpt_buserr;         //invalid pbus access
    //FC -> IR
    wire                                     fc2ir_capture;           //capture current IR
    wire                                     fc2ir_stash;             //capture stashed IR
@@ -249,6 +264,7 @@ module N1
    //IR -> PRS
    wire                                     ir2prs_alu2ps0;          //ALU output  -> PS0
    wire                                     ir2prs_alu2ps1;          //ALU output  -> PS1
+   wire                                     ir2prs_dat2ps0;          //read data   -> PS0
    wire                                     ir2prs_lit2ps0;          //literal     -> PS0
    wire                                     ir2prs_pc2rs0;           //PC          -> RS0
    wire                                     ir2prs_ps_rst;           //reset parameter stack
@@ -282,14 +298,15 @@ module N1
    wire [15:0]                              prs2pagu_ps0;            //PS0
    wire [15:0]                              prs2pagu_rs0;            //RS0
    //PRS -> SAGU
-   wire                                     prs2sagu_hold;           //maintain stack pointer
-   wire                                     prs2sagu_ps_rst;         //reset parameter stack
-   wire                                     prs2sagu_rs_rst;         //reset return stack
+   wire                                     prs2sagu_hold;           //maintain stack pointers
+   wire                                     prs2sagu_psp_rst;        //reset PSP
+   wire                                     prs2sagu_rsp_rst;        //reset RSP
    wire                                     prs2sagu_stack_sel;      //1:RS, 0:PS
-   wire                                     prs2sagu_psh;            //push (increment SP)
-   wire                                     prs2sagu_pul;            //pull (decrement SP)
-   wire                                     prs2sagu_set;            //set new SP
-   wire [SP_WIDTH-1:0]                      prs2sagu_sp_next;        //new SP
+   wire                                     prs2sagu_push;           //increment stack pointer
+   wire                                     prs2sagu_pull;           //decrement stack pointer
+   wire                                     prs2sagu_load;           //load stack pointer
+   wire [SP_WIDTH-1:0]                      prs2sagu_psp_next;       //parameter stack load value
+   wire [SP_WIDTH-1:0]                      prs2sagu_rsp_next;       //return stack load value
 
    //SAGU - Stack bus address generation unit
    //SAGU -> DSP
@@ -305,9 +322,9 @@ module N1
    wire                                     sagu2excpt_psof;         //PS overflow
    wire                                     sagu2excpt_rsof;         //RS overflow
    //SAGU -> PRS
-   wire                                     sagu2prs_lps_empty_i;    //lower parameter stack is empty
-   wire                                     sagu2prs_lrs_empty_i;    //lower return stack is empty
-   
+   wire                                     sagu2prs_lps_empty;      //lower parameter stack is empty
+   wire                                     sagu2prs_lrs_empty;      //lower return stack is empty
+
    //ALU - Arithmetic logic unit
    //---------------------------
    N1_alu
@@ -391,7 +408,7 @@ module N1
     .sync_rst_i                 (sync_rst_i),                        //synchronous reset
 
     //Interrupt interface
-    irq_req_i                   (irq_req_i),                         //requested ISR
+    .irq_req_i                  (irq_req_i),                         //requested ISR
 
     //FC interface
     .excpt2fc_excpt_o           (excpt2fc_excpt),                    //exception to be handled
@@ -475,8 +492,8 @@ module N1
       .excpt2fc_irq_i           (excpt2fc_irq),                      //exception to be handled
 
       //Probe signals
-      .prb_fc_state_o           (prb_fc_state),                      //state variable
-      .prb_fc_pbus_acc_o        (prb_fc_pbus_acc));                  //ongoing bus access
+      .prb_fc_state_o           (prb_fc_state_o),                    //state variable
+      .prb_fc_pbus_acc_o        (prb_fc_pbus_acc_o));                //ongoing bus access
 
    //IR - Instruction Register and Decoder
    //-------------------------------------
@@ -506,7 +523,6 @@ module N1
       .ir2fc_eow_postpone_o     (ir2fc_eow_postpone),                //EOW conflict detected
       .ir2fc_jump_or_call_o     (ir2fc_jump_or_call),                //either JUMP or CALL
       .ir2fc_bra_o              (ir2fc_bra),                         //conditonal BRANCG instruction
-      .ir2fc_isr_o              (ir2fc_isr),                         //ISR launcher
       .ir2fc_scyc_o             (ir2fc_scyc),                        //linear flow
       .ir2fc_mem_o              (ir2fc_mem),                         //memory I/O
       .ir2fc_mem_rd_o           (ir2fc_mem_rd),                      //memory read
@@ -592,10 +608,10 @@ module N1
       .async_rst_i              (async_rst_i),                       //asynchronous reset
       .sync_rst_i               (sync_rst_i),                        //synchronous reset
 
-      //Program bus (wishbone)		     			                   
+      //Program bus (wishbone)
       .pbus_dat_o               (pbus_dat_o),                        //write data bus
       .pbus_dat_i               (pbus_dat_i),                        //read data bus
-								                   
+
       //Stack bus (wishbone)
       .sbus_cyc_o               (sbus_cyc_o),                        //bus cycle indicator       +-
       .sbus_stb_o               (sbus_stb_o),                        //access request            | initiator
@@ -605,6 +621,9 @@ module N1
       .sbus_stall_i             (sbus_stall_i),                      //access delay              | target to initiator
       .sbus_dat_i               (sbus_dat_i),                        //read data bus             +-
 
+      //Interrupt interface
+      .irq_req_i                (irq_req_i),                         //requested interrupt vector
+
       //ALU interface
       .prs2alu_ps0_o            (prs2alu_ps0),                       //current PS0 (TOS)
       .prs2alu_ps1_o            (prs2alu_ps1),                       //current PS1 (TOS+1)
@@ -612,9 +631,9 @@ module N1
       .alu2prs_ps1_next_i       (alu2prs_ps1_next),                  //new PS1 (TOS+1)
 
       //DSP interface
-      .dsp2prs_pc_i             (dsp2prs_pc_i),                      //program counter
-      .dsp2prs_psp_i            (dsp2prs_psp_i),                     //parameter stack pointer (AGU output)
-      .dsp2prs_rsp_i            (dsp2prs_rsp_i),                     //return stack pointer (AGU output)
+      .dsp2prs_pc_i             (dsp2prs_pc),                        //program counter
+      .dsp2prs_psp_i            (dsp2prs_psp),                       //parameter stack pointer (AGU output)
+      .dsp2prs_rsp_i            (dsp2prs_rsp),                       //return stack pointer (AGU output)
 
       //EXCPT interface
       .prs2excpt_psuf_o         (prs2excpt_psuf),                    //parameter stack underflow
@@ -630,35 +649,55 @@ module N1
       .fc2prs_isr2ps0_i         (fc2prs_isr2ps0),                    //capture ISR
 
       //IR interface
-      .ir2prs_alu2ps0_i		(ir2prs_alu2ps0),                    //ALU output  -> PS0
-      .ir2prs_alu2ps1_i		(ir2prs_alu2ps1),                    //ALU output  -> PS1
-      .ir2prs_lit2ps0_i		(ir2prs_lit2ps0),                    //literal     -> PS0
-      .ir2prs_pc2rs0_i		(ir2prs_pc2rs0),                     //PC          -> RS0
-      .ir2prs_ps_rst_i		(ir2prs_ps_rst),                     //reset parameter stack
-      .ir2prs_rs_rst_i		(ir2prs_rs_rst),                     //reset return stack
-      .ir2prs_psp_get_i		(ir2prs_psp_get),                    //read parameter stack pointer
-      .ir2prs_psp_set_i		(ir2prs_psp_set),                    //write parameter stack pointer
-      .ir2prs_rsp_get_i		(ir2prs_rsp_get),                    //read return stack pointer
-      .ir2prs_rsp_set_i		(ir2prs_rsp_set),                    //write return stack pointer
-      .ir2prs_lit_val_i		(ir2prs_lit_val),                    //literal value
-      .ir2prs_us_tp_i		(ir2prs_us_tp),                      //upper stack transition pattern
-      .ir2prs_ips_tp_i		(ir2prs_ips_tp),                     //10:push, 01:pull
-      .ir2prs_irs_tp_i		(ir2prs_irs_tp),                     //10:push, 01:pull
-     
+      .ir2prs_lit_val_i         (ir2prs_lit_val),                    //literal value
+      .ir2prs_us_tp_i           (ir2prs_us_tp),                      //upper stack transition pattern
+      .ir2prs_ips_tp_i          (ir2prs_ips_tp),                     //10:push          (), 01:pull
+      .ir2prs_irs_tp_i          (ir2prs_irs_tp),                     //10:push          (), 01:pull
+      .ir2prs_alu2ps0_i         (ir2prs_alu2ps0),                    //ALU output  -> PS0
+      .ir2prs_alu2ps1_i         (ir2prs_alu2ps1),                    //ALU output  -> PS1
+      .ir2prs_lit2ps0_i         (ir2prs_lit2ps0),                    //literal     -> PS0
+      .ir2prs_pc2rs0_i          (ir2prs_pc2rs0),                     //PC          -> RS0
+      .ir2prs_ps_rst_i          (ir2prs_ps_rst),                     //reset parameter stack
+      .ir2prs_rs_rst_i          (ir2prs_rs_rst),                     //reset return stack
+      .ir2prs_psp_get_i         (ir2prs_psp_get),                    //read parameter stack pointer
+      .ir2prs_psp_set_i         (ir2prs_psp_set),                    //write parameter stack pointer
+      .ir2prs_rsp_get_i         (ir2prs_rsp_get),                    //read return stack pointer
+      .ir2prs_rsp_set_i         (ir2prs_rsp_set),                    //write return stack pointer
+
+      //PRS interface
+      .prs2pagu_ps0_o           (prs2pagu_ps0),                      //PS0
+      .prs2pagu_rs0_o           (prs2pagu_rs0),                      //RS0
+
       //SAGU interface
       .prs2sagu_hold_o          (prs2sagu_hold),                     //maintain stack pointer
-      .prs2sagu_ps_rst_o        (prs2sagu_ps_rst),                   //reset parameter stack
-      .prs2sagu_rs_rst_o        (prs2sagu_rs_rst),                   //reset return stack
+      .prs2sagu_psp_rst_o       (prs2sagu_psp_rst),                  //reset PSP
+      .prs2sagu_rsp_rst_o       (prs2sagu_rsp_rst),                  //reset RSP
       .prs2sagu_stack_sel_o     (prs2sagu_stack_sel),                //1:RS, 0:PS
-      .prs2sagu_psh_o           (prs2sagu_psh),                      //reset return stack
-      .prs2sagu_pul_o           (prs2sagu_pul),                      //reset return stack
-      .prs2sagu_set_o           (prs2sagu_set),                      //reset return stack
-      .prs2sagu_sp_next_o       (prs2sagu_sp_next),                  //relative address
+      .prs2sagu_push_o          (prs2sagu_push),                     //increment stack pointer
+      .prs2sagu_pull_o          (prs2sagu_pull),                     //decrement stack pointer
+      .prs2sagu_load_o          (prs2sagu_load),                     //load stack pointer
+      .prs2sagu_psp_next_o      (prs2sagu_psp_next),                 //parameter stack load value
+      .prs2sagu_rsp_next_o      (prs2sagu_rsp_next),                 //return stack load value
+      .sagu2prs_lps_empty_i     (sagu2prs_lps_empty),                //lower parameter stack is empty
+      .sagu2prs_lrs_empty_i     (sagu2prs_lrs_empty),                //lower return stack is empty
 
       //Probe signals
-
-      );
-
+      .prb_state_task_o         (prb_state_task_o),                  //current state
+      .prb_state_sbus_o         (prb_state_sbus_o),                  //current state
+      .prb_rs0_o                (prb_rs0_o),                         //current RS0
+      .prb_ps0_o                (prb_ps0_o),                         //current PS0
+      .prb_ps1_o                (prb_ps1_o),                         //current PS1
+      .prb_ps2_o                (prb_ps2_o),                         //current PS2
+      .prb_ps3_o                (prb_ps3_o),                         //current PS3
+      .prb_rs0_tag_o            (prb_rs0_tag_o),                     //current RS0 tag
+      .prb_ps0_tag_o            (prb_ps0_tag_o),                     //current PS0 tag
+      .prb_ps1_tag_o            (prb_ps1_tag_o),                     //current PS1 tag
+      .prb_ps2_tag_o            (prb_ps2_tag_o),                     //current PS2 tag
+      .prb_ps3_tag_o            (prb_ps3_tag_o),                     //current PS3 tag
+      .prb_ips_o                (prb_ips_o),                         //current IPS
+      .prb_ips_tags_o           (prb_ips_tags_o),                    //current IPS
+      .prb_irs_o                (prb_irs_o),                         //current IRS
+      .prb_irs_tags_o           (prb_irs_tags_o));                   //current IRS
 
    //SAGU - Stack bus address generation unit
    //----------------------------------------

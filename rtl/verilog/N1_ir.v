@@ -320,6 +320,7 @@ module N1_ir
    assign ir2prs_alu2ps0_o        = instr_alu;                                       //ALU output  -> PS0
    assign ir2prs_alu2ps1_o        = instr_alu_2cell;                                 //ALU output  -> PS1
    assign ir2prs_lit2ps0_o        = instr_lit;                                       //literal     -> PS0
+   assign ir2prs_pc2rs0_o         = instr_call;                                      //PC          -> RS0
    assign ir2prs_ps_rst_o         = instr_ctrl_conc & act_ps_rst;                    //reset parameter stack
    assign ir2prs_rs_rst_o         = instr_ctrl_conc & act_rs_rst;                    //reset return stack
    assign ir2prs_psp_get_o        = instr_ctrl_psp_get;                              //read parameter stack pointer

@@ -114,10 +114,7 @@ module N1_prs
     input  wire [1:0]                        ir2prs_irs_tp_i,                      //10:push, 01:pull
     input  wire                              ir2prs_alu2ps0_i,                     //ALU output  -> PS0
     input  wire                              ir2prs_alu2ps1_i,                     //ALU output  -> PS1
-    input  wire                              ir2prs_dat2ps0_i,                     //read data   -> PS0
     input  wire                              ir2prs_lit2ps0_i,                     //literal     -> PS0
-    input  wire                              ir2prs_isr2ps0_i,                     //ISR address -> PS0
-    input  wire                              ir2prs_tc2ps0_i,                      //throw code  -> PS0
     input  wire                              ir2prs_pc2rs0_i,                      //PC          -> RS0
     input  wire                              ir2prs_ps_rst_i,                      //reset parameter stack
     input  wire                              ir2prs_rs_rst_i,                      //reset return stack
@@ -125,6 +122,10 @@ module N1_prs
     input  wire                              ir2prs_psp_set_i,                     //write parameter stack pointer
     input  wire                              ir2prs_rsp_get_i,                     //read return stack pointer
     input  wire                              ir2prs_rsp_set_i,                     //write return stack pointer
+
+    //PAGU interface
+    output wire [15:0]                       prs2pagu_ps0_o,                       //PS0
+    output wire [15:0]                       prs2pagu_rs0_o,                       //RS0
 
     //SAGU interface
     output reg                               prs2sagu_hold_o,                      //maintain stack pointers
@@ -253,15 +254,15 @@ module N1_prs
                            (ir2prs_lit2ps0_i   ? ir2prs_lit_val_i   : 16'h0000) |  //LIT -> PS0
                            (fc2prs_dat2ps0_i   ? pbus_dat_i         : 16'h0000) |  //DAT -> PS0
                            (fc2prs_tc2ps0_i    ? excpt2prs_tc_i     : 16'h0000) |  //TC  -> PS0
-                           (ir2prs_isr2ps0_i   ? irq_req_i          : 16'h0000))); //ISR -> PS0
+                           (fc2prs_isr2ps0_i   ? irq_req_i          : 16'h0000))); //ISR -> PS0
    assign ps0_tag_next = (fsm_ps_shift_up      & ps1_tag_reg)                   |  //PS1 -> PS0
                          (fsm_idle             &
                           ((ir2prs_us_tp_i[1]  & rs0_tag_reg)                   |  //RS0 -> PS0
                            (ir2prs_us_tp_i[2]  & ps1_tag_reg)                   |  //PS1 -> PS0
                             ir2prs_alu2ps0_i                                    |  //ALU -> PS0
-                            ir2prs_dat2ps0_i                                    |  //DAT -> PS0
+                            fc2prs_dat2ps0_i                                    |  //DAT -> PS0
                             ir2prs_lit2ps0_i                                    |  //LIT -> PS0
-                            ir2prs_isr2ps0_i));                                    //ISR -> PS0
+                            fc2prs_isr2ps0_i));                                    //ISR -> PS0
    assign ps0_we       = fsm_ps_shift_down                                      |  //0   -> PS0
                          fsm_ps_shift_up                                        |  //PS1 -> PS0
                          (fsm_idle & ~fc2prs_hold_i &
@@ -269,9 +270,9 @@ module N1_prs
                            ir2prs_us_tp_i[1]                                    |  //RS0 -> PS0
                            ir2prs_us_tp_i[2]                                    |  //PS1 -> PS0
                            ir2prs_alu2ps0_i                                     |  //ALU -> PS0
-                           ir2prs_dat2ps0_i                                     |  //DAT -> PS0
+                           fc2prs_dat2ps0_i                                     |  //DAT -> PS0
                            ir2prs_lit2ps0_i                                     |  //LIT -> PS0
-                           ir2prs_isr2ps0_i));                                     //ISR -> PS0
+                           fc2prs_isr2ps0_i));                                     //ISR -> PS0
 
    //PS1
    assign ps1_next     = (fsm_ps_shift_down    ? ps0_reg            : 16'h0000) |  //PS0 -> PS1
@@ -554,9 +555,9 @@ module N1_prs
 
    //Stack bus
    assign sbus_cyc_o         = sbus_stb_o | |(state_sbus_reg ^ STATE_SBUS_IDLE);   //bus cycle indicator
-   assign sbus_dat_o         = prs2sagu_stack_sel_o ?                              //1:RS, 0:PS
-                               irs_reg[(16*IRS_DEPTH)-1:(16*IRS_DEPTH)-16] :       //bottom of the IRS
-                               ips_reg[(16*IPS_DEPTH)-1:(16*IPS_DEPTH)-16];        //bottom of the IPS
+   assign sbus_dat_o            = prs2sagu_stack_sel_o ?                           //1:RS, 0:PS
+                                  irs_reg[(16*IRS_DEPTH)-1:16*(IRS_DEPTH-1)] :     //unload RS
+                                  ips_reg[(16*IPS_DEPTH)-1:16*(IPS_DEPTH-1)];      //unload PS
    assign fsm_dat2ps4        = ~|(state_sbus_reg ^ STATE_SBUS_READ_PS) |           //in STATE_SBUS_READ_PS
                                sbus_ack_i;                                         //bus request acknowledged
    assign fsm_dat2rs1        = ~|(state_sbus_reg ^ STATE_SBUS_READ_RS) |           //in STATE_SBUS_READ_RS
@@ -1008,12 +1009,11 @@ module N1_prs
    //Stack data outputs
    //------------------
    assign pbus_dat_o            = ps0_reg;                                         //write data bus
-   assign sbus_dat_o            = prs2sagu_stack_sel_o ?                           //1:RS, 0:PS
-                                  irs_reg[(16*IRS_DEPTH)-1:16*(IRS_DEPTH-1)] :     //unload RS
-                                  ips_reg[(16*IPS_DEPTH)-1:16*(IPS_DEPTH-1)];      //unload PS
    assign prs2alu_ps0_o         = ps0_reg;                                         //current PS0 (TOS)
    assign prs2alu_ps1_o         = ps1_reg;                                         //current PS1 (TOS+1)
    assign prs2fc_ps0_true_o     = |ps0_reg;                                        //PS0 in non-zero
+   assign prs2pagu_ps0_o        = ps0_reg;                                         //PS0
+   assign prs2pagu_rs0_o        = rs0_reg;                                         //RS0
    assign prs2sagu_psp_next_o   = ips_reg[(16*(IPS_DEPTH-1))+SP_WIDTH-1:16*(IPS_DEPTH-1)];//parameter stack load value
    assign prs2sagu_rsp_next_o   = irs_reg[(16*(IRS_DEPTH-1))+SP_WIDTH-1:16*(IRS_DEPTH-1)];//return stack load value
 

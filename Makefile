@@ -28,43 +28,37 @@
 ###############################################################################
 
 #Directories
-REPO_DIR     := .
-#REPO_DIR    := $(CURDIR)
-RTL_DIR      := $(REPO_DIR)/rtl/verilog
-BENCH_DIR    := $(REPO_DIR)/bench/verilog
-SBY_DIR      := $(REPO_DIR)/tools/SymbiYosys
-SBY_SRC_DIR  := $(SBY_DIR)/src
-SBY_WRK_DIR  := $(SBY_DIR)/run
-GTKW_DIR     := $(REPO_DIR)/tools/gtkwave
-GTKW_SRC_DIR := $(GTKW_DIR)/src
-GTKW_WRK_DIR := $(GTKW_DIR)/run
+REPO_DIR      := .
+#REPO_DIR     := $(CURDIR)
+RTL_DIR       := $(REPO_DIR)/rtl/verilog
+BENCH_DIR     := $(REPO_DIR)/bench/verilog
+YOSYS_DIR     := $(REPO_DIR)/tools/Yosys
+YOSYS_SRC_DIR := $(YOSYS_DIR)/src
+YOSYS_WRK_DIR := $(YOSYS_DIR)/run
+SBY_DIR       := $(REPO_DIR)/tools/SymbiYosys
+SBY_SRC_DIR   := $(SBY_DIR)/src
+SBY_WRK_DIR   := $(SBY_DIR)/run
+GTKW_DIR      := $(REPO_DIR)/tools/gtkwave
+GTKW_SRC_DIR  := $(GTKW_DIR)/src
+GTKW_WRK_DIR  := $(GTKW_DIR)/run
 
-#Tools
-ifndef EDITOR
-EDITOR       := $(shell which emacs || which xemacs || which nano || which vi)
-endif
-VERILATOR    := verilator -sv --lint-only 
-IVERILOG     := iverilog -t null
-YOSYS        := yosys -q
-SBY          := sby -f
-PERL         := perl
-GTKWAVE      := gtkwave      
-VCD2FST      := vcd2fst
+#Tools	      
+ifndef EDITOR 
+EDITOR        := $(shell which emacs || which xemacs || which nano || which vi)
+endif	      
+VERILATOR     := verilator -sv --lint-only 
+IVERILOG      := iverilog -t null
+YOSYS         := yosys -q
+#YOSYS         := yosys
+SBY           := sby -f
+PERL          := perl
+GTKWAVE       := gtkwave      
+VCD2FST       := vcd2fst
 
 #List of modules and their supported configurations <module>.<configuration>
-#MODCONFS := 	$(sort	N1.default \
-#			N1.iCE40UP5K \
-#			N1_alu.default \
-#			N1_dsp_synth.default \
-#			N1_dsp_iCE40UP5K.default \
-#			N1_excpt.default \
-#			N1_fc.default \
-#			N1_ir.default \
-#			N1_pagu.default \
-#			N1_prs.default \
-#			N1_sagu.default \
-#		 )
-MODCONFS := 	$(sort	N1_alu.default \
+MODCONFS := 	$(sort	N1.default \
+			N1.iCE40UP5K \
+			N1_alu.default \
 			N1_dsp_synth.default \
 			N1_dsp_iCE40UP5K.default \
 			N1_excpt.default \
@@ -73,10 +67,11 @@ MODCONFS := 	$(sort	N1_alu.default \
 			N1_pagu.default \
 			N1_prs.default \
 			N1_sagu.default \
+			SB_MAC16.default \
 		 )
 
-MODS  := $(sort $(foreach mod,$(MODCONFS),$(firstword $(subst ., ,$(mod)))))
-CONFS := $(sort $(foreach mod,$(MODCONFS),$(lastword  $(subst ., ,$(mod)))))
+MODS  := $(sort $(foreach modconf,$(MODCONFS),$(firstword $(subst ., ,$(modconf)))))
+CONFS := $(sort $(foreach modconf,$(MODCONFS),$(lastword  $(subst ., ,$(modconf)))))
 
 .SECONDEXPANSION:
 
@@ -88,37 +83,37 @@ help:
 	$(info )
 	$(info lint:                            Lint all modules in all supported configurations)
 	$(info lint.<module>.<configuration>:   Lint a module in one particular configuration)
-	$(info lint.<module>:                   Lint a module in all supported cinfigurations)
+	$(info lint.<module>:                   Lint a module in all supported configurations)
 	$(info lint.<configuration>:            Lint all modules which support the given configuration)
 	$(info lint.clean:                      Clean up lint targets)
 #	$(info )
 #	$(info verify:                          Verify all modules in all supported configurations)
 #	$(info verify.<module>.<configuration>: Verify a module in one particular configuration)
-#	$(info verify.<module>:                 Verify a module in all supported cinfigurations)
+#	$(info verify.<module>:                 Verify a module in all supported configurations)
 #	$(info verify.<configuration>:          Verify all modules which support the given configuration)
 #	$(info verify.clean:                    Clean up verify targets)
 #	$(info )
 #	$(info bmc:                             Generate bounded proofs for all modules in all support configurations)
 #	$(info bmc.<module>.<configuration>:    Generate bounded proofs for a module in one particular configuration)
-#	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported cinfigurations)
+#	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported configurations)
 #	$(info bmc.<configuration>:             Generate bounded proofs for all modules which support the given configuration)
 #	$(info bmc.clean:                       Clean up bounded proof targets)
 #	$(info )
 #	$(info prove:                           Generate unboundeds proof for all modules in all supported configurations)
 #	$(info prove.<module>.<configuration>:  Generate unboundeds proof for a module in one particular configuration)
-#	$(info prove.<module>:                  Generate unboundeds proof for a module in all supported cinfigurations)
+#	$(info prove.<module>:                  Generate unboundeds proof for a module in all supported configurations)
 #	$(info prove.<configuration>:           Generate unboundeds proof for all modules which support the given configuration)
 #	$(info prove.clean:                     Clean up unbounded proof targets)
 #	$(info )
 #	$(info live:                            Prove liveness of all modules in all supported configurations)
 #	$(info live.<module>.<configuration>:   Prove liveness of a module in one particular configuration)
-#	$(info live.<module>:                   Prove liveness of a module in all supported cinfigurations)
+#	$(info live.<module>:                   Prove liveness of a module in all supported configurations)
 #	$(info live.<configuration>:            Prove liveness of all modules which support the given configuration)
 #	$(info live.clean:                      Clean up liveness targets)
 #	$(info )
 #	$(info cover:                           Generate cover traces for all modules in all supported configurations)
 #	$(info cover.<module>.<configuration>:  Generate cover traces for a module in one particular configuration)
-#	$(info cover.<module>:                  Generate cover traces for a module in all supported cinfigurations)
+#	$(info cover.<module>:                  Generate cover traces for a module in all supported configurations)
 #	$(info cover.<configuration>:           Generate cover traces for all modules which support the given configuration)
 #	$(info cover.clean:                     Clean up cover targets)
 #	$(info )
@@ -127,10 +122,17 @@ help:
 #	$(info debug.prev:                      View the previous VCD dump file)
 #	$(info debug<n>:                        View a VCD dump file from the selection given by 'debug.list')
 #	$(info )
-#	$(info clean:                           Clean up all targets)
+	$(info synth:                           Run all synthesis scripts)
+	$(info synth.<module>.<configuration>:  Run the synthesys script of a module in one particular configuration)
+	$(info synth.<module>:                  Run all synthesys scripts of a module)
+	$(info synth.<configuration>:           Run the synthesys scripts of all modules which support the given configuration)
+	$(info synth.list:                      List all synthesis scripts)
+	$(info synth.clean:                     Clean up synthesis outputs)
+	$(info )
+##	$(info clean:                           Clean up all targets)
 #	$(info )
 #	$(info doc:                             Build the user manual)
-#	@echo "" > /dev/null
+	@echo "" > /dev/null
 
 ###########
 # Linting #
@@ -145,8 +147,10 @@ $(LINT_MODCONFS):
 	$(eval conf     := $(lastword $(subst ., ,$@)))
 	$(eval confdef  := CONF_$(shell echo $(conf) | tr '[:lower:]' '[:upper:]'))
 	$(eval srcfiles := $(BENCH_DIR)/ftb_$(commod).sv $(RTL_DIR)/$(mod).v)
-	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.default" ];   then echo $(RTL_DIR)/N1_dsp_synth.v;     fi;))  	
-	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.iCE40UP5K" ]; then echo $(RTL_DIR)/N1_dsp_iCE40UP5K.v; fi;))  	
+#	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.default" ];   then echo $(RTL_DIR)/N1_dsp_synth.v;     fi;))  	
+#	$(eval srcfiles += $(shell if [ "$@" = "lint.N1.iCE40UP5K" ]; then echo $(RTL_DIR)/N1_dsp_iCE40UP5K.v; fi;))  	
+	$(eval srcfiles += $(if $(findstring lint.N1.default,$@),$(RTL_DIR)/N1_dsp_synth.v))  	
+	$(eval srcfiles += $(if $(findstring lint.N1.iCE40UP5K,$@),$(RTL_DIR)/N1_dsp_iCE40UP5K.v))  	
 	$(info ...Linting $(mod) in $(conf) configuration)
 	@$(VERILATOR) -D$(confdef) --top-module ftb_$(commod) -y $(RTL_DIR) $(srcfiles) 
 	@$(IVERILOG) -D$(confdef) -s ftb_$(commod) -y $(RTL_DIR) $(srcfiles)  
@@ -362,6 +366,32 @@ ifneq ($(word 2,$(DEBUG_TGTS)),)
 endif
 	@echo "" > /dev/null
 
+#############
+# Synthesis #
+#############
+SYNTH_SCRIPTS  := $(sort $(shell ls -1 $(YOSYS_SRC_DIR)/*.yosys))
+SYNTH_MODCONFS := $(addprefix synth.,$(filter $(basename $(notdir $(SYNTH_SCRIPTS))),$(MODCONFS)))
+SYNTH_MODS     := $(addprefix synth.,$(sort $(foreach modconf,$(SYNTH_MODCONFS),$(word 2,$(subst ., ,$(modconf))))))
+SYNTH_CONFS    := $(addprefix synth.,$(sort $(foreach modconf,$(SYNTH_MODCONFS),$(lastword  $(subst ., ,$(modconf))))))
+
+$(SYNTH_MODCONFS):
+	$(eval mod     := $(word 2,$(subst ., ,$@)))
+	$(eval conf    := $(lastword $(subst ., ,$@)))
+	$(YOSYS) -s $(YOSYS_SRC_DIR)/$(mod).$(conf).yosys
+
+$(SYNTH_MODS): $$(filter $$@.%,$(SYNTH_MODCONFS))
+
+$(SYNTH_CONFS): $$(filter synth.%.$$(lastword $$(subst ., ,$$@)),$(SYNTH_MODCONFS))
+
+synth:	$(SYNTH_MODCONFS) 
+
+synth.list:
+	@ls -1 $(SYNTH_SCRIPTS)
+
+synth.clean:
+	$(info ...Cleaning up synthesis files)
+	@rm -rf $(YOSYS_WRK_DIR)/*
+
 #################
 # Documentation #
 #################
@@ -372,7 +402,7 @@ doc:
 # Clean up #
 ############
 
-clean:	lint.clean bmc.clean verify.clean
+clean:	lint.clean bmc.clean verify.clean synth.clean
 
 ####################
 # General targetds #
@@ -386,5 +416,6 @@ clean:	lint.clean bmc.clean verify.clean
 	$(LIVE_MODCONFS)   $(LIVE_MODS)   $(LIVE_CONFS)   live   live.clean \
 	$(COVER_MODCONFS)  $(COVER_MODS)  $(COVER_CONFS)  cover  cover.clean \
 	$(DEBUG_TGTS) debug debug.prev debug.list \
+	$(SYNTH_MODCONFS)  $(SYNTH_MODS)  $(SYNTH_CONFS)  synth  synth.clean \
 	doc \
 	clean

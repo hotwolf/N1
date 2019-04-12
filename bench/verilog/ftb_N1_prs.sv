@@ -104,8 +104,6 @@ module ftb_N1_prs
     input  wire                              ir2prs_alu2ps1_i,                     //ALU output  -> PS1
     input  wire                              ir2prs_dat2ps0_i,                     //read data   -> PS0
     input  wire                              ir2prs_lit2ps0_i,                     //literal     -> PS0
-    input  wire                              ir2prs_isr2ps0_i,                     //ISR address -> PS0
-    input  wire                              ir2prs_tc2ps0_i,                      //throw code  -> PS0
     input  wire                              ir2prs_pc2rs0_i,                      //PC          -> RS0
     input  wire                              ir2prs_ps_rst_i,                      //reset parameter stack
     input  wire                              ir2prs_rs_rst_i,                      //reset return stack
@@ -113,6 +111,10 @@ module ftb_N1_prs
     input  wire                              ir2prs_psp_set_i,                     //write parameter stack pointer
     input  wire                              ir2prs_rsp_get_i,                     //read return stack pointer
     input  wire                              ir2prs_rsp_set_i,                     //write return stack pointer
+
+    //PAGU interface
+    output wire [15:0]                       prs2pagu_ps0_o,                       //PS0
+    output wire [15:0]                       prs2pagu_rs0_o,                       //RS0
 
     //SAGU interface
     output wire                              prs2sagu_hold_o,                      //maintain stack pointers
@@ -206,10 +208,7 @@ module ftb_N1_prs
     .ir2prs_irs_tp_i            (ir2prs_irs_tp_i),                                 //10:push            (), 01:pull
     .ir2prs_alu2ps0_i           (ir2prs_alu2ps0_i),                                //ALU output  -> PS0
     .ir2prs_alu2ps1_i           (ir2prs_alu2ps1_i),                                //ALU output  -> PS1
-    .ir2prs_dat2ps0_i           (ir2prs_dat2ps0_i),                                //read data   -> PS0
     .ir2prs_lit2ps0_i           (ir2prs_lit2ps0_i),                                //literal     -> PS0
-    .ir2prs_isr2ps0_i           (ir2prs_isr2ps0_i),                                //ISR address -> PS0
-    .ir2prs_tc2ps0_i            (ir2prs_tc2ps0_i),                                 //throw code  -> PS0
     .ir2prs_pc2rs0_i            (ir2prs_pc2rs0_i),                                 //PC          -> RS0
     .ir2prs_ps_rst_i            (ir2prs_ps_rst_i),                                 //reset parameter stack
     .ir2prs_rs_rst_i            (ir2prs_rs_rst_i),                                 //reset return stack
@@ -217,6 +216,10 @@ module ftb_N1_prs
     .ir2prs_psp_set_i           (ir2prs_psp_set_i),                                //write parameter stack pointer
     .ir2prs_rsp_get_i           (ir2prs_rsp_get_i),                                //read return stack pointer
     .ir2prs_rsp_set_i           (ir2prs_rsp_set_i),                                //write return stack pointer
+
+    //PRS interface
+    .prs2pagu_ps0_o             (prs2pagu_ps0_o),                                  //PS0
+    .prs2pagu_rs0_o             (prs2pagu_rs0_o),                                  //RS0
 
     //SAGU interface
     .prs2sagu_hold_o            (prs2sagu_hold_o),                                 //maintain stack pointers

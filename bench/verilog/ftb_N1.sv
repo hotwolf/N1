@@ -58,18 +58,14 @@ module ftb_N1
     output wire                              pbus_stb_o,         //access request            |
     output wire                              pbus_we_o,          //write enable              |
     output wire [15:0]                       pbus_adr_o,         //address bus               |
-    output wire [15:0]                       pbus_dat_o,         //write data bus            |
-    output wire                              pbus_tga_jmp_dir_o, //direct jump               | initiator
-    output wire                              pbus_tga_jmp_ind_o, //indirect jump             | to
-    output wire                              pbus_tga_cal_dir_o, //direct call               | target
-    output wire                              pbus_tga_cal_ind_o, //indirect call             |
-    output wire                              pbus_tga_bra_dir_o, //direct branch             |
-    output wire                              pbus_tga_bra_ind_o, //indirect branch           |
-    output wire                              pbus_tga_dat_dir_o, //direct data access        |
-    output wire                              pbus_tga_dat_ind_o, //indirect data access      +-
+    output wire [15:0]                       pbus_dat_o,         //write data bus            | initiator
+    output wire                              pbus_tga_cof_jmp_o, //COF jump                  | to
+    output wire                              pbus_tga_cof_cal_o, //COF call                  | target
+    output wire                              pbus_tga_cof_bra_o, //COF conditional branch    |
+    output wire                              pbus_tga_cof_eow_o, //COF return from call      |
+    output wire                              pbus_tga_dat_o,     //data access               |
     input  wire                              pbus_ack_i,         //bus cycle                 +-
-    input  wire                              pbus_err_i,         //error indicator           | target
-    input  wire                              pbus_rty_i,         //retry request             | to
+    input  wire                              pbus_err_i,         //error indicator           | target to
     input  wire                              pbus_stall_i,       //access delay              | initiator
     input  wire [15:0]                       pbus_dat_i,         //read data bus             +-
 
@@ -89,30 +85,36 @@ module ftb_N1
 
     //Interrupt interface
     output wire                              irq_ack_o,          //interrupt acknowledge
-    input wire [15:0]                        irq_req_adr_i,      //requested interrupt vector
+    input  wire [15:0]                       irq_req_i,          //requested interrupt vector
 
     //Probe signals
-    //Exception aggregator
-    //Flow Controller
-    output wire [3:0]                        prb_fc_state_o,     //FSM state
-    //Intermediate parameter stack
-    output wire [`IPS_DEPTH-1:0]             prb_ips_tags_o,     //intermediate stack cell tags
-    output wire [(`IPS_DEPTH*16)-1:0]        prb_ips_cells_o,    //intermediate stack cells
-    output wire [`SP_WIDTH-1:0]              prb_ips_lsp_o,      //lower stack pointer
-    output wire [1:0]                        prb_ips_state_o,    //FSM state
-    //Intermediate return stack
-    output wire [`IRS_DEPTH-1:0]             prb_irs_tags_o,     //intermediate stack cell tags
-    output wire [(`IRS_DEPTH*16)-1:0]        prb_irs_cells_o,    //intermediate stack cells
-    output wire [`SP_WIDTH-1:0]              prb_irs_lsp_o,      //lower stack pointer
-    output wire [1:0]                        prb_irs_state_o,    //FSM state
-    //Stack bus arbiter
-    output wire [1:0]                        prb_sarb_state_o,   //FSM state
-    //Upper stacks
-    output wire [3:0]                        prb_us_ps_tags_o,   //intermediate stack cell tags
-    output wire [(4*16)-1:0]                 prb_us_ps_cells_o,  //intermediate stack cells
-    output wire                              prb_us_rs_tags_o,   //intermediate stack cell tags
-    output wire [15:0]                       prb_us_rs_cells_o,  //intermediate stack cells
-    output wire [1:0]                        prb_us_state_o);    //FSM state
+    //EXCPT - Exception aggregator
+    output wire [2:0]                        prb_excpt_o,        //exception tracker
+    output wire                              prb_excpt_en_o,     //exception enable
+    output wire                              prb_irq_en_o,       //interrupt enable
+    //FC - Flow control
+    output wire [2:0]                        prb_fc_state_o,     //state variable
+    output wire                              prb_fc_pbus_acc_o,  //ongoing bus access
+    //IR - Instruction register
+    output wire [15:0]                       prb_ir_o,           //current instruction register
+    output wire [15:0]                       prb_ir_stash_o,     //stashed instruction register
+    //Probe signals
+    output wire [2:0]                        prb_state_task_o,   //current state
+    output wire [1:0]                        prb_state_sbus_o,   //current state
+    output wire [15:0]                       prb_rs0_o,          //current RS0
+    output wire [15:0]                       prb_ps0_o,          //current PS0
+    output wire [15:0]                       prb_ps1_o,          //current PS1
+    output wire [15:0]                       prb_ps2_o,          //current PS2
+    output wire [15:0]                       prb_ps3_o,          //current PS3
+    output wire                              prb_rs0_tag_o,      //current RS0 tag
+    output wire                              prb_ps0_tag_o,      //current PS0 tag
+    output wire                              prb_ps1_tag_o,      //current PS1 tag
+    output wire                              prb_ps2_tag_o,      //current PS2 tag
+    output wire                              prb_ps3_tag_o,      //current PS3 tag
+    output wire [(16*`IPS_DEPTH)-1:0]        prb_ips_o,          //current IPS
+    output wire [`IPS_DEPTH-1:0]             prb_ips_tags_o,     //current IPS
+    output wire [(16*`IRS_DEPTH)-1:0]        prb_irs_o,          //current IRS
+    output wire [`IRS_DEPTH-1:0]             prb_irs_tags_o);    //current IRS
 
    //Instantiation
    //=============
@@ -131,18 +133,14 @@ module ftb_N1
       .pbus_stb_o               (pbus_stb_o),                    //access request            |
       .pbus_we_o                (pbus_we_o),                     //write enable              |
       .pbus_adr_o               (pbus_adr_o),                    //address bus               |
-      .pbus_dat_o               (pbus_dat_o),                    //write data bus            |
-      .pbus_tga_jmp_dir_o       (pbus_tga_jmp_dir_o),            //direct jump               | initiator
-      .pbus_tga_jmp_ind_o       (pbus_tga_jmp_ind_o),            //indirect jump             | to
-      .pbus_tga_cal_dir_o       (pbus_tga_cal_dir_o),            //direct call               | target
-      .pbus_tga_cal_ind_o       (pbus_tga_cal_ind_o),            //indirect call             |
-      .pbus_tga_bra_dir_o       (pbus_tga_bra_dir_o),            //direct branch             |
-      .pbus_tga_bra_ind_o       (pbus_tga_bra_ind_o),            //indirect branch           |
-      .pbus_tga_dat_dir_o       (pbus_tga_dat_dir_o),            //direct data access        |
-      .pbus_tga_dat_ind_o       (pbus_tga_dat_ind_o),            //indirect data access      +-
+      .pbus_dat_o               (pbus_dat_o),                    //write data bus            | initiator
+      .pbus_tga_cof_jmp_o       (pbus_tga_cof_jmp_o),            //COF jump                  | to
+      .pbus_tga_cof_cal_o       (pbus_tga_cof_cal_o),            //COF call                  | target
+      .pbus_tga_cof_bra_o       (pbus_tga_cof_bra_o),            //COF conditional branch    |
+      .pbus_tga_cof_eow_o       (pbus_tga_cof_eow_o),            //COF return from call      |
+      .pbus_tga_dat_o           (pbus_tga_dat_o),                //data access               |
       .pbus_ack_i               (pbus_ack_i),                    //bus cycle                 +-
-      .pbus_err_i               (pbus_err_i),                    //error indicator           | target
-      .pbus_rty_i               (pbus_rty_i),                    //retry request             | to
+      .pbus_err_i               (pbus_err_i),                    //error indicator           | target to
       .pbus_stall_i             (pbus_stall_i),                  //access delay              | initiator
       .pbus_dat_i               (pbus_dat_i),                    //read data bus             +-
 
@@ -155,37 +153,41 @@ module ftb_N1
       .sbus_tga_ps_o            (sbus_tga_ps_o),                 //parameter stack access    |
       .sbus_tga_rs_o            (sbus_tga_rs_o),                 //return stack access       +-
       .sbus_ack_i               (sbus_ack_i),                    //bus cycle acknowledge     +-
-      .sbus_err_i               (sbus_err_i),                    //error indicator           | target
-      .sbus_rty_i               (sbus_rty_i),                    //retry request             | to
-      .sbus_stall_i             (sbus_stall_i),                  //access delay              | initiator
+      .sbus_stall_i             (sbus_stall_i),                  //access delay              | target to initiator
       .sbus_dat_i               (sbus_dat_i),                    //read data bus             +-
 
       //Interrupt interface
       .irq_ack_o                (irq_ack_o),                     //interrupt acknowledge
-      .irq_req_adr_i            (irq_req_adr_i),                 //requested interrupt vector
+      .irq_req_i                (irq_req_i),                     //requested interrupt vector
 
       //Probe signals
-      //Exception aggregator
-      //Flow Controller
-      .prb_fc_state_o           (prb_fc_state_o),                //FSM state
-      //Intermediate parameter stack
-      .prb_ips_tags_o           (prb_ips_tags_o),                //intermediate stack cell tags
-      .prb_ips_cells_o          (prb_ips_cells_o),               //intermediate stack cells
-      .prb_ips_lsp_o            (prb_ips_lsp_o),                 //lower stack pointer
-      .prb_ips_state_o          (prb_ips_state_o),               //FSM state
-      //Intermediate return stack
-      .prb_irs_tags_o           (prb_irs_tags_o),                //intermediate stack cell tags
-      .prb_irs_cells_o          (prb_irs_cells_o),               //intermediate stack cells
-      .prb_irs_lsp_o            (prb_irs_lsp_o),                 //lower stack pointer
-      .prb_irs_state_o          (prb_irs_state_o),               //FSM state
-      //Stack bus arbiter
-      .prb_sarb_state_o         (prb_sarb_state_o),              //FSM state
-      //Upper stacks
-      .prb_us_ps_tags_o         (prb_us_ps_tags_o),              //intermediate stack cell tags
-      .prb_us_ps_cells_o        (prb_us_ps_cells_o),             //intermediate stack cells
-      .prb_us_rs_tags_o         (prb_us_rs_tags_o),              //intermediate stack cell tags
-      .prb_us_rs_cells_o        (prb_us_rs_cells_o),             //intermediate stack cells
-      .prb_us_state_o           (prb_us_state_o));               //FSM state
+      //EXCPT - Exception aggregator
+      .prb_excpt_o              (prb_excpt_o),                   //exception tracker
+      .prb_excpt_en_o           (prb_excpt_en_o),                //exception enable
+      .prb_irq_en_o             (prb_irq_en_o),                  //interrupt enable
+      //FC - Flow control
+      .prb_fc_state_o           (prb_fc_state_o),                //state variable
+      .prb_fc_pbus_acc_o        (prb_fc_pbus_acc_o),             //ongoing bus access
+      //IR - Instruction register
+      .prb_ir_o                 (prb_ir_o),                      //current instruction register
+      .prb_ir_stash_o           (prb_ir_stash_o),                //stashed instruction register
+      //Probe signals
+      .prb_state_task_o         (prb_state_task_o),              //current state
+      .prb_state_sbus_o         (prb_state_sbus_o),              //current state
+      .prb_rs0_o                (prb_rs0_o),                     //current RS0
+      .prb_ps0_o                (prb_ps0_o),                     //current PS0
+      .prb_ps1_o                (prb_ps1_o),                     //current PS1
+      .prb_ps2_o                (prb_ps2_o),                     //current PS2
+      .prb_ps3_o                (prb_ps3_o),                     //current PS3
+      .prb_rs0_tag_o            (prb_rs0_tag_o),                 //current RS0 tag
+      .prb_ps0_tag_o            (prb_ps0_tag_o),                 //current PS0 tag
+      .prb_ps1_tag_o            (prb_ps1_tag_o),                 //current PS1 tag
+      .prb_ps2_tag_o            (prb_ps2_tag_o),                 //current PS2 tag
+      .prb_ps3_tag_o            (prb_ps3_tag_o),                 //current PS3 tag
+      .prb_ips_o                (prb_ips_o),                     //current IPS
+      .prb_ips_tags_o           (prb_ips_tags_o),                //current IPS
+      .prb_irs_o                (prb_irs_o),                     //current IRS
+      .prb_irs_tags_o           (prb_irs_tags_o));               //current IRS
 
 `ifdef FORMAL
    //Testbench signals
