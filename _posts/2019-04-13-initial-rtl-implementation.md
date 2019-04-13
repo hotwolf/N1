@@ -14,9 +14,9 @@ Here are the first synthesys results with [Yosys](https://github.com/cliffordwol
   </tr>
   <tr>
     <th></th>    
-    <th>in "default" configuration</th>
-    <th>in "iCE40UP5K" configuration</th>
-    <th>from <a href="https://github.com/igor-m/UPduino-Mecrisp-Ice-15kB">UPduino-Mecrisp-Ice-15kB</a> project</th>
+    <th>in <br> "default" configuration</th>
+    <th>in <br> "iCE40UP5K" configuration</th>
+    <th>from <br> <a href="https://github.com/igor-m/UPduino-Mecrisp-Ice-15kB">UPduino-Mecrisp-Ice-15kB</a> project</th>
   </tr>
   <tr><td> Number of wires            </td><td> 3123                               |</td><td> 1900 </td><td>   615 </td></tr>
   <tr><td> Number of wire bits        </td><td> 6131                               |</td><td> 5383 </td><td>  3091 </td></tr>
