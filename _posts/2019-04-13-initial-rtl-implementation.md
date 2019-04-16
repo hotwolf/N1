@@ -8,7 +8,7 @@ Here are the first synthesys results with [Yosys](https://github.com/cliffordwol
 
 <table border="1">
   <tr>
-    <th> rowspan="2"</th>
+    <th rowspan="2"></th>
     <th colspan="2">N1</th>
     <th>J1</th>
   </tr>
