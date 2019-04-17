@@ -224,7 +224,7 @@ which can be directly mapped to N1 instructions.
       ( x1 x2 -- )                                                &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Drop cell pair x1 x2 }}                                 &
+          Drop cell pair x1 x2}}                                  &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x06A8}                                         \\        %DROP
@@ -235,7 +235,7 @@ which can be directly mapped to N1 instructions.
       ( x1 x2 -- x1 x2 x1 x2 )                                    &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          Drop cell pair x1 x2 }}                                 &
+          Duplicate cell pair x1 x2}}                             &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0758}                                         \\        %SWAP and duplicate PS1
@@ -291,7 +291,7 @@ which can be directly mapped to N1 instructions.
           \texttt{0x0757}}}                                       \\ \hline %PS4<-PS3<-PS2<>PS1->PS0
       
       %2ROT                                       
-       \texttt{2OVER}                                             &
+       \texttt{2ROT}                                              &
        ( x1 x2 x3 x4 x4 x5 x6 -- x3 x4 x5 x6 x1 x2 )              &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
@@ -335,7 +335,7 @@ which can be directly mapped to N1 instructions.
       ( n1 n2 -- flag )                                           &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if n1 is lower than n2}}                           &
+          Test if n1 is lower than n2}}                           &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
         \texttt{0x0DA0}}}                                         \\ \hline
@@ -345,7 +345,7 @@ which can be directly mapped to N1 instructions.
       ( x1 x2 -- flag )                                           &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if x1 is different than x2}}                       &
+          Test if x1 is different than x2}}                       &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0D40}}}                                       \\ \hline
@@ -355,7 +355,7 @@ which can be directly mapped to N1 instructions.
       ( x1 x2 -- flag )                                           &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if x1 equals x2}}                                  &
+          Test if x1 equals x2}}                                  &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0D00}}}                                       \\ \hline
@@ -365,7 +365,7 @@ which can be directly mapped to N1 instructions.
       ( n1 n2 -- flag )                                           &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if n1 is greater than n2}}                         &
+          Test if n1 is greater than n2}}                         &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0DE0}}}                                       \\ \hline
@@ -380,9 +380,9 @@ which can be directly mapped to N1 instructions.
         \makecell[c]{                   
         \texttt{0x06AB}}}                                         \\ \hline
                                                            
-      %?DUP                                        
-        \texttt{?DUP}                                             &
-        ( x -- 0$\mid$x x )                                       &
+     %?DUP                                        
+      \texttt{?DUP}                                               &
+      ( x -- 0$\mid$x x )                                         &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
           Duplicate x if it is not zero}}                         &
@@ -703,7 +703,7 @@ which can be directly mapped to N1 instructions.
       ( u1 u2 -- flag)                                            &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if u1 is lower than u2}}                           &
+          Test if u1 is lower than u2}}                           &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
         \texttt{0x0DC0}}}                                         \\ \hline
@@ -713,7 +713,7 @@ which can be directly mapped to N1 instructions.
       ( u1 u2 -- flag)                                            &
       \multicolumn{1}{m{36ex}|}{
         \makecell[l]{                   
-          test if u1 is greater than u2}}                         &
+          Test if u1 is greater than u2}}                         &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0D80}}}                                       \\ \hline
