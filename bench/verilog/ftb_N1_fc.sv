@@ -82,7 +82,7 @@ module ftb_N1_fc
     output wire                      fc2prs_tc2ps0_o,              //capture throw code
     output wire                      fc2prs_isr2ps0_o,             //capture ISR
     input  wire                      prs2fc_hold_i,                //stacks not ready
-    input  wire                      prs2fc_ps0_true_i,            //PS0 in non-zero
+    input  wire                      prs2fc_ps0_false_i,           //PS0 is zero
 
     //EXCPT interface
     output wire                      fc2excpt_excpt_clr_o,         //disable exceptions
@@ -141,7 +141,7 @@ module ftb_N1_fc
       .fc2prs_tc2ps0_o            (fc2prs_tc2ps0_o),               //capture throw code
       .fc2prs_isr2ps0_o           (fc2prs_isr2ps0_o),              //capture ISR
       .prs2fc_hold_i              (prs2fc_hold_i),                 //stacks not ready
-      .prs2fc_ps0_true_i          (prs2fc_ps0_true_i),             //PS0 in non-zero
+      .prs2fc_ps0_false_i         (prs2fc_ps0_false_i),            //PS0 is zero
 
       //EXCPT interface
       .fc2excpt_excpt_clr_o       (fc2excpt_excpt_clr_o),          //disable exceptions

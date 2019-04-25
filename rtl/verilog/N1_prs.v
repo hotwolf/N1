@@ -101,7 +101,7 @@ module N1_prs
 
     //FC interface
     output reg                               prs2fc_hold_o,                        //stacks not ready
-    output wire                              prs2fc_ps0_true_o,                    //PS0 in non-zero
+    output wire                              prs2fc_ps0_false_o,                   //PS0 is zero
     input  wire                              fc2prs_hold_i,                        //hold any state tran
     input  wire                              fc2prs_dat2ps0_i,                     //capture read data
     input  wire                              fc2prs_tc2ps0_i,                      //capture throw code
@@ -1021,7 +1021,7 @@ module N1_prs
    assign pbus_dat_o              = ps0_reg;                                       //write data bus
    assign prs2alu_ps0_o           = ps0_reg;                                       //current PS0 (TOS)
    assign prs2alu_ps1_o           = ps1_reg;                                       //current PS1 (TOS+1)
-   assign prs2fc_ps0_true_o       = |ps0_reg;                                      //PS0 in non-zero
+   assign prs2fc_ps0_false_o      = ~|ps0_reg;                                     //PS0 is zero
    assign prs2pagu_ps0_o          = ps0_reg;                                       //PS0
    assign prs2pagu_rs0_o          = rs0_reg;                                       //RS0
    assign prs2sagu_psp_load_val_o =

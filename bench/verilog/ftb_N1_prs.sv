@@ -89,7 +89,7 @@ module ftb_N1_prs
 
     //FC interface
     output wire                              prs2fc_hold_o,                        //stacks not ready
-    output wire                              prs2fc_ps0_true_o,                    //PS0 in non-zero
+    output wire                              prs2fc_ps0_false_o,                   //PS0 is zero
     input  wire                              fc2prs_hold_i,                        //hold any state tran
     input  wire                              fc2prs_dat2ps0_i,                     //capture read data
     input  wire                              fc2prs_tc2ps0_i,                      //capture throw code
@@ -193,7 +193,7 @@ module ftb_N1_prs
 
     //FC interface
     .prs2fc_hold_o              (prs2fc_hold_o),                                   //stacks not ready
-    .prs2fc_ps0_true_o          (prs2fc_ps0_true_o),                               //PS0 in non-zero
+    .prs2fc_ps0_false_o         (prs2fc_ps0_false_o),                              //PS0 is zero
     .fc2prs_hold_i              (fc2prs_hold_i),                                   //hold any state tran
     .fc2prs_dat2ps0_i           (fc2prs_dat2ps0_i),                                //capture read data
     .fc2prs_tc2ps0_i            (fc2prs_tc2ps0_i),                                 //capture throw code

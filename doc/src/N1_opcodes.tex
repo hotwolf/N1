@@ -595,7 +595,9 @@ into the opcode of the instruction (only for destination addresses $<$ 0x3FFF).
 \label{opcodes:branch}
 
 \Glspl{branch} invoke a change of program flow depending on the argument at the \glslink{tos}{top}
-of the \gls{ps}. The branch destination is a \glslink{reladr}{relative address}, encoded into the opcode
+of the \gls{ps}.
+If it is zero, then the branch is taken.
+The branch destination is a \glslink{reladr}{relative address}, encoded into the opcode
 of the instruction in the range of $\pm$ 8KB.
 
 \subsection{Literals}

@@ -154,7 +154,7 @@ $(LINT_MODCONFS):
 	$(info ...Linting $(mod) in $(conf) configuration)
 	@$(VERILATOR) -D$(confdef) --top-module ftb_$(commod) -y $(RTL_DIR) $(srcfiles) 
 	@$(IVERILOG) -D$(confdef) -s ftb_$(commod) -y $(RTL_DIR) $(srcfiles)  
-	@$(YOSYS) -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(srcfiles)"
+	@$(YOSYS) -q -p "read_verilog -sv -D $(confdef) -I $(RTL_DIR) $(srcfiles)"
 
 $(LINT_MODS): $$(filter $$@.%,$(LINT_MODCONFS))
 

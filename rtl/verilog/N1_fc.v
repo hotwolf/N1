@@ -98,7 +98,7 @@ module N1_fc
     output reg                       fc2prs_tc2ps0_o,                                          //capture throw code
     output reg                       fc2prs_isr2ps0_o,                                         //capture ISR
     input  wire                      prs2fc_hold_i,                                            //stacks not ready
-    input  wire                      prs2fc_ps0_true_i,                                        //PS0 in non-zero
+    input  wire                      prs2fc_ps0_false_i,                                       //PS0 is zero
 
     //EXCPT interface
     output reg                       fc2excpt_excpt_clr_o,                                     //clear and disable exceptions
@@ -182,9 +182,9 @@ module N1_fc
         else
           begin
              //Trigger exception
-             fc2excpt_buserr_o = pbus_err_i                         &                          //bus error
-                                 ~ir2fc_jump_or_call_i              &                          //no JUMP or CALL
-                                 ~(ir2fc_bra_i & prs2fc_ps0_true_i) &                          //no taken BRANCH
+             fc2excpt_buserr_o = pbus_err_i                          &                         //bus error
+                                 ~ir2fc_jump_or_call_i               &                         //no JUMP or CALL
+                                 ~(ir2fc_bra_i & prs2fc_ps0_false_i) &                         //no BRANCH taken
                                  ~ir2fc_eow_i;                                                 //no EOW
              //Capture read data
              if (~|{state_reg[1:0] ^ STATE_EXEC_READ[1:0]})                                    //STATE_EXEC_READ
@@ -222,9 +222,9 @@ module N1_fc
                   else
                     begin
                        //Multi-cycle instruction
-                       if (ir2fc_jump_or_call_i              |                                 //call or jump
-                           (ir2fc_bra_i & prs2fc_ps0_true_i) |                                 //taken branch
-                           ir2fc_eow_i                       |                                 //EOW
+                       if (ir2fc_jump_or_call_i               |                                //call or jump
+                           (ir2fc_bra_i & prs2fc_ps0_false_i) |                                //BRANCH taken
+                           ir2fc_eow_i                        |                                //EOW
                            ir2fc_mem_i)                                                        //memory I/O
                          begin
 
@@ -254,7 +254,7 @@ module N1_fc
 
                             //Change of flow
                             else if (ir2fc_jump_or_call_i                   |                  //call or jump
-                                     (ir2fc_bra_i & prs2fc_ps0_true_i)      |                  //taken branch
+                                     (ir2fc_bra_i & prs2fc_ps0_false_i)     |                  //BRANCH taken
                                      (ir2fc_eow_i & ~ir2fc_eow_postpone_i))                    //EOW (not postponed)
                               begin
                                  fc2ir_force_nop_o       = 1'b1;                               //direct addressing

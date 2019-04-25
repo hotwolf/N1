@@ -293,7 +293,7 @@ module N1
    wire                                     prs2excpt_rsuf;          //RS underflow
    //PRS -> FC
    wire                                     prs2fc_hold;             //stacks not ready
-   wire                                     prs2fc_ps0_true;         //PS0 in non-zero
+   wire                                     prs2fc_ps0_false;        //PS0 is zero
    //PRS -> PAGU
    wire [15:0]                              prs2pagu_ps0;            //PS0
    wire [15:0]                              prs2pagu_rs0;            //RS0
@@ -480,7 +480,7 @@ module N1
       .fc2prs_tc2ps0_o          (fc2prs_tc2ps0),                     //capture throw code
       .fc2prs_isr2ps0_o         (fc2prs_isr2ps0),                    //capture ISR
       .prs2fc_hold_i            (prs2fc_hold),                       //stacks not ready
-      .prs2fc_ps0_true_i        (prs2fc_ps0_true),                   //PS0 in non-zero
+      .prs2fc_ps0_false_i       (prs2fc_ps0_false),                  //PS0 is zero
 
       //EXCPT interface
       .fc2excpt_excpt_clr_o     (fc2excpt_excpt_clr),                //clear and disable exceptions
@@ -645,7 +645,7 @@ module N1
 
       //FC interface
       .prs2fc_hold_o            (prs2fc_hold),                       //stacks not ready
-      .prs2fc_ps0_true_o        (prs2fc_ps0_true),                   //PS0 in non-zero
+      .prs2fc_ps0_false_o       (prs2fc_ps0_false),                  //PS0 is zero
       .fc2prs_hold_i            (fc2prs_hold),                       //hold any state tran
       .fc2prs_dat2ps0_i         (fc2prs_dat2ps0),                    //capture read data
       .fc2prs_tc2ps0_i          (fc2prs_tc2ps0),                     //capture throw code
