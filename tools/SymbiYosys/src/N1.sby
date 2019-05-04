@@ -1,0 +1,45 @@
+[tasks]
+bmc.default    bmc   default	
+bmc.iCE40UP5K  bmc   iCE40UP5K	
+
+[options]
+bmc:   mode bmc
+bmc:   depth 30
+multiclock on
+
+[engines]
+bmc:   smtbmc
+
+[script]
+default:   read -formal -D CONF_DEFAULT   ftb_N1.sv
+iCE40UP5K: read -formal -D CONF_ICE40UP5K ftb_N1.sv
+read -sv                                  N1.v
+read -sv                                  N1_alu.v
+default:   read -sv                       N1_dsp_synth.v
+iCE40UP5K: read -sv                       N1_dsp_iCE40UP5K.v
+iCE40UP5K: read -sv                       SB_MAC16.v
+read -sv                                  N1_excpt.v
+read -sv                                  N1_fc.v
+read -sv                                  N1_ir.v
+read -sv                                  N1_pagu.v
+read -sv                                  N1_prs.v
+read -sv                                  N1_sagu.v
+read -formal                              wb_tgt_mon.sv
+read -formal                              wb_syscon.sv
+prep -top ftb_N1
+
+[files]
+./bench/verilog/ftb_N1.sv
+./rtl/verilog/N1.v
+./rtl/verilog/N1_alu.v
+default:   ./rtl/verilog/N1_dsp_synth.v
+iCE40UP5K: ./rtl/verilog/N1_dsp_iCE40UP5K.v
+iCE40UP5K: ./rtl/verilog/SB_MAC16.v
+./rtl/verilog/N1_excpt.v
+./rtl/verilog/N1_fc.v
+./rtl/verilog/N1_ir.v
+./rtl/verilog/N1_pagu.v
+./rtl/verilog/N1_prs.v
+./rtl/verilog/N1_sagu.v
+./bench/verilog/wb_tgt_mon.sv
+./bench/verilog/wb_syscon.sv

@@ -86,19 +86,19 @@ help:
 	$(info lint.<module>:                   Lint a module in all supported configurations)
 	$(info lint.<configuration>:            Lint all modules which support the given configuration)
 	$(info lint.clean:                      Clean up lint targets)
-#	$(info )
+	$(info )
 #	$(info verify:                          Verify all modules in all supported configurations)
 #	$(info verify.<module>.<configuration>: Verify a module in one particular configuration)
 #	$(info verify.<module>:                 Verify a module in all supported configurations)
 #	$(info verify.<configuration>:          Verify all modules which support the given configuration)
 #	$(info verify.clean:                    Clean up verify targets)
 #	$(info )
-#	$(info bmc:                             Generate bounded proofs for all modules in all support configurations)
-#	$(info bmc.<module>.<configuration>:    Generate bounded proofs for a module in one particular configuration)
-#	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported configurations)
-#	$(info bmc.<configuration>:             Generate bounded proofs for all modules which support the given configuration)
-#	$(info bmc.clean:                       Clean up bounded proof targets)
-#	$(info )
+	$(info bmc:                             Generate bounded proofs for all modules in all support configurations)
+	$(info bmc.<module>.<configuration>:    Generate bounded proofs for a module in one particular configuration)
+	$(info bmc.<module>:                    Generate bounded proofs for a module in all supported configurations)
+	$(info bmc.<configuration>:             Generate bounded proofs for all modules which support the given configuration)
+	$(info bmc.clean:                       Clean up bounded proof targets)
+	$(info )
 #	$(info prove:                           Generate unboundeds proof for all modules in all supported configurations)
 #	$(info prove.<module>.<configuration>:  Generate unboundeds proof for a module in one particular configuration)
 #	$(info prove.<module>:                  Generate unboundeds proof for a module in all supported configurations)
@@ -192,7 +192,7 @@ $(BMC_MODCONFS):
 	$(eval mod     := $(word 2,$(subst ., ,$@)))
 	$(eval conf    := $(lastword $(subst ., ,$@)))
 	$(info ...Generating bounded proofs for $(mod) in $(conf) configuration)
-	@$(SBY) -d $(SBY_WRK_DIR)/$@ $(SBY_SRC_DIR)/$(mod).sby bmc.$(conf)
+	$(SBY) -d $(SBY_WRK_DIR)/$@ $(SBY_SRC_DIR)/$(mod).sby bmc.$(conf)
 
 $(BMC_MODS): $$(filter $$@.%,$(BMC_MODCONFS))
 
@@ -299,11 +299,10 @@ $(STEMS_FILES): %.stems: %.fst $(BENCH_DIR)/*.sv $(RTL_DIR)/*.v
 	$(info conf:     $(conf))
 	$(info confdef:  $(confdef))
 	$(info ...Generating STEMS file)
-	@$(PERL) tools/gtkwave/src/gtkw_gen.pl \
+	$(PERL) tools/gtkwave/src/gen_stems.pl \
 		-top   ftb_$(mod) \
 		-trace $< \
-		-gtkw  $(subst .stems,.gtkw,$@) \
-		-stems $@ \
+		-stems  $@ \
 		+define+$(confdef) \
 		+define+FORMAL \
 		+libext+.v+.sv \
@@ -321,11 +320,10 @@ $(GTKW_FILES): %.gtkw: %.fst $(BENCH_DIR)/*.sv $(RTL_DIR)/*.v
 	$(info conf:     $(conf))
 	$(info confdef:  $(confdef))
 	$(info ...Generating GTKW file)
-	@$(PERL) tools/gtkwave/src/gtkw_gen.pl \
+	@$(PERL) tools/gtkwave/src/gen_gtkw.pl \
 		-top   ftb_$(mod) \
 		-trace $< \
 		-gtkw  $@ \
-		-stems $(subst .gtkw,.stems,$@) \
 		+define+$(confdef) \
 		+define+FORMAL \
 		+libext+.v+.sv \
@@ -338,10 +336,9 @@ $(DEBUG_TGTS): $$(word $$(subst debug,,$$@),$(STEMS_FILES)) \
                $$(word $$(subst debug,,$$@),$(GTKW_FILES))
 	$(info ...Opening GTKWave)
 	@$(GTKWAVE) -t $< $(word 2,$^) $(word 3,$^) &
-	$(info ...Opening log file)
-	$(eval logs = $(shell find $(dir $(word 2,$^)).. -name "logfile*.txt" -type f -exec ls -1t "{}" +;))
-	@echo $(logs)
-#	@$(EDITOR) $(firstword $(logs)) &
+	$(eval log = $(shell ls -1 $(dir $(word 2,$^))logfile*.txt))
+	$(info ...Checking log file $(log):)
+	@grep "Assert failed" $(log)
 
 debug: $(firstword $(DEBUG_TGTS))
 

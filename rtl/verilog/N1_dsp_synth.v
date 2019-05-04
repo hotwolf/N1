@@ -56,14 +56,14 @@ module N1_dsp
     input  wire                             fc2dsp_pc_hold_i,         //maintain PC
 
     //PAGU interface
-    output wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
-    output wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
-    output wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
+    input  wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
+    input  wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
+    input  wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
 
     //PRS interface
-    output wire [15:0]                      dsp2prs_pc_o,             //program counter
-    output wire [SP_WIDTH-1:0]              dsp2prs_psp_o,            //parameter stack pointer
-    output wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,            //return stack pointer
+    input  wire [15:0]                      dsp2prs_pc_o,             //program counter
+    input  wire [SP_WIDTH-1:0]              dsp2prs_psp_o,            //parameter stack pointer
+    input  wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,            //return stack pointer
 
     //SAGU interface
     output wire [SP_WIDTH-1:0]              dsp2sagu_psp_next_o,      //parameter stack pointer
