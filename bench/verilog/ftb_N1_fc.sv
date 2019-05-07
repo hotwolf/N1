@@ -24,6 +24,9 @@
 //# Version History:                                                            #
 //#   March 4, 2019                                                             #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added "pbus_rty_i" input                                             #
+//#      - Keep PBUS idle in reset                                              #
 //###############################################################################
 `default_nettype none
 
@@ -47,7 +50,8 @@ module ftb_N1_fc
     output wire                      pbus_cyc_o,                   //bus cycle indicator       +-
     output wire                      pbus_stb_o,                   //access request            | initiator to target
     input  wire                      pbus_ack_i,                   //bus acknowledge           +-
-    input  wire                      pbus_err_i,                   //error indicator           | target to initiator
+    input  wire                      pbus_err_i,                   //error indicator           | target to
+    input  wire                      pbus_rty_i,                   //retry request             | initiator
     input  wire                      pbus_stall_i,                 //access delay              +-
 
     //Interrupt interface
@@ -75,6 +79,9 @@ module ftb_N1_fc
     input  wire                      ir2fc_mem_i,                  //memory I/O
     input  wire                      ir2fc_mem_rd_i,               //memory read
     input  wire                      ir2fc_madr_sel_i,             //direct memory address
+
+    //PAGU interface
+    output wire                      fc2pagu_inc_pc_o,             //1:increment PC, 0:maintain PC
 
     //PRS interface
     output wire                      fc2prs_hold_o,                //hold any state tran
@@ -108,7 +115,8 @@ module ftb_N1_fc
       .pbus_cyc_o                 (pbus_cyc_o),                    //bus cycle indicator       +-
       .pbus_stb_o                 (pbus_stb_o),                    //access request            | initiator to target
       .pbus_ack_i                 (pbus_ack_i),                    //bus acknowledge           +-
-      .pbus_err_i                 (pbus_err_i),                    //error indicator           | target to initiator
+      .pbus_err_i                 (pbus_err_i),                    //error indicator           | target to
+      .pbus_rty_i                 (pbus_rty_i),                    //retry request             | initiator
       .pbus_stall_i               (pbus_stall_i),                  //access delay              +-
 
       //Interrupt interface
@@ -134,6 +142,9 @@ module ftb_N1_fc
       .ir2fc_mem_i                (ir2fc_mem_i),                   //memory I/O
       .ir2fc_mem_rd_i             (ir2fc_mem_rd_i),                //memory read
       .ir2fc_madr_sel_i           (ir2fc_madr_sel_i),              //direct memory address
+
+      //PAGU interface
+      .fc2pagu_inc_pc_o           (fc2pagu_inc_pc_o),              //1:increment PC, 0:maintain PC
 
       //PRS interface
       .fc2prs_hold_o              (fc2prs_hold_o),                 //hold any state tran

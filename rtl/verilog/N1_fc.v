@@ -50,6 +50,9 @@
 //# Version History:                                                            #
 //#   December 4, 2018                                                          #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added "pbus_rty_i" input                                             #
+//#      - Keep PBUS idle in reset                                              #
 //###############################################################################
 `default_nettype none
 
@@ -63,7 +66,8 @@ module N1_fc
     output wire                      pbus_cyc_o,                                               //bus cycle indicator       +-
     output reg                       pbus_stb_o,                                               //access request            | initiator to target
     input  wire                      pbus_ack_i,                                               //bus acknowledge           +-
-    input  wire                      pbus_err_i,                                               //error indicator           | target to initiator
+    input  wire                      pbus_err_i,                                               //error indicator           | target to
+    input  wire                      pbus_rty_i,                                               //retry request             | initiator
     input  wire                      pbus_stall_i,                                             //access delay              +-
 
     //Interrupt interface
@@ -139,10 +143,11 @@ module N1_fc
 
    //Finite state machine
    //--------------------
-   localparam STATE_EXEC        = 3'b000;                                                      //execute single cycle instruction (next upcode on read data bus)
-   localparam STATE_EXEC_STASH  = 3'b001;                                                      //execute single cycle instruction (next opcode stached)
-   localparam STATE_EXEC_READ   = 3'b010;                                                      //second cycle of the reaad instruction
-   localparam STATE_EXEC_IRQ    = 3'b011;                                                      //Capture ISR and prepare CALL
+   localparam STATE_RESET       = 3'b000;                                                      //reset state -> delay first bus access
+   localparam STATE_EXEC        = 3'b001;                                                      //execute single cycle instruction (next upcode on read data bus)
+   localparam STATE_EXEC_STASH  = 3'b010;                                                      //execute single cycle instruction (next opcode stached)
+   localparam STATE_EXEC_READ   = 3'b011;                                                      //second cycle of the reaad instruction
+   localparam STATE_EXEC_IRQ    = 3'b100;                                                      //Capture ISR and prepare CALL
    localparam STATE_EXEC_EXCPT  = 3'b111;                                                      //Capture ISR and prepare CALL
 
    always @*
@@ -168,6 +173,11 @@ module N1_fc
         fc2excpt_buserr_o       = 1'b0;                                                        //invalid pbus access
         state_next              = state_reg;                                                   //remain in current state
 
+        //Keep bus idle during reset
+
+
+
+	
         //Wait for bus response (stay in sync with memory)
         if (pbus_acc_reg &                                                                     //ongoung bus access
             ~pbus_ack_i  &                                                                     //no bus acknowledge
@@ -342,9 +352,9 @@ module N1_fc
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                                                       //asynchronous reset
-          state_reg <= STATE_EXEC;
+          state_reg <= STATE_RESET;
         else if (sync_rst_i)                                                                   //synchronous reset
-          state_reg <= STATE_EXEC;
+          state_reg <= STATE_RESET;
         else                                                                                   //state transition
           state_reg <= state_next;
      end // always @ (posedge async_rst_i or posedge clk_i)

@@ -151,6 +151,13 @@ All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
   memory system. 
   If unused, this input must be tied to \texttt{0}.
   
+\item[\texttt{pbus\_rty\_i}] Retry input. \\  
+  This input signal corresponds to signal \texttt{RTY\_I} of the Wishbone specification~\cite{wishbone}.
+  It terminates the bus cycle, indicating that the target is not ready to accept or provide new data.
+  In contrast to asserting \texttt{pbus\_stall\_i} or delaying \texttt{pbus\_ack\_i}, the bus cycle termination
+  via \texttt{pbus\_rty\_i} does not block the processor from handing interrupts.
+  If unused, this input must be tied to \texttt{0}.
+  
 \item[\texttt{pbus\_stall\_i}] Pipeline stall input. \\
   This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
   If unused, this input must be tied to \texttt{0}.

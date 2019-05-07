@@ -25,6 +25,8 @@
 //# Version History:                                                            #
 //#   February 11, 2019                                                         #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added "pbus_rty_i" input                                             #
 //###############################################################################
 `default_nettype none
 
@@ -64,8 +66,9 @@ module ftb_N1
     output wire                              pbus_tga_cof_bra_o,    //COF conditional branch    |
     output wire                              pbus_tga_cof_eow_o,    //COF return from call      |
     output wire                              pbus_tga_dat_o,        //data access               |
-    input  wire                              pbus_ack_i,            //bus cycle                 +-
-    input  wire                              pbus_err_i,            //error indicator           | target to
+    input  wire                              pbus_ack_i,            //bus cycle acknowledge     +-
+    input  wire                              pbus_err_i,            //error indicator           | target
+    input  wire                              pbus_rty_i,            //retry request             | to
     input  wire                              pbus_stall_i,          //access delay              | initiator
     input  wire [15:0]                       pbus_dat_i,            //read data bus             +-
 
@@ -139,8 +142,9 @@ module ftb_N1
       .pbus_tga_cof_bra_o       (pbus_tga_cof_bra_o),               //COF conditional branch    |
       .pbus_tga_cof_eow_o       (pbus_tga_cof_eow_o),               //COF return from call      |
       .pbus_tga_dat_o           (pbus_tga_dat_o),                   //data access               |
-      .pbus_ack_i               (pbus_ack_i),                       //bus cycle                 +-
-      .pbus_err_i               (pbus_err_i),                       //error indicator           | target to
+      .pbus_ack_i               (pbus_ack_i),                       //bus cycle acknowledge     +-
+      .pbus_err_i               (pbus_err_i),                       //error indicator           | target
+      .pbus_rty_i               (pbus_rty_i),                       //retry request             | to
       .pbus_stall_i             (pbus_stall_i),                     //access delay              | initiator
       .pbus_dat_i               (pbus_dat_i),                       //read data bus             +-
 
@@ -210,11 +214,11 @@ module ftb_N1
       .async_rst_i              (async_rst_i),                      //asynchronous reset
       .sync_rst_i               (sync_rst_i),                       //synchronous reset
       .gated_clk_o              ());                                //gated clock
-								    
-   //Target bus monitors					    
-   //===================					    
-   //Program bus						    
-   wb_tgt_mon							    
+
+   //Target bus monitors
+   //===================
+   //Program bus
+   wb_tgt_mon
      #(.ADR_WIDTH (16),                                             //width of the address bus
        .DAT_WIDTH (16),                                             //width of each data bus
        .SEL_WIDTH (1),                                              //number of data select lines
@@ -222,10 +226,10 @@ module ftb_N1
        .TGC_WIDTH (1),                                              //number of propagated cycle tags
        .TGRD_WIDTH(1),                                              //number of propagated read data tags
        .TGWD_WIDTH(1))                                              //number of propagated write data tags
-								    
-   wb_pbus_mon							    
-     (//Clock and reset						    
-      //---------------						    
+
+   wb_pbus_mon
+     (//Clock and reset
+      //---------------
       .clk_i                    (clk_i),                            //module clock
       .async_rst_i              (async_rst_i),                      //asynchronous reset
       .sync_rst_i               (sync_rst_i),                       //synchronous reset
@@ -238,17 +242,17 @@ module ftb_N1
       .tgt_lock_o               (1'b0),                             //uninterruptable bus cycle |
       .tgt_sel_o                (1'b0),                             //write data selects        |
       .tgt_adr_o                (pbus_adr_o),                       //write data selects        | initiator
-      .tgt_dat_o                (pbus_dat_o),                       //write data bus            | to	
-      .tgt_tga_o                ({pbus_tga_cof_jmp_o,  |            //address tags              | target   
+      .tgt_dat_o                (pbus_dat_o),                       //write data bus            | to
+      .tgt_tga_o                ({pbus_tga_cof_jmp_o,  |            //address tags              | target
                                   pbus_tga_cof_cal_o,  |            //                          |
                                   pbus_tga_cof_bra_o,  |            //                          |
                                   pbus_tga_cof_eow_o,  |            //                          |
-                                  pbus_tga_dat_o}),                 //                          |  
+                                  pbus_tga_dat_o}),                 //                          |
       .tgt_tgc_o                (1'b0),                             //bus cycle tags            |
       .tgt_tgd_o                (1'b0),                             //write data tags           +-
       .tgt_ack_i                (pbus_ack_i),                       //bus cycle acknowledge     +-
       .tgt_err_i                (pbus_err_i),                       //error indicator           | target
-      .tgt_rty_i                (1'b0),                             //retry request             | to
+      .tgt_rty_i                (pbus_rty_i),                       //retry request             | to
       .tgt_stall_i              (1'b0),                             //access delay              | initiator
       .tgt_dat_i                (pbus_dat_i),                       //read data bus             |
       .tgt_tgd_i                (1'b0),                             //read data tags            +-
@@ -258,9 +262,9 @@ module ftb_N1
       .tb_fsm_reset             (wb_pbus_mon_fsm_reset),            //FSM in RESET state
       .tb_fsm_idle              (wb_pbus_mon_fsm_idle),             //FSM in IDLE state
       .tb_fsm_busy              (wb_pbus_mon_fsm_busy));            //FSM in BUSY state
-								    
-   //Stack bus							    
-   wb_tgt_mon							    
+
+   //Stack bus
+   wb_tgt_mon
      #(.ADR_WIDTH (`SP_WIDTH),                                      //width of the address bus
        .DAT_WIDTH (16),                                             //width of each data bus
        .SEL_WIDTH (1),                                              //number of data select lines
@@ -268,24 +272,24 @@ module ftb_N1
        .TGC_WIDTH (1),                                              //number of propagated cycle tags
        .TGRD_WIDTH(1),                                              //number of propagated read data tags
        .TGWD_WIDTH(1))                                              //number of propagated write data tags
-   wb_sbus_mon							    
-     (//Clock and reset						    
-      //---------------						    
+   wb_sbus_mon
+     (//Clock and reset
+      //---------------
       .clk_i                    (clk_i),                            //module clock
       .async_rst_i              (async_rst_i),                      //asynchronous reset
       .sync_rst_i               (sync_rst_i),                       //synchronous reset
-								    
-      //Target interface					    
-      //----------------					    
+
+      //Target interface
+      //----------------
       .tgt_cyc_o                (sbus_cyc_o),                       //bus cycle indicator       +-
       .tgt_stb_o                (sbus_stb_o),                       //access request            |
       .tgt_we_o                 (sbus_we_o),                        //write enable              |
       .tgt_lock_o               (1'b0),                             //uninterruptable bus cycle |
       .tgt_sel_o                (1'b0),                             //write data selects        | initiator
-      .tgt_adr_o                (sbus_adr_o),                       //write data selects        | to	
-      .tgt_dat_o                (sbus_dat_o),                       //write data bus            | target   
+      .tgt_adr_o                (sbus_adr_o),                       //write data selects        | to
+      .tgt_dat_o                (sbus_dat_o),                       //write data bus            | target
       .tgt_tga_o                ({sbus_tga_ps_o,  |                 //address tags              |
-                                  sbus_tga_rs_o}),                  //                          |  
+                                  sbus_tga_rs_o}),                  //                          |
       .tgt_tgc_o                (1'b0),                             //bus cycle tags            |
       .tgt_tgd_o                (1'b0),                             //write data tags           +-
       .tgt_ack_i                (sbus_ack_i),                       //bus cycle acknowledge     +-
@@ -294,13 +298,13 @@ module ftb_N1
       .tgt_stall_i              (1'b0),                             //access delay              | initiator
       .tgt_dat_i                (sbus_dat_i),                       //read data bus             |
       .tgt_tgd_i                (1'b0),                             //read data tags            +-
-  
+
      //Testbench status signals
      //------------------------
      .tb_fsm_reset              (wb_sbus_mon_fsm_reset),            //FSM in RESET state
      .tb_fsm_idle               (wb_sbus_mon_fsm_idle),             //FSM in IDLE state
      .tb_fsm_busy               (wb_sbus_mon_fsm_busy));            //FSM in BUSY state
-   
+
 `endif //  `ifdef FORMAL
 
 endmodule // ftb_N1

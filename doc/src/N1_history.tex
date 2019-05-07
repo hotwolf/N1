@@ -27,6 +27,7 @@
 \label{hist}
 
 \begingroup
+%\setlength{\extrarowheight}{0.5ex}
 \setlength{\LTleft}{-20cm plus -1fill}
 \setlength{\LTright}{\LTleft}
 \begin{center}
@@ -38,7 +39,7 @@
     \hline                                     
     \rowcolor{gray!25}
     \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex} Date}}     &  
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}  Change}} \\
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}  Change}}   \\
     \hline
     \endhead                               
     %Footers
@@ -49,12 +50,35 @@
     \hline
     \endlastfoot
     %Revisions
-     March 21, 2019 & Initial release \\   
-     March 22, 2019 & Changed encoding of ALU operands 
-     (see \tabref{opcodes:alu:operators} and \tabref{words:list})  \\   
-     April 17, 2019 & Fixed some copy \& paste errors \\ 
-     April 26, 2019 & Fixes and a description of the branch condition in \secref{opcodes:branch} \\ 
-    \today          & Added \secref{memmap} \\   
+    March 21, 2019 &
+    \makecell[l]{
+      Initial release
+    } \\
+
+    March 22, 2019 &
+    \makecell[l]{
+      Changed encoding of ALU operands 
+      (see \tabref{opcodes:alu:operators} and \tabref{words:list})
+    } \\
+         
+    April 17, 2019 &
+    \makecell[l]{
+      Fixed some copy \& paste errors
+    } \\
+ 
+    April 26, 2019 &
+    \makecell[l]{
+       Fixes and a description of the branch condition in \\
+      \secref{opcodes:branch}
+    } \\
+
+    May    6, 2019 &
+    \makecell[l]{
+      Added input \texttt{pbus\_rty\_i} \\
+      Corrected and specified reference point of relative addresses
+    } \\
+
+    %\today          & Added \secref{memmap} \\   
   \end{longtable}
 \end{center}  
 \endgroup

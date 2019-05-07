@@ -24,6 +24,8 @@
 //# Version History:                                                            #
 //#   March 5, 2019                                                             #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added support for "pbus_rty_i" input (fc2pagu_inc_pc_i)              #
 //###############################################################################
 `default_nettype none
 
@@ -52,6 +54,9 @@ module ftb_N1_pagu
     output wire [15:0]               pagu2dsp_radr_o,           //relative COF address
     output wire [15:0]               pagu2dsp_aadr_o,           //absolute COF address
 
+    //FC interface
+    input  wire                      fc2pagu_inc_pc_i,          //1:increment PC, 0:maintain PC
+
     //IR interface
     input  wire                      ir2pagu_eow_i,             //end of word (EOW bit)
     input  wire                      ir2pagu_eow_postpone_i,    //postpone EOW
@@ -79,6 +84,9 @@ module ftb_N1_pagu
       .pagu2dsp_adr_sel_o            (pagu2dsp_adr_sel_o),      //1:absolute COF, 0:relative COF
       .pagu2dsp_radr_o               (pagu2dsp_radr_o),         //relative COF address
       .pagu2dsp_aadr_o               (pagu2dsp_aadr_o),         //absolute COF address
+
+      //FC interface
+      .fc2pagu_inc_pc_i              (fc2pagu_inc_pc_i),        //1:increment PC, 0:maintain PC
 
       //IR interface
       .ir2pagu_eow_i                 (ir2pagu_eow_i),           //end of word (EOW bit)

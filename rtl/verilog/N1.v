@@ -98,6 +98,8 @@
 //# Version History:                                                            #
 //#   December 4, 2018                                                          #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added "pbus_rty_i" input                                             #
 //###############################################################################
 `default_nettype none
 
@@ -125,8 +127,9 @@ module N1
     output wire                              pbus_tga_cof_bra_o,     //COF conditional branch    |
     output wire                              pbus_tga_cof_eow_o,     //COF return from call      |
     output wire                              pbus_tga_dat_o,         //data access               |
-    input  wire                              pbus_ack_i,             //bus cycle                 +-
-    input  wire                              pbus_err_i,             //error indicator           | target to
+    input  wire                              pbus_ack_i,             //bus cycle acknowledge     +-
+    input  wire                              pbus_err_i,             //error indicator           | target
+    input  wire                              pbus_rty_i,             //retry request             | to
     input  wire                              pbus_stall_i,           //access delay              | initiator
     input  wire [15:0]                       pbus_dat_i,             //read data bus             +-
 
@@ -224,6 +227,8 @@ module N1
    wire                                     fc2ir_force_call;        //load CALL instruction
    wire                                     fc2ir_force_drop;        //load DROP instruction
    wire                                     fc2ir_force_nop;         //load NOP instruction
+   //FC -> PAGU
+   wire                                     fc2pagu_inc_pc;          //1:increment PC, 0:maintain PC
    //FC -> PRS
    wire                                     fc2prs_hold;             //hold any state tran
    wire                                     fc2prs_dat2ps0;          //capture read data
@@ -447,7 +452,8 @@ module N1
       .pbus_cyc_o               (pbus_cyc_o),                        //bus cycle indicator       +-
       .pbus_stb_o               (pbus_stb_o),                        //access request            | initiator to target
       .pbus_ack_i               (pbus_ack_i),                        //bus acknowledge           +-
-      .pbus_err_i               (pbus_err_i),                        //error indicator           | target to initiator
+      .pbus_err_i               (pbus_err_i),                        //error indicator           | target to
+      .pbus_rty_i               (pbus_rty_i),                        //retry request             | initiator
       .pbus_stall_i             (pbus_stall_i),                      //access delay              +-
 
       //Interrupt interface
@@ -473,6 +479,9 @@ module N1
       .ir2fc_mem_i              (ir2fc_mem),                         //memory I/O
       .ir2fc_mem_rd_i           (ir2fc_mem_rd),                      //memory read
       .ir2fc_madr_sel_i         (ir2fc_madr_sel),                    //direct memory address
+
+      //PAGU interface
+      .fc2pagu_inc_pc_o         (fc2pagu_inc_pc),                    //1:increment PC, 0:maintain PC
 
       //PRS interface
       .fc2prs_hold_o            (fc2prs_hold),                       //hold any state tran
@@ -583,6 +592,9 @@ module N1
       .pagu2dsp_adr_sel_o       (pagu2dsp_adr_sel),                  //1:absolute COF, 0:relative COF
       .pagu2dsp_radr_o          (pagu2dsp_radr),                     //relative COF address
       .pagu2dsp_aadr_o          (pagu2dsp_aadr),                     //absolute COF address
+
+      //FC interface
+      .fc2pagu_inc_pc_i         (fc2pagu_inc_pc),                    //1:increment PC, 0:maintain PC
 
       //IR interface
       .ir2pagu_eow_i            (ir2pagu_eow),                       //end of word (EOW bit)

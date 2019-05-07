@@ -24,6 +24,8 @@
 //# Version History:                                                            #
 //#   February 20, 2019                                                         #
 //#      - Initial release                                                      #
+//#   May 6, 2019                                                               #
+//#      - Added support for "pbus_rty_i" input (fc2pagu_inc_pc_i)              #
 //###############################################################################
 `default_nettype none
 
@@ -37,6 +39,9 @@ module N1_pagu
     output reg                       pagu2dsp_adr_sel_o,        //1:absolute COF, 0:relative COF
     output reg  [15:0]               pagu2dsp_radr_o,           //relative COF address
     output reg  [15:0]               pagu2dsp_aadr_o,           //absolute COF address
+
+    //FC interface
+    input  wire                      fc2pagu_inc_pc_i,          //1:increment PC, 0:maintain PC
 
     //IR interface
     input  wire                      ir2pagu_eow_i,             //end of word (EOW bit)
@@ -94,7 +99,7 @@ module N1_pagu
              pagu2dsp_radr_o    = pagu2dsp_aadr_o    |          //make use of onehot encoding
                                   (|prs2pagu_ps0_i   ?          //branch or not
                                    dir_radr          :          //branch address
-                                   16'h0001);                   //increment
+                                   {15'h0000,fc2pagu_inc_pc};   //increment
           end // if (ir2pagu_bra_i)
 
         //Single cycle instruction
@@ -107,7 +112,7 @@ module N1_pagu
                 pagu2dsp_aadr_o    = pagu2dsp_aadr_o |          //make use of onehot encoding
                                      prs2pagu_rs0_i;            //return address
                 pagu2dsp_radr_o    = pagu2dsp_aadr_o |          //make use of onehot encoding
-                                     16'h0001;                  //increment
+                                     {15'h0000,fc2pagu_inc_pc}; //increment
              end
           end // if (ir2pagu_scyc_i)
 
