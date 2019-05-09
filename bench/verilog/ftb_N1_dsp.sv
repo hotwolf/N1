@@ -25,6 +25,8 @@
 //# Version History:                                                            #
 //#   October 16, 2018                                                          #
 //#      - Initial release                                                      #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -47,9 +49,6 @@ module ftb_N1_dsp
     input  wire                             async_rst_i,              //asynchronous reset
     input  wire                             sync_rst_i,               //synchronous reset
 
-    //Program bus (wishbone)
-    output wire [15:0]                      pbus_adr_o,               //address bus
-
     //Internal interfaces
     //-------------------
     //ALU interface
@@ -64,11 +63,13 @@ module ftb_N1_dsp
 
     //FC interface
     input  wire                             fc2dsp_pc_hold_i,         //maintain PC
+    input  wire                             fc2dsp_radr_inc_i,        //increment relative address
 
     //PAGU interface
-    output wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
-    output wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
-    output wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
+    output wire [15:0]                      dsp2pagu_adr_o,           //program AGU output
+    input  wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
+    input  wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
+    input  wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
 
     //PRS interface
     output wire [15:0]                      dsp2prs_pc_o,             //program counter
@@ -97,9 +98,6 @@ module ftb_N1_dsp
       .async_rst_i              (async_rst_i),                        //asynchronous reset
       .sync_rst_i               (sync_rst_i),                         //synchronous reset
 
-      //Program bus (wishbone)
-      .pbus_adr_o               (pbus_adr_o),                         //address bus
-
       //ALU interface
       .dsp2alu_add_res_o        (dsp2alu_add_res_o),                  //result from adder
       .dsp2alu_mul_res_o        (dsp2alu_mul_res_o),                  //result from multiplier
@@ -112,14 +110,15 @@ module ftb_N1_dsp
 
       //FC interface
       .fc2dsp_pc_hold_i         (fc2dsp_pc_hold_i),                   //maintain PC
+      .fc2dsp_radr_inc_i        (fc2dsp_radr_inc_i),                  //increment relative address
 
       //PAGU interface
+      .dsp2pagu_adr_o           (dsp2pagu_adr_o),                     //program AGU output
       .pagu2dsp_adr_sel_i       (pagu2dsp_adr_sel_i),                 //1:absolute COF, 0:relative COF
       .pagu2dsp_aadr_i          (pagu2dsp_aadr_i),                    //absolute COF address
       .pagu2dsp_radr_i          (pagu2dsp_radr_i),                    //relative COF address
 
       //PRS interface
-      .dsp2prs_pc_o             (dsp2prs_pc_o),                       //program counter
       .dsp2prs_psp_o            (dsp2prs_psp_o),                      //parameter stack pointer (AGU output)
       .dsp2prs_rsp_o            (dsp2prs_rsp_o),                      //return stack pointer (AGU output)
 

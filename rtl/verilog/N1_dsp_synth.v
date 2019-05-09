@@ -25,6 +25,10 @@
 //# Version History:                                                            #
 //#   January 10, 2019                                                          #
 //#      - Initial release                                                      #
+//#   May 7, 2019                                                               #
+//#      - added input "fc2dsp_radr_inc_i"                                      #
+//#   May 8, 2019                                                               #
+//#      - Moved PBUS address generation to PAGU                                #
 //###############################################################################
 `default_nettype none
 
@@ -36,9 +40,6 @@ module N1_dsp
     input  wire                             clk_i,                    //module clock
     input  wire                             async_rst_i,              //asynchronous reset
     input  wire                             sync_rst_i,               //synchronous reset
-
-    //Program bus (wishbone)
-    output wire [15:0]                      pbus_adr_o,               //address bus
 
     //Internal interfaces
     //-------------------
@@ -54,14 +55,15 @@ module N1_dsp
 
     //FC interface
     input  wire                             fc2dsp_pc_hold_i,         //maintain PC
+    input  wire                             fc2dsp_radr_inc_i,        //increment relative address
 
     //PAGU interface
+    output wire [15:0]                      dsp2pagu_adr_o,           //program AGU output
     input  wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
     input  wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
     input  wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
 
     //PRS interface
-    output wire [15:0]                      dsp2prs_pc_o,             //program counter
     output wire [SP_WIDTH-1:0]              dsp2prs_psp_o,            //parameter stack pointer
     output wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,            //return stack pointer
 
@@ -81,6 +83,7 @@ module N1_dsp
    //----------------
    //Program AGU
    reg  [15:0]                              pc_reg;                   //program counter
+   wire [15:0]                              pc_next;                  //next program counter
    //Lower parameter stack AGU
    reg  [SP_WIDTH-1:0]                      psp_reg;                  //parameter stack pointer
    //Lower return  stack AGU
@@ -107,13 +110,15 @@ module N1_dsp
         else if (sync_rst_i)                                          //synchronous reset
           pc_reg <= 16'h0000;                                         //start address
         else if (~fc2dsp_pc_hold_i)                                   //update PC
-          pc_reg <= pbus_adr_o;
+          pc_reg <= pc_next;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Outputs
-   assign pbus_adr_o   = pagu2dsp_adr_sel_i ? pagu2dsp_aadr_i :
-                                              pagu2dsp_radr_i + pc_reg;
-   assign dsp2prs_pc_o = pc_reg;
+   assign pc_next        = pagu2dsp_adr_sel_i ? pagu2dsp_aadr_i :
+                                                pc_reg          +
+                                                pagu2dsp_radr_i +
+                                                {15'h0000,fc2dsp_radr_inc_i};
+   assign dsp2pagu_adr_o = pc_next;                                   //program AGU output
 
    //Parameter stack AGU
    //-------------------

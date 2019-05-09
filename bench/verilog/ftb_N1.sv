@@ -25,8 +25,9 @@
 //# Version History:                                                            #
 //#   February 11, 2019                                                         #
 //#      - Initial release                                                      #
-//#   May 6, 2019                                                               #
-//#      - Added "pbus_rty_i" input                                             #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
+//#      - Updated overflow monitoring                                          #
 //###############################################################################
 `default_nettype none
 
@@ -101,7 +102,9 @@ module ftb_N1
     //IR - Instruction register
     output wire [15:0]                       prb_ir_o,              //current instruction register
     output wire [15:0]                       prb_ir_stash_o,        //stashed instruction register
-    //Probe signals
+    //PAGU - Program bus AGU
+    output wire [15:0]                       prb_pagu_areg_o,        //address register
+    //PRS - Parameter and return stack
     output wire [2:0]                        prb_state_task_o,      //current state
     output wire [1:0]                        prb_state_sbus_o,      //current state
     output wire [15:0]                       prb_rs0_o,             //current RS0
@@ -115,9 +118,13 @@ module ftb_N1
     output wire                              prb_ps2_tag_o,         //current PS2 tag
     output wire                              prb_ps3_tag_o,         //current PS3 tag
     output wire [(16*`IPS_DEPTH)-1:0]        prb_ips_o,             //current IPS
-    output wire [`IPS_DEPTH-1:0]             prb_ips_tags_o,        //current IPS
+    output wire [`IPS_DEPTH-1:0]             prb_ips_tags_o,        //current IPS tags
     output wire [(16*`IRS_DEPTH)-1:0]        prb_irs_o,             //current IRS
-    output wire [`IRS_DEPTH-1:0]             prb_irs_tags_o);       //current IRS
+    output wire [`IRS_DEPTH-1:0]             prb_irs_tags_o,        //current IRS tags
+    //SAGU - Stack bus AGU
+    output wire                              prb_sagu_of_o,          //overflow condition
+    output wire                              prb_sagu_ps_o,          //PS operation
+    output wire                              prb_sagu_rs_o);         //RS operation
 
    //Instantiation
    //=============
@@ -175,7 +182,9 @@ module ftb_N1
       //IR - Instruction register
       .prb_ir_o                 (prb_ir_o),                         //current instruction register
       .prb_ir_stash_o           (prb_ir_stash_o),                   //stashed instruction register
-      //Probe signals
+      //PAGU - Program bus AGU
+      .prb_pagu_areg_o          (prb_pagu_areg_o),                  //address register
+      //PRS - Parameter and return stack
       .prb_state_task_o         (prb_state_task_o),                 //current state
       .prb_state_sbus_o         (prb_state_sbus_o),                 //current state
       .prb_rs0_o                (prb_rs0_o),                        //current RS0
@@ -189,9 +198,13 @@ module ftb_N1
       .prb_ps2_tag_o            (prb_ps2_tag_o),                    //current PS2 tag
       .prb_ps3_tag_o            (prb_ps3_tag_o),                    //current PS3 tag
       .prb_ips_o                (prb_ips_o),                        //current IPS
-      .prb_ips_tags_o           (prb_ips_tags_o),                   //current IPS
+      .prb_ips_tags_o           (prb_ips_tags_o),                   //current IPS tags
       .prb_irs_o                (prb_irs_o),                        //current IRS
-      .prb_irs_tags_o           (prb_irs_tags_o));                  //current IRS
+      .prb_irs_tags_o           (prb_irs_tags_o),                   //current IRS tags
+      //SAGU - Stack bus AGU
+      .prb_sagu_of_o            (prb_sagu_of_o),                     //overflow condition
+      .prb_sagu_ps_o            (prb_sagu_ps_o),                     //PS operation
+      .prb_sagu_rs_o            (prb_sagu_rs_o));                    //RS operation
 
 `ifdef FORMAL
    //Testbench signals

@@ -24,6 +24,8 @@
 //# Version History:                                                            #
 //#   March 25, 2019                                                            #
 //#      - Initial release                                                      #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -115,6 +117,7 @@ module ftb_N1_prs
     //PAGU interface
     output wire [15:0]                       prs2pagu_ps0_o,                       //PS0
     output wire [15:0]                       prs2pagu_rs0_o,                       //RS0
+    input  wire [15:0]                       pagu2prs_areg_i,                      //address register output
 
     //SAGU interface
     output wire                              prs2sagu_hold_o,                      //maintain stack pointers
@@ -182,7 +185,6 @@ module ftb_N1_prs
     .alu2prs_ps1_next_i         (alu2prs_ps1_next_i),                              //new PS1 (TOS+1)
 
      //DSP interface
-    .dsp2prs_pc_i               (dsp2prs_pc_i),                                    //program counter
     .dsp2prs_psp_i              (dsp2prs_psp_i),                                   //parameter stack pointer
     .dsp2prs_rsp_i              (dsp2prs_rsp_i),                                   //return stack pointer
 
@@ -215,9 +217,10 @@ module ftb_N1_prs
     .ir2prs_rsp_get_i           (ir2prs_rsp_get_i),                                //read return stack pointer
     .ir2prs_rsp_set_i           (ir2prs_rsp_set_i),                                //write return stack pointer
 
-    //PRS interface
+    //PAGU interface
     .prs2pagu_ps0_o             (prs2pagu_ps0_o),                                  //PS0
     .prs2pagu_rs0_o             (prs2pagu_rs0_o),                                  //RS0
+    .pagu2prs_areg_i            (pagu2prs_areg_i),                                 //address register output
 
     //SAGU interface
     .prs2sagu_hold_o            (prs2sagu_hold_o),                                 //maintain stack pointers

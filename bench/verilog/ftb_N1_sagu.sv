@@ -24,6 +24,8 @@
 //# Version History:                                                            #
 //#   March 5, 2019                                                             #
 //#      - Initial release                                                      #
+//#   May 8, 2019                                                               #
+//#      - Updated overflow monitoring                                          #
 //###############################################################################
 `default_nettype none
 
@@ -45,7 +47,12 @@
 
 module ftb_N1_sagu
 
-   (//Stack bus (wishbone)
+   (//Clock and reset
+    input  wire                             clk_i,                    //module clock
+    input  wire                             async_rst_i,              //asynchronous reset
+    input  wire                             sync_rst_i,               //synchronous reset
+
+    //Stack bus (wishbone)
     output wire [`SP_WIDTH-1:0]             sbus_adr_o,               //address bus
     output wire                             sbus_tga_ps_o,            //parameter stack access
     output wire                             sbus_tga_rs_o,            //return stack access
@@ -77,7 +84,12 @@ module ftb_N1_sagu
     input  wire                             prs2sagu_pull_i,          //decrement stack pointer
     input  wire                             prs2sagu_load_i,          //load stack pointer
     input  wire [`SP_WIDTH-1:0]             prs2sagu_psp_load_val_i,  //parameter stack load value
-    input  wire [`SP_WIDTH-1:0]             prs2sagu_rsp_load_val_i); //return stack load value
+    input  wire [`SP_WIDTH-1:0]             prs2sagu_rsp_load_val_i,  //return stack load value
+
+    //Probe signals
+    output wire                             prb_sagu_of_o,              //overflow condition
+    output wire                             prb_sagu_ps_o,              //PS operation
+    output wire                             prb_sagu_rs_o);             //RS operation
 
    //Instantiation
    //=============
@@ -85,7 +97,12 @@ module ftb_N1_sagu
      #(.SP_WIDTH   (`SP_WIDTH),                                       //width of either stack pointer
        .PS_RS_DIST (`PS_RS_DIST))                                     //safety distance between PS and RS
    DUT
-   (//Stack bus (wishbone)
+     (//Clock and reset
+      .clk_i                    (clk_i),                             //module clock
+      .async_rst_i              (async_rst_i),                       //asynchronous reset
+      .sync_rst_i               (sync_rst_i),                        //synchronous reset
+
+      //Stack bus (wishbone)
       .sbus_adr_o               (sbus_adr_o),                         //address bus
       .sbus_tga_ps_o            (sbus_tga_ps_o),                      //parameter stack access
       .sbus_tga_rs_o            (sbus_tga_rs_o),                      //return stack access
@@ -115,7 +132,12 @@ module ftb_N1_sagu
       .prs2sagu_pull_i          (prs2sagu_pull_i),                    //decrement stack pointer
       .prs2sagu_load_i          (prs2sagu_load_i),                    //load stack pointer
       .prs2sagu_psp_load_val_i  (prs2sagu_psp_load_val_i),            //parameter stack load value
-      .prs2sagu_rsp_load_val_i  (prs2sagu_rsp_load_val_i));           //return stack load value
+      .prs2sagu_rsp_load_val_i  (prs2sagu_rsp_load_val_i),            //return stack load value
+
+      //Probe signals
+      .prb_sagu_of_o            (prb_sagu_of_o),                      //overflow condition
+      .prb_sagu_ps_o            (prb_sagu_ps_o),                      //PS operation
+      .prb_sagu_rs_o            (prb_sagu_rs_o));                     //RS operation)
 
 `ifdef FORMAL
    //Testbench signals

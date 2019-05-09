@@ -52,6 +52,8 @@
 //# Version History:                                                            #
 //#   December 13, 2018                                                         #
 //#      - Initial release                                                      #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -90,7 +92,6 @@ module N1_prs
     input  wire [15:0]                       alu2prs_ps1_next_i,                   //new PS1 (TOS+1)
 
      //DSP interface
-    input  wire [15:0]                       dsp2prs_pc_i,                         //program counter
     input  wire [SP_WIDTH-1:0]               dsp2prs_psp_i,                        //parameter stack pointer (AGU output)
     input  wire [SP_WIDTH-1:0]               dsp2prs_rsp_i,                        //return stack pointer (AGU output)
 
@@ -126,6 +127,7 @@ module N1_prs
     //PAGU interface
     output wire [15:0]                       prs2pagu_ps0_o,                       //PS0
     output wire [15:0]                       prs2pagu_rs0_o,                       //RS0
+    input  wire [15:0]                       pagu2prs_areg_i,                      //address register output
 
     //SAGU interface
     output reg                               prs2sagu_hold_o,                      //maintain stack pointers
@@ -233,7 +235,7 @@ module N1_prs
                          ({16{fsm_idle}} &
                           ((ir2prs_us_tp_i[0]  ? ps0_reg            : 16'h0000) |  //PS0 -> RS0
                            (ir2prs_irs_tp_i[0] ? irs_reg[15:0]      : 16'h0000) |  //RS1 -> RS0
-                           (ir2prs_pc2rs0_i    ? dsp2prs_pc_i       : 16'h0000))); //PC  -> RS0
+                           (ir2prs_pc2rs0_i    ? pagu2prs_areg_i    : 16'h0000))); //PC  -> RS0
    assign rs0_tag_next = (fsm_rs_shift_up      & irs_tags_reg[0])               |  //RS1 -> RS0
                          (fsm_idle             &
                           ((ir2prs_us_tp_i[0]  & ps0_tag_reg)                   |  //PS0 -> RS0

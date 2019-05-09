@@ -27,6 +27,8 @@
 //# Version History:                                                            #
 //#   January 10, 2019                                                          #
 //#      - Initial release                                                      #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -38,9 +40,6 @@ module N1_dsp
     input  wire                             clk_i,                    //module clock
     input  wire                             async_rst_i,              //asynchronous reset
     input  wire                             sync_rst_i,               //synchronous reset
-
-    //Program bus (wishbone)
-    output wire [15:0]                      pbus_adr_o,               //address bus
 
     //Internal interfaces
     //-------------------
@@ -56,14 +55,15 @@ module N1_dsp
 
     //FC interface
     input  wire                             fc2dsp_pc_hold_i,         //maintain PC
+    input  wire                             fc2dsp_radr_inc_i,        //increment relative address
 
     //PAGU interface
+    output wire [15:0]                      dsp2pagu_adr_o,           //program AGU output
     input  wire                             pagu2dsp_adr_sel_i,       //1:absolute COF, 0:relative COF
     input  wire [15:0]                      pagu2dsp_aadr_i,          //absolute COF address
     input  wire [15:0]                      pagu2dsp_radr_i,          //relative COF address
 
     //PRS interface
-    output wire [15:0]                      dsp2prs_pc_o,             //program counter
     output wire [SP_WIDTH-1:0]              dsp2prs_psp_o,            //parameter stack pointer (AGU output)
     output wire [SP_WIDTH-1:0]              dsp2prs_rsp_o,            //return stack pointer (AGU output)
 
@@ -91,7 +91,6 @@ module N1_dsp
    wire [31:0]                              alu_umul_out;             //ALU unsigned multiplier output
    wire [31:0]                              alu_smul_out;             //ALU signed multiplier output
    //Program AGU
-   reg  [15:0]                              pc_mirror_reg;            //program counter
    wire [31:0]                              pagu_out;                 //program AGU output
    //Stack AGUs
    reg  [SP_WIDTH-1:0]                      psp_mirror_reg;            //parameter stack pointer
@@ -122,7 +121,7 @@ module N1_dsp
        .BOTOUTPUT_SELECT         (2'b00),                             //C15,C16    -> unregistered output
        .BOTADDSUB_LOWERINPUT     (2'b00),                             //C17,C18    -> plain adder
        .BOTADDSUB_UPPERINPUT     (1'b1),                              //C19        -> connect to program counter
-       .BOTADDSUB_CARRYSELECT    (2'b00),                             //C20,C21    -> no carry
+       .BOTADDSUB_CARRYSELECT    (2'b11),                             //C20,C21    -> add carry via CI input
        .MODE_8x8                 (1'b1),                              //C22        -> power safe
        .A_SIGNED                 (1'b0),                              //C23        -> unsigned
        .B_SIGNED                 (1'b0))                              //C24        -> unsigned
@@ -147,7 +146,7 @@ module N1_dsp
       .ADDSUBBOT                 (1'b0),                              //always use adder
       .OHOLDTOP                  (1'b1),                              //keep hold register stable
       .OHOLDBOT                  (fc2dsp_pc_hold_i),                  //update PC
-      .CI                        (1'b0),                              //no carry
+      .CI                        (fc2dsp_radr_inc_i),                 //address increment
       .ACCUMCI                   (1'b0),                              //no carry
       .SIGNEXTIN                 (1'b0),                              //no sign extension
       .O                         (pagu_out),                          //result
@@ -155,21 +154,9 @@ module N1_dsp
       .ACCUMCO                   (alu_add_c),                         //carry bit determines upper word
       .SIGNEXTOUT                ());                                 //ignore sign extension output
 
-   //Mirrored PC
-   always @(posedge async_rst_i or posedge clk_i)
-     begin
-        if (async_rst_i)                                              //asynchronous reset
-          pc_mirror_reg <= 16'h0000;                                  //start address
-        else if (sync_rst_i)                                          //synchronous reset
-          pc_mirror_reg <= 16'h0000;                                  //start address
-        else if (~fc2dsp_pc_hold_i)                                   //update PC
-          pc_mirror_reg <= pagu_out[15:0];
-     end // always @ (posedge async_rst_i or posedge clk_i)
-
    //Outputs
-   assign dsp2alu_add_res_o = {{16{alu_add_c}}, pagu_out[31:16]};
-   assign pbus_adr_o        = pagu_out[15:0];
-   assign dsp2prs_pc_o      = pc_mirror_reg;
+   assign dsp2alu_add_res_o = {{16{alu_add_c}}, pagu_out[31:16]};     //adder output
+   assign dsp2pagu_adr_o    = pagu_out[15:0];                         //program AGU autput
 
    //Shared SB_MAC32 cell for both stack AGUs
    //----------------------------------------

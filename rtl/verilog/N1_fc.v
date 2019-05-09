@@ -50,9 +50,8 @@
 //# Version History:                                                            #
 //#   December 4, 2018                                                          #
 //#      - Initial release                                                      #
-//#   May 6, 2019                                                               #
-//#      - Added "pbus_rty_i" input                                             #
-//#      - Keep PBUS idle in reset                                              #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -77,6 +76,7 @@ module N1_fc
     //-------------------
     //DSP interface
     output reg                       fc2dsp_pc_hold_o,                                         //maintain PC
+    output reg                       fc2dsp_radr_inc_o,                                        //increment relative address
 
     //IR interface
     output reg                       fc2ir_capture_o,                                          //capture current IR
@@ -96,6 +96,10 @@ module N1_fc
     input  wire                      ir2fc_mem_rd_i,                                           //memory read
     input  wire                      ir2fc_madr_sel_i,                                         //direct memory address
 
+    //PAGU interface
+    output wire                      fc2pagu_areg_hold_o,                                      //maintain stored address
+    output wire                      fc2pagu_areg_sel_o,                                       //0:AGU output, 1:previous address
+
     //PRS interface
     output reg                       fc2prs_hold_o,                                            //hold any state tran
     output reg                       fc2prs_dat2ps0_o,                                         //capture read data
@@ -107,7 +111,7 @@ module N1_fc
     //EXCPT interface
     output reg                       fc2excpt_excpt_clr_o,                                     //clear and disable exceptions
     output reg                       fc2excpt_irq_dis_o,                                       //disable interrupts
-    output reg                       fc2excpt_buserr_o,                                        //invalid pbus access
+    output wire                      fc2excpt_buserr_o,                                        //invalid pbus access
     input  wire                      excpt2fc_excpt_i,                                         //exception to be handled
     input  wire                      excpt2fc_irq_i,                                           //exception to be handled
 
@@ -139,7 +143,15 @@ module N1_fc
           pbus_acc_reg <= pbus_acc_next;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
+   //Handle CYC_O output
    assign pbus_cyc_o = pbus_stb_o | pbus_acc_reg;                                              //bus cycle indicator
+
+   //Trigger exception
+   assign fc2excpt_buserr_o = pbus_acc_reg &                                                   //ongoing bus access
+                              pbus_err_i  &                                                    //bus error
+                              ~ir2fc_jump_or_call_i               &                            //no JUMP or CALL
+                              ~(ir2fc_bra_i & prs2fc_ps0_false_i) &                            //no BRANCH taken
+                              ~ir2fc_eow_i;                                                    //no EOW
 
    //Finite state machine
    //--------------------
@@ -155,7 +167,8 @@ module N1_fc
         //Default outputs
         pbus_stb_o              = 1'b1;                                                        //access request
         irq_ack_o               = 1'b0;                                                        //interrupt acknowledge
-        fc2dsp_pc_hold_o        = 1'b0;                                                        //maintain PC
+        fc2dsp_pc_hold_o        = 1'b0;                                                        //update PC
+        fc2dsp_radr_inc_o       = 1'b1;                                                        //increment relative address
         fc2ir_capture_o         = 1'b0;                                                        //capture current IR
         fc2ir_stash_o           = 1'b0;                                                        //capture stashed IR
         fc2ir_expend_o          = 1'b0;                                                        //stashed IR -> current IR
@@ -170,180 +183,498 @@ module N1_fc
         fc2prs_isr2ps0_o        = 1'b0;                                                        //capture ISR
         fc2excpt_excpt_clr_o    = 1'b0;                                                        //disable exceptions
         fc2excpt_irq_dis_o      = 1'b0;                                                        //disable interrupts
-        fc2excpt_buserr_o       = 1'b0;                                                        //invalid pbus access
         state_next              = state_reg;                                                   //remain in current state
 
-        //Keep bus idle during reset
-
-
-
-	
-        //Wait for bus response (stay in sync with memory)
-        if (pbus_acc_reg &                                                                     //ongoung bus access
-            ~pbus_ack_i  &                                                                     //no bus acknowledge
-            ~pbus_err_i)                                                                       //no error indicator
-          begin
-             state_next       = state_reg;                                                     //remain in current state
-             pbus_stb_o       = 1'b0;                                                          //delay next access
-             fc2dsp_pc_hold_o = 1'b1;                                                          //don't update PC
-             fc2prs_hold_o    = 1'b1;                                                          //don't update stacks
-          end
-        //Bus response received
-        else
-          begin
-             //Trigger exception
-             fc2excpt_buserr_o = pbus_err_i                          &                         //bus error
-                                 ~ir2fc_jump_or_call_i               &                         //no JUMP or CALL
-                                 ~(ir2fc_bra_i & prs2fc_ps0_false_i) &                         //no BRANCH taken
-                                 ~ir2fc_eow_i;                                                 //no EOW
-             //Capture read data
-             if (~|{state_reg[1:0] ^ STATE_EXEC_READ[1:0]})                                    //STATE_EXEC_READ
-               begin
-                  fc2prs_dat2ps0_o   = 1'b1;                                                   //read data -> PS0
-                  state_next         = STATE_EXEC_STASH;                                       //capture read data only once
-               end
-             //Wait for stacks
-             if (prs2fc_hold_i)                                                                //stacks are busy
-               begin
-                  if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                                    //STATE_EXEC
-                    begin
-                       fc2ir_stash_o = 1'b1;                                                   //stash next instruction
-                       state_next    = STATE_EXEC_STASH;                                       //track stashed opcode
-                    end
-                  pbus_stb_o       = 1'b0;                                                     //idle pbus
-                  fc2dsp_pc_hold_o = 1'b1;                                                     //don't update PC
-                  fc2prs_hold_o    = 1'b1;                                                     //don't update stacks
-               end // if (prs2fc_hold_i)
-             //Initiate next bus access
-             else
-               begin
-                  //Wait while Pbus is stalled
-                  if (pbus_stall_i)
-                    begin
-                       if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                               //STATE_EXEC
-                         begin
-                            fc2ir_stash_o = 1'b1;                                              //stash next instruction
-                            state_next    = STATE_EXEC_STASH;                                  //track stashed opcode
-                         end
-                       fc2dsp_pc_hold_o   = 1'b1;                                              //don't update PC
-                       fc2prs_hold_o      = 1'b1;                                              //don't update stacks
-                    end
-                  //Execute
-                  else
-                    begin
-                       //Multi-cycle instruction
-                       if (ir2fc_jump_or_call_i               |                                //call or jump
-                           (ir2fc_bra_i & prs2fc_ps0_false_i) |                                //BRANCH taken
-                           ir2fc_eow_i                        |                                //EOW
-                           ir2fc_mem_i)                                                        //memory I/O
-                         begin
-
-                            //Memory I/O
-                            if (ir2fc_mem_i)
-                              begin
-                                 if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                     //STATE_EXEC
-                                   begin
-                                      fc2ir_stash_o      = 1'b1;                               //stash next instruction
-                                   end
-                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
-                                 fc2ir_force_eow_o       = ir2fc_eow_i;                        //postpone EOW
-                                 //Fetch
-                                 if (ir2fc_mem_rd_i)
-                                   begin
-                                      fc2ir_force_nop_o  = 1'b1;                               //overwrite PS0
-                                      state_next         = STATE_EXEC_READ;                    //fetch read data
-                                   end
-                                 //Store
-                                 else
-                                   begin
-                                      fc2ir_force_drop_o =  ir2fc_madr_sel_i;                  //indirect addressing
-                                      fc2ir_force_nop_o  = ~ir2fc_madr_sel_i;                  //direct addressing
-                                      state_next         = STATE_EXEC_STASH;                   //track stashed opcode
-                                   end // else: !if(ir2fc_mem_rd_i)
-                              end
-
-                            //Change of flow
-                            else if (ir2fc_jump_or_call_i                   |                  //call or jump
-                                     (ir2fc_bra_i & prs2fc_ps0_false_i)     |                  //BRANCH taken
-                                     (ir2fc_eow_i & ~ir2fc_eow_postpone_i))                    //EOW (not postponed)
-                              begin
-                                 fc2ir_force_nop_o       = 1'b1;                               //direct addressing
-                                 state_next              = STATE_EXEC;                         //execute NOP
-                              end
-
-                            //Postponed EOW
-                              else
-                                begin
-                                   fc2ir_force_eow_o       = 1'b1;                             //force EOW bit
-                                   fc2ir_force_nop_o       = 1'b1;                             //force NOP instruction
-                                   state_next              = STATE_EXEC;                       //execute EOW
-                                end
-
-                         end // if (ir2fc_jump_or_call_i              |...
-
-                       //Single-cycle instruction
-                       else
-                         begin
-
-                            //Prepare exception handler
-                            if (~|{state_reg ^ STATE_EXEC_EXCPT})                              //STATE_EXEC_EXCPT
-                              begin
-                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
-                                 fc2prs_tc2ps0_o         = 1'b1;                               //capture throw code
-                                 fc2ir_force_0call_o     = 1'b1;                               //force CALL instruction
-                                 fc2excpt_excpt_clr_o    = 1'b1;                               //disable interrupts
-                                 state_next              = STATE_EXEC;                         //execute CALL
-                              end
-
-                            //Prepare ISR
-                            else if (~|{state_reg ^ STATE_EXEC_IRQ})                           //STATE_EXEC_IRQ
-                              begin
-                                 //IRQ still pending
-                                 if (excpt2fc_irq_i)                                           //pending interrupt request
-                                   begin
-                                      fc2dsp_pc_hold_o   = 1'b1;                               //don't update PC
-                                      fc2prs_isr2ps0_o   = 1'b1;                               //capture ISR address
-                                      fc2ir_force_call_o = 1'b1;                               //force CALL instruction
-                                      fc2excpt_irq_dis_o = 1'b1;                               //disable interrupts
-                                      state_next         = STATE_EXEC;                         //execute CALL
-                                   end
-                                 //IRQ retracted
-                                 else
-                                   begin
-                                      fc2ir_capture_o    = 1'b1;                               //capture IR
-                                      state_next         = STATE_EXEC;                         //execute CALL
-                                   end // else: !if(excpt2fc_irq_i)
-                              end // if (~|{state_reg ^ STATE_EXEC_IRQ})
-
-                            //Exception
-                            else if (excpt2fc_excpt_i)                                         //pending exception
-                              begin
-                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
-                                 fc2ir_force_nop_o       = 1'b1;                               //force jump to addess zero
-                                 state_next              = STATE_EXEC_EXCPT;                   //execute jump
-                              end
-
-                            //Interrupt request
-                            else if (excpt2fc_irq_i)                                           //pending interrupt request
-                              begin
-                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
-                                 fc2ir_force_nop_o       = 1'b1;                               //capture ISR
-                                 state_next              = STATE_EXEC_IRQ;                     //capture ISR
-                              end
-
-                            //Continue program flow
-                            else
-                              begin
-                                 fc2ir_expend_o          = ~|{state_reg ^ STATE_EXEC_STASH} |  //use stashed upcode next
-                                                           ~|{state_reg ^ STATE_EXEC_READ};    //
-                                 fc2ir_capture_o         = ~|{state_reg ^ STATE_EXEC};         //capture opcode
-                                 state_next              = STATE_EXEC;                         //execute next opcode
-                              end // else: !if(excpt2fc_irq_i)
-
-                         end // else: !if(ir2fc_jump_or_call_i              |...
-                    end // else: !if(pbus_stall_i)
-               end // else: !if(prs2fc_hold_i)
-          end // else: !if(pbus_acc_reg &...
+//      //Keep PBUS idle during reset
+//      if (~|{state_reg ^ STATE_RESET})
+//          begin
+//             state_next       = STATE_EXEC;                                                    //fetch opcode
+//             pbus_stb_o       = 1'b0;                                                          //delay next access
+//             fc2dsp_pc_hold_o = 1'b1;                                                          //don't update PC
+//             fc2prs_hold_o    = 1'b1;                                                          //don't update stacks
+//          end
+//      else
+//        //Wait for bus response (stay in sync with memory)
+//        if (pbus_acc_reg &                                                                     //ongoing bus access
+//            ~pbus_ack_i  &                                                                     //no bus acknowledge
+//            ~pbus_err_i  &                                                                     //no error indicator
+//            ~pbus_rty_i)                                                                       //no retry request
+//          begin
+//             //state_next     = state_reg;                                                     //remain in current state
+//             pbus_stb_o       = 1'b0;                                                          //delay next access
+//             fc2dsp_pc_hold_o = 1'b1;                                                          //don't update PC
+//             fc2prs_hold_o    = 1'b1;                                                          //don't update stacks
+//          end
+//      else
+//      //Handle first execution cycle
+//      if ((~|{state_reg ^ STATE_EXEC}) |
+//          (~|{state_reg ^ STATE_EXEC_RTY}))
+//        begin
+//           //Common logic
+//           fc2dsp_radr_inc_o                 = ~|{state_reg ^ STATE_EXEC};                   //increment relative address
+//
+//           //Memory I/O
+//           if (ir2fc_mem_i)
+//             begin
+//                //Maintain PC
+//                fc2dsp_pc_hold_o             = 1'b1;                                         //update PC
+//
+//                //Incoming opcode
+//                if (pbus_acc_reg &                                                           //ongoing bus access
+//                    pbus_ack_i)                                                              //bus acknowledge
+//                  begin
+//                     fc2ir_stash_o           = 1'b1;                                         //stash opcode
+//                  end
+//
+//                //Delays
+//                  if ((prs2fc_hold_i) |                                                        //stacks not ready
+//                    (pbus_stall_i))                                                          //PBUS is busy
+//                  begin
+//                     pbus_stb_o              = pbus_stall_i;                                 //access request
+//                     fc2prs_hold_o           = pbus_stall_i;                                 //don't update stacks
+//                     //Retry request
+//                     if (pbus_acc_reg &                                                      //ongoing bus access
+//                         pbus_rty_i)                                                         //retry request
+//                       begin
+//                          state_next = STATE_EXEC_RTY;                                       //remember retry request
+//                       end
+//                  end
+//                //No delay
+//                else
+//                  begin
+//
+//
+//
+//                  end
+//             end
+//
+//           //Change of flow
+//           if (ir2fc_jump_or_call_i               |                                           //JUMP or CALL
+//                 (ir2fc_bra_i & prs2fc_ps0_false_i) |                                           //BRANCH taken
+//                 (ir2fc_eow_i & ~ir2fc_mem_i)       |                                           //EOW
+//               excpt2fc_irq_i                     |                                           //pending interrupt request
+//               excpt2fc_excpt_i)                                                              //pending exception
+//             begin
+//
+//
+//
+//             end
+//
+//           //Single cycle
+//           if ((ir2fc_scyc_i                        |                                         //single cycle instruction
+//                 (ir2fc_bra_i & ~prs2fc_ps0_false_i)) &                                         //BRANCH not taken
+//               (~ir2fc_eow_i                        |                                         //not end of word (EOW bit cleared)
+//                ir2fc_eow_postpone_i))                                                        //EOW conflict detected
+//             begin
+//
+//
+//
+//
+//
+//             end
+//
+//
+//                //Delay bus request
+//                if (prs2fc_hold_i |                                                          //stacks are busy
+//                    (pbus_acc_reg &                                                          //ongoing bus access
+//                     pbus_rty_i))                                                            //retry request
+//                  begin
+//                     pbus_stb_o              = 1'b0;                                         //no access request
+//                  end
+//
+//                //Freeze PC
+//                if (prs2fc_hold_i |                                                          //stacks are busy
+//                    pbus_stall_i  |                                                          //PBUS is busy
+//                    (pbus_acc_reg &                                                          //ongoing bus access
+//                     pbus_rty_i))                                                            //retry request
+//                  begin
+//                     fc2dsp_pc_hold_o        = 1'b1;                                         //keep PC
+//                  end
+//
+//                //Capture opcode
+//                if (~prs2fc_hold_i                                                           //stacks are busy
+//                    ~pbus_stall_i  |                                                          //PBUS is busy
+//                    (pbus_acc_reg &                                                          //ongoing bus access
+//                     pbus_rty_i))                                                            //retry request
+//
+//
+//
+//
+//
+//
+//        fc2ir_capture_o         = 1'b0;                                                        //capture current IR
+//        fc2ir_stash_o           = 1'b0;                                                        //capture stashed IR
+//        fc2ir_expend_o          = 1'b0;                                                        //stashed IR -> current IR
+//        fc2ir_force_eow_o       = 1'b0;                                                        //load EOW bit
+//        fc2ir_force_0call_o     = 1'b0;                                                        //load 0 CALL instruction
+//        fc2ir_force_call_o      = 1'b0;                                                        //load CALL instruction
+//        fc2ir_force_drop_o      = 1'b0;                                                        //load DROP instruction
+//        fc2ir_force_nop_o       = 1'b0;                                                        //load NOP instruction
+//        fc2prs_hold_o           = 1'b0;                                                        //hold any state tran
+//        fc2prs_dat2ps0_o        = 1'b0;                                                        //capture read data
+//        fc2prs_tc2ps0_o         = 1'b0;                                                        //capture throw code
+//        fc2prs_isr2ps0_o        = 1'b0;                                                        //capture ISR
+//        fc2excpt_excpt_clr_o    = 1'b0;                                                        //disable exceptions
+//        fc2excpt_irq_dis_o      = 1'b0;                                                        //disable interrupts
+//        state_next              = state_reg;                                                   //remain in current state
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//                //Single cycle execution
+//                if (pbus_acc_reg   &                                                         //ongoing bus access
+//                    pbus_ack_i     &                                                         //bus acknowledge
+//                    ~prs2fc_hold_i &                                                         //stacks are ready
+//                    ~pbus_stall_i  &                                                         //PBUS is idle
+//                    ~ir2fc_mem_i)                                                            //no memory I/O
+//                  begin
+//                     fc2ir_capture_o  = 1'b1;                                                //capture opcode
+//                  end
+//
+//                //Incoming opcode, bus stalled, no mem I/O
+//                if (pbus_acc_reg &                                                           //ongoing bus access
+//                    pbus_ack_i   &                                                           //bus acknowledge
+//                    pbus_stall_i &                                                           //PBUS is busy
+//                  ~ir2fc_mem_i)                                                              //no mem I/O
+//                  begin
+//                     fc2ir_stash_o    = 1'b1;                                                //stash opcode
+//                     fc2dsp_pc_hold_o = 1'b1;                                                //don't update PC
+//                     fc2prs_hold_o    = 1'b1;                                                //don't update stacks
+//                  end
+//
+//                //Incoming opcode, stacks busy, no mem I/O
+//                if (pbus_acc_reg  &                                                          //ongoing bus access
+//                    pbus_ack_i    &                                                          //bus acknowledge
+//                    prs2fc_hold_i &                                                          //stacks are busy
+//                  ~ir2fc_mem_i)                                                              //no mem I/O
+//                  begin
+//                     pbus_stb_o       = 1'b0;                                                //delay access request
+//                     fc2ir_stash_o    = 1'b1;                                                //stash opcode
+//                     fc2dsp_pc_hold_o = 1'b1;                                                //don't update PC
+//                     fc2prs_hold_o    = 1'b1;                                                //don't update stacks
+//                  end
+//
+//
+//
+//
+//                //Retry request, bus stalled, no mem I/O
+//                if (pbus_acc_reg &                                                           //ongoing bus access
+//                    pbus_ack_i   &                                                           //bus acknowledge
+//                    pbus_stall_i &                                                           //PBUS is busy
+//                  ~ir2fc_mem_i)                                                              //no mem I/O
+//                  begin
+//                     fc2ir_stash_o    = 1'b1;                                                //stash opcode
+//                     fc2dsp_pc_hold_o = 1'b1;                                                //don't update PC
+//                     fc2prs_hold_o    = 1'b1;                                                //don't update stacks
+//                  end
+//
+//                //Retry request, stacks busy, no mem I/O
+//                if (pbus_acc_reg  &                                                          //ongoing bus access
+//                    pbus_ack_i    &                                                          //bus acknowledge
+//                    prs2fc_hold_i &                                                          //stacks are busy
+//                  ~ir2fc_mem_i)                                                              //no mem I/O
+//                  begin
+//                     pbus_stb_o       = 1'b0;                                                //delay access request
+//                     fc2ir_stash_o    = 1'b1;                                                //stash opcode
+//                     fc2dsp_pc_hold_o = 1'b1;                                                //don't update PC
+//                     fc2prs_hold_o    = 1'b1;                                                //don't update stacks
+//                  end
+//
+//
+//
+//
+//
+//                //Handle incoming opcodes
+//                if (pbus_acc_reg &                                                           //ongoing bus access
+//                    pbus_ack_i)                                                              //bus acknowledge
+//                  begin
+//                     if (prs2fc_hold_i |                                                     //stacks are busy
+//                         pbus_stall_i)                                                       //PBUS is busy
+//                       begin
+//                          pbus_stb_o       = pbus_stall_i;                                   //delay access request
+//                          fc2ir_stash_o    = 1'b1;                                           //stash opcode
+//                          fc2dsp_pc_hold_o = 1'b1;                                           //don't update PC
+//                          fc2prs_hold_o    = 1'b1;                                           //don't update stacks
+//                       end
+//                     else                                                                    //ready to execute instruction cycle
+//                       begin
+//                          fc2ir_capture_o  = ~ir2fc_mem_i;                                   //capture opcide
+//                       end
+//                  end
+//
+//                //Handle retry requests
+//                if ((pbus_acc_reg &                                                           //ongoing bus access
+//                     pbus_ack_i)  |                                                           //retry request
+//                    (~|{state_reg ^ STATE_EXEC_RTY}))
+//                  begin
+//                     fc2dsp_radr_inc_o     = 1'b0;                                            //PC is address output
+//                  end
+//
+//                //Memory I/O
+//                  if (ir2fc_mem_i)
+//                  begin
+//                     if (pbus_acc_reg &                                                           //ongoing bus access
+//                         pbus_ack_i)                                                              //bus acknowledge
+//                       begin
+//                             fc2ir_stash_o      = 1'b1;
+//
+//
+//
+//
+//
+//
+//          //Handle RTY_I
+//          if (pbus_acc_reg                        &                                          //ongoing bus access
+//              pbus_rty_i                          &                                          //retry request
+//                ~ir2fc_jump_or_call_i               &                                          //no JUMP or CALL
+//                ~(ir2fc_bra_i & prs2fc_ps0_false_i) &                                          //no BRANCH taken
+//                ~ir2fc_eow_i;                                                                  //no EOW
+//            begin
+//              fc2dsp_pc_hold_o  = 1'b0;                                                      //maintain PC
+//              fc2dsp_radr_inc_o = 1'b1;                                                      //relative address
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//        end
+//      else
+//      //Handle second execution cycle if fetch instruction
+//      if (~|{state_reg ^ STATE_READ})
+//        begin
+//
+//
+//
+//
+//
+//        end
+//      else
+//      //Execute ISR
+//      if (~|{state_reg ^ STATE_IRQ})
+//        begin
+//
+//
+//
+//
+//
+//        end
+//      else
+//      //Handle exception
+//      if (~|{state_reg ^ STATE_EXCPT})
+//        begin
+//
+//
+//
+//
+//
+//        end
+//     end // always @ *
+//
+//
+//
+//
+//
+//
+//        begin
+//           //Capture read data
+//             if (~|{state_reg[1:0] ^ STATE_EXEC_READ[1:0]})                                    //STATE_EXEC_READ
+//
+//
+//
+//               begin
+//                  fc2prs_dat2ps0_o   = 1'b1;                                                   //read data -> PS0
+//                  state_next         = STATE_EXEC_STASH;                                       //capture read data only once
+//               end
+//             //Wait for stacks
+//             if (prs2fc_hold_i)                                                                //stacks are busy
+//               begin
+//                  if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                                    //STATE_EXEC
+//                    begin
+//                       fc2ir_stash_o = 1'b1;                                                   //stash next instruction
+//                       state_next    = STATE_EXEC_STASH;                                       //track stashed opcode
+//                    end
+//                  pbus_stb_o       = 1'b0;                                                     //idle pbus
+//                  fc2dsp_pc_hold_o = 1'b1;                                                     //don't update PC
+//                  fc2prs_hold_o    = 1'b1;                                                     //don't update stacks
+//               end // if (prs2fc_hold_i)
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//             //Initiate next bus access
+//             else
+//               begin
+//                  //Wait while Pbus is stalled
+//                  if (pbus_stall_i)
+//                    begin
+//                       if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                               //STATE_EXEC
+//                         begin
+//                            fc2ir_stash_o = 1'b1;                                              //stash next instruction
+//                            state_next    = STATE_EXEC_STASH;                                  //track stashed opcode
+//                         end
+//                       fc2dsp_pc_hold_o   = 1'b1;                                              //don't update PC
+//                       fc2prs_hold_o      = 1'b1;                                              //don't update stacks
+//                    end
+//                  //Execute
+//                  else
+//                    begin
+//                       //Multi-cycle instruction
+//                       if (ir2fc_jump_or_call_i               |                                //call or jump
+//                           (ir2fc_bra_i & prs2fc_ps0_false_i) |                                //BRANCH taken
+//                           ir2fc_eow_i                        |                                //EOW
+//                           ir2fc_mem_i)                                                        //memory I/O
+//                         begin
+//
+//                            //Memory I/O
+//                            if (ir2fc_mem_i)
+//                              begin
+//                                 if (~|{state_reg[1:0] ^ STATE_EXEC[1:0]})                     //STATE_EXEC
+//                                   begin
+//                                      fc2ir_stash_o      = 1'b1;                               //stash next instruction
+//                                   end
+//                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
+//                                 fc2ir_force_eow_o       = ir2fc_eow_i;                        //postpone EOW
+//                                 //Fetch
+//                                 if (ir2fc_mem_rd_i)
+//                                   begin
+//                                      fc2ir_force_nop_o  = 1'b1;                               //overwrite PS0
+//                                      state_next         = STATE_EXEC_READ;                    //fetch read data
+//                                   end
+//                                 //Store
+//                                 else
+//                                   begin
+//                                      fc2ir_force_drop_o =  ir2fc_madr_sel_i;                  //indirect addressing
+//                                      fc2ir_force_nop_o  = ~ir2fc_madr_sel_i;                  //direct addressing
+//                                      state_next         = STATE_EXEC_STASH;                   //track stashed opcode
+//                                   end // else: !if(ir2fc_mem_rd_i)
+//                              end
+//
+//                            //Change of flow
+//                            else if (ir2fc_jump_or_call_i                   |                  //call or jump
+//                                     (ir2fc_bra_i & prs2fc_ps0_false_i)     |                  //BRANCH taken
+//                                     (ir2fc_eow_i & ~ir2fc_eow_postpone_i))                    //EOW (not postponed)
+//                              begin
+//                                 fc2ir_force_nop_o       = 1'b1;                               //direct addressing
+//                                 state_next              = STATE_EXEC;                         //execute NOP
+//                              end
+//
+//                            //Postponed EOW
+//                              else
+//                                begin
+//                                   fc2ir_force_eow_o       = 1'b1;                             //force EOW bit
+//                                   fc2ir_force_nop_o       = 1'b1;                             //force NOP instruction
+//                                   state_next              = STATE_EXEC;                       //execute EOW
+//                                end
+//
+//                         end // if (ir2fc_jump_or_call_i              |...
+//
+//                       //Single-cycle instruction
+//                       else
+//                         begin
+//
+//                            //Prepare exception handler
+//                            if (~|{state_reg ^ STATE_EXEC_EXCPT})                              //STATE_EXEC_EXCPT
+//                              begin
+//                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
+//                                 fc2prs_tc2ps0_o         = 1'b1;                               //capture throw code
+//                                 fc2ir_force_0call_o     = 1'b1;                               //force CALL instruction
+//                                 fc2excpt_excpt_clr_o    = 1'b1;                               //disable interrupts
+//                                 state_next              = STATE_EXEC;                         //execute CALL
+//                              end
+//
+//                            //Prepare ISR
+//                            else if (~|{state_reg ^ STATE_EXEC_IRQ})                           //STATE_EXEC_IRQ
+//                              begin
+//                                 //IRQ still pending
+//                                 if (excpt2fc_irq_i)                                           //pending interrupt request
+//                                   begin
+//                                      fc2dsp_pc_hold_o   = 1'b1;                               //don't update PC
+//                                      fc2prs_isr2ps0_o   = 1'b1;                               //capture ISR address
+//                                      fc2ir_force_call_o = 1'b1;                               //force CALL instruction
+//                                      fc2excpt_irq_dis_o = 1'b1;                               //disable interrupts
+//                                      state_next         = STATE_EXEC;                         //execute CALL
+//                                   end
+//                                 //IRQ retracted
+//                                 else
+//                                   begin
+//                                      fc2ir_capture_o    = 1'b1;                               //capture IR
+//                                      state_next         = STATE_EXEC;                         //execute CALL
+//                                   end // else: !if(excpt2fc_irq_i)
+//                              end // if (~|{state_reg ^ STATE_EXEC_IRQ})
+//
+//                            //Exception
+//                            else if (excpt2fc_excpt_i)                                         //pending exception
+//                              begin
+//                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
+//                                 fc2ir_force_nop_o       = 1'b1;                               //force jump to addess zero
+//                                 state_next              = STATE_EXEC_EXCPT;                   //execute jump
+//                              end
+//
+//                            //Interrupt request
+//                            else if (excpt2fc_irq_i)                                           //pending interrupt request
+//                              begin
+//                                 fc2dsp_pc_hold_o        = 1'b1;                               //don't update PC
+//                                 fc2ir_force_nop_o       = 1'b1;                               //capture ISR
+//                                 state_next              = STATE_EXEC_IRQ;                     //capture ISR
+//                              end
+//
+//                            //Continue program flow
+//                            else
+//                              begin
+//                                 fc2ir_expend_o          = ~|{state_reg ^ STATE_EXEC_STASH} |  //use stashed upcode next
+//                                                           ~|{state_reg ^ STATE_EXEC_READ};    //
+//                                 fc2ir_capture_o         = ~|{state_reg ^ STATE_EXEC};         //capture opcode
+//                                 state_next              = STATE_EXEC;                         //execute next opcode
+//                              end // else: !if(excpt2fc_irq_i)
+//
+//                         end // else: !if(ir2fc_jump_or_call_i              |...
+//                    end // else: !if(pbus_stall_i)
+//               end // else: !if(prs2fc_hold_i)
+//          end // else: !if(pbus_acc_reg &...
+//
+//
+//
+//
+//
+//
+//        //Wait for bus response (stay in sync with memory)
+//        if (pbus_acc_reg &                                                                     //ongoung bus access
+//            ~pbus_ack_i  &                                                                     //no bus acknowledge
+//            ~pbus_err_i)                                                                       //no error indicator
+//          begin
+//             state_next       = state_reg;                                                     //remain in current state
+//             pbus_stb_o       = 1'b0;                                                          //delay next access
+//             fc2dsp_pc_hold_o = 1'b1;                                                          //don't update PC
+//             fc2prs_hold_o    = 1'b1;                                                          //don't update stacks
+//          end
+//
+//      //Keep bus idle in STATE_RESET
+//      if (~|state_reg ^ STATE_RESET)
+//        begin
+//             state_next       = STATE_EXEC;                                                    //fetch first opcode
+//             pbus_stb_o       = 1'b0;                                                          //delay next access
+//             fc2dsp_pc_hold_o = 1'b1;                                                          //don't update PC
+//             fc2prs_hold_o    = 1'b1;                                                          //don't update stacks
+//        end
+//
      end // always @ *
 
    //Flip flops

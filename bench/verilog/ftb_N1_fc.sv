@@ -24,9 +24,8 @@
 //# Version History:                                                            #
 //#   March 4, 2019                                                             #
 //#      - Initial release                                                      #
-//#   May 6, 2019                                                               #
-//#      - Added "pbus_rty_i" input                                             #
-//#      - Keep PBUS idle in reset                                              #
+//#   May 8, 2019                                                               #
+//#      - Added RTY_I support to PBUS                                          #
 //###############################################################################
 `default_nettype none
 
@@ -61,6 +60,7 @@ module ftb_N1_fc
     //-------------------
     //DSP interface
     output wire                      fc2dsp_pc_hold_o,             //maintain PC
+    output wire                      fc2dsp_radr_inc_o,            //increment relative address
 
     //IR interface
     output wire                      fc2ir_capture_o,              //capture current IR
@@ -81,7 +81,8 @@ module ftb_N1_fc
     input  wire                      ir2fc_madr_sel_i,             //direct memory address
 
     //PAGU interface
-    output wire                      fc2pagu_inc_pc_o,             //1:increment PC, 0:maintain PC
+    output wire                      fc2pagu_areg_hold_o,          //maintain stored address
+    output wire                      fc2pagu_areg_sel_o,           //0:AGU output, 1:previous address
 
     //PRS interface
     output wire                      fc2prs_hold_o,                //hold any state tran
@@ -124,6 +125,7 @@ module ftb_N1_fc
 
       //DSP interface
       .fc2dsp_pc_hold_o           (fc2dsp_pc_hold_o),              //maintain PC
+      .fc2dsp_radr_inc_o          (fc2dsp_radr_inc_o),             //increment relative address
 
       //IR interface
       .fc2ir_capture_o            (fc2ir_capture_o),               //capture current IR
@@ -144,7 +146,8 @@ module ftb_N1_fc
       .ir2fc_madr_sel_i           (ir2fc_madr_sel_i),              //direct memory address
 
       //PAGU interface
-      .fc2pagu_inc_pc_o           (fc2pagu_inc_pc_o),              //1:increment PC, 0:maintain PC
+      .fc2pagu_areg_hold_o        (fc2pagu_areg_hold_o),           //maintain stored address
+      .fc2pagu_areg_sel_o         (fc2pagu_areg_sel_o),            //0:AGU output, 1:previous address
 
       //PRS interface
       .fc2prs_hold_o              (fc2prs_hold_o),                 //hold any state tran
