@@ -63,8 +63,8 @@ module ftb_N1_pagu
     input  wire [15:0]               dsp2pagu_adr_i,            //AGU output
 
     //FC interface
-    input  wire                      fc2pagu_areg_hold_i,       //maintain stored address
-    input  wire                      fc2pagu_areg_sel_i,        //0:AGU output, 1:previous address
+    input  wire                      fc2pagu_prev_adr_hold_i,   //maintain stored address
+    input  wire                      fc2pagu_prev_adr_sel_i,    //0:AGU output, 1:previous address
 
     //IR interface
     input  wire                      ir2pagu_eow_i,             //end of word (EOW bit)
@@ -83,12 +83,12 @@ module ftb_N1_pagu
     input  wire [15:0]               dsp2pagu_adr,              //AGU output
 
    //PRS interface
-    output wire [15:0]               pagu2prs_areg_o,           //address register output
+    output wire [15:0]               pagu2prs_prev_adr_o,       //address register output
     input  wire [15:0]               prs2pagu_ps0_i,            //PS0
     input  wire [15:0]               prs2pagu_rs0_i,            //RS0
 
     //Probe signals
-    output wire [15:0]               prb_pagu_areg_o);          //address register
+    output wire [15:0]               prb_pagu_prev_adr_o);      //address register
 
    //Instantiation
    //=============
@@ -111,8 +111,8 @@ module ftb_N1_pagu
       .dsp2pagu_adr_i                (dsp2pagu_adr_i),          //AGU output
 
       //FC interface
-      .fc2pagu_areg_hold_i           (fc2pagu_areg_hold_i),     //maintain stored address
-      .fc2pagu_areg_sel_i            (fc2pagu_areg_sel_i),      //0:AGU output, 1:previous address
+      .fc2pagu_prev_adr_hold_i       (fc2pagu_prev_adr_hold_i), //maintain stored address
+      .fc2pagu_prev_adr_sel_i        (fc2pagu_prev_adr_sel_i),  //0:AGU output, 1:previous address
 
       //IR interface
       .ir2pagu_eow_i                 (ir2pagu_eow_i),           //end of word (EOW bit)
@@ -128,12 +128,12 @@ module ftb_N1_pagu
       .ir2pagu_madr_i                (ir2pagu_madr_i),          //direct memory address
 
       //PRS interface
-      .pagu2prs_areg_o               (pagu2prs_areg_o),         //address register output
+      .pagu2prs_prev_adr_o           (pagu2prs_prev_adr_o),     //address register output
       .prs2pagu_ps0_i                (prs2pagu_ps0_i),          //PS0
       .prs2pagu_rs0_i                (prs2pagu_rs0_i),          //RS0
 
       //Probe signals
-      .prb_pagu_areg_o               (prb_pagu_areg_o));        //address register
+      .prb_pagu_prev_adr_o           (prb_pagu_prev_adr_o));    //address register
 
 `ifdef FORMAL
    //Testbench signals
@@ -145,11 +145,11 @@ module ftb_N1_pagu
    wb_syscon wb_syscon
      (//Clock and reset
       //---------------
-      .clk_i                      (clk_i),                         //module clock
-      .sync_i                     (1'b1),                          //clock enable
-      .async_rst_i                (async_rst_i),                   //asynchronous reset
-      .sync_rst_i                 (sync_rst_i),                    //synchronous reset
-      .gated_clk_o                ());                             //gated clock
+      .clk_i                        (clk_i),                    //module clock
+      .sync_i                       (1'b1),                     //clock enable
+      .async_rst_i                  (async_rst_i),              //asynchronous reset
+      .sync_rst_i                   (sync_rst_i),               //synchronous reset
+      .gated_clk_o                  ());                        //gated clock
 
 `endif //  `ifdef FORMAL
 

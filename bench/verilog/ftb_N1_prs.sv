@@ -117,7 +117,7 @@ module ftb_N1_prs
     //PAGU interface
     output wire [15:0]                       prs2pagu_ps0_o,                       //PS0
     output wire [15:0]                       prs2pagu_rs0_o,                       //RS0
-    input  wire [15:0]                       pagu2prs_areg_i,                      //address register output
+    input  wire [15:0]                       pagu2prs_prev_adr_i,                  //address register output
 
     //SAGU interface
     output wire                              prs2sagu_hold_o,                      //maintain stack pointers
@@ -220,7 +220,7 @@ module ftb_N1_prs
     //PAGU interface
     .prs2pagu_ps0_o             (prs2pagu_ps0_o),                                  //PS0
     .prs2pagu_rs0_o             (prs2pagu_rs0_o),                                  //RS0
-    .pagu2prs_areg_i            (pagu2prs_areg_i),                                 //address register output
+    .pagu2prs_prev_adr_i        (pagu2prs_prev_adr_i),                             //address register output
 
     //SAGU interface
     .prs2sagu_hold_o            (prs2sagu_hold_o),                                 //maintain stack pointers

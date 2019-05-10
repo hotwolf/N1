@@ -77,7 +77,12 @@ module N1_dsp
     input  wire                             sagu2dsp_rsp_hold_i,      //maintain RSP
     input  wire                             sagu2dsp_rsp_op_sel_i,    //1:set new RSP, 0:add offset to RSP
     input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_offs_i,      //relative address
-    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_load_val_i); //absolute address
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_load_val_i,  //absolute address
+
+    //Probe signals
+    output wire [15:0]                      prb_dsp_pc_o,             //PC
+    output wire [SP_WIDTH-1:0]              prb_dsp_psp_o,            //PSP
+    output wire [SP_WIDTH-1:0]              prb_dsp_rsp_o);           //RSP
 
    //Internal parameters
    //-------------------
@@ -91,10 +96,11 @@ module N1_dsp
    wire [31:0]                              alu_umul_out;             //ALU unsigned multiplier output
    wire [31:0]                              alu_smul_out;             //ALU signed multiplier output
    //Program AGU
+   reg  [15:0]                              pc_mirror_reg;            //program counter
    wire [31:0]                              pagu_out;                 //program AGU output
    //Stack AGUs
-   reg  [SP_WIDTH-1:0]                      psp_mirror_reg;            //parameter stack pointer
-   reg  [SP_WIDTH-1:0]                      rsp_mirror_reg;            //return stack pointer
+   reg  [SP_WIDTH-1:0]                      psp_mirror_reg;           //parameter stack pointer
+   reg  [SP_WIDTH-1:0]                      rsp_mirror_reg;           //return stack pointer
    wire [31:0]                              sagu_out;                 //Stack AGU output
 
    //Shared SB_MAC16 cell for the program AGU and the ALU adder
@@ -154,9 +160,23 @@ module N1_dsp
       .ACCUMCO                   (alu_add_c),                         //carry bit determines upper word
       .SIGNEXTOUT                ());                                 //ignore sign extension output
 
+   //Mirrored PC
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+        if (async_rst_i)                                              //asynchronous reset
+          pc_mirror_reg <= 16'h0000;                                  //reset PC
+        else if (sync_rst_i)                                          //synchronous reset
+          pc_mirror_reg <= 16'h0000;                                  //reset PC
+        else if (~fc2dsp_pc_hold_i)                                   //update PC
+          pc_mirror_reg <= pagu_out[15:0];                            //
+     end // always @ (posedge async_rst_i or posedge clk_i)
+
    //Outputs
    assign dsp2alu_add_res_o = {{16{alu_add_c}}, pagu_out[31:16]};     //adder output
-   assign dsp2pagu_adr_o    = pagu_out[15:0];                         //program AGU autput
+   assign dsp2pagu_adr_o    = pagu_out[15:0];                         //AGU autput
+
+   //Probe signals
+   assign prb_dsp_pc_o      = pc_mirror_reg;                          //PC
 
    //Shared SB_MAC32 cell for both stack AGUs
    //----------------------------------------
@@ -220,7 +240,7 @@ module N1_dsp
         if (async_rst_i)                                              //asynchronous reset
           psp_mirror_reg <= {SP_WIDTH{1'b0}};                         //clear LPS
         else if (sync_rst_i)                                          //synchronous reset
-          psp_mirror_reg <= {SP_WIDTH{1'b0}};                                 //clear LPS
+          psp_mirror_reg <= {SP_WIDTH{1'b0}};                         //clear LPS
         else if (~sagu2dsp_psp_hold_i)                                //update PSP
           psp_mirror_reg <= sagu_out[SP_WIDTH+15:16];                 //
      end // always @ (posedge async_rst_i or posedge clk_i)
@@ -229,18 +249,25 @@ module N1_dsp
    always @(posedge async_rst_i or posedge clk_i)
      begin
         if (async_rst_i)                                              //asynchronous reset
-          rsp_mirror_reg <= {SP_WIDTH{1'b0}};                                 //clear LRS
+          rsp_mirror_reg <= {SP_WIDTH{1'b0}};                         //clear LRS
         else if (sync_rst_i)                                          //synchronous reset
-          rsp_mirror_reg <= {SP_WIDTH{1'b0}};                                 //clear LRS
+          rsp_mirror_reg <= {SP_WIDTH{1'b0}};                         //clear LRS
         else if (~sagu2dsp_rsp_hold_i)                                //update RSP
           rsp_mirror_reg <= sagu_out[SP_WIDTH-1:0];                   //
      end // always @ (posedge async_rst_i or posedge clk_i)
 
-   assign dsp2prs_psp_o = psp_mirror_reg;
-   assign dsp2prs_rsp_o = rsp_mirror_reg;
+   //Outputs
+   assign dsp2sagu_psp_next_o = sagu_out[SP_WIDTH+15:16];             //AGU output
+   assign dsp2sagu_rsp_next_o = sagu_out[SP_WIDTH-1:0];               //AGU output
 
-   assign dsp2sagu_psp_next_o = sagu_out[SP_WIDTH+15:16];
-   assign dsp2sagu_rsp_next_o = sagu_out[SP_WIDTH-1:0];
+   assign dsp2prs_psp_o       = psp_mirror_reg;                       //PSP
+   assign dsp2prs_rsp_o       = rsp_mirror_reg;                       //RSP
+   //assign dsp2prs_psp_o     = sagu_out[SP_WIDTH+15:16];             //PSP
+   //assign dsp2prs_rsp_o     = sagu_out[SP_WIDTH-1:0];               //RSP
+
+   //Probe signals
+   assign prb_dsp_psp_o       = psp_mirror_reg;                       //PSP
+   assign prb_dsp_rsp_o       = rsp_mirror_reg;                       //RSP
 
    //SB_MAC32 cell for unsigned multiplications
    //-------------------------------------------

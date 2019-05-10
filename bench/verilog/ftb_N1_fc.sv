@@ -81,8 +81,8 @@ module ftb_N1_fc
     input  wire                      ir2fc_madr_sel_i,             //direct memory address
 
     //PAGU interface
-    output wire                      fc2pagu_areg_hold_o,          //maintain stored address
-    output wire                      fc2pagu_areg_sel_o,           //0:AGU output, 1:previous address
+    output wire                      fc2pagu_prev_adr_hold_o,      //maintain stored address
+    output wire                      fc2pagu_prev_adr_sel_o,       //0:AGU output, 1:previous address
 
     //PRS interface
     output wire                      fc2prs_hold_o,                //hold any state tran
@@ -146,8 +146,8 @@ module ftb_N1_fc
       .ir2fc_madr_sel_i           (ir2fc_madr_sel_i),              //direct memory address
 
       //PAGU interface
-      .fc2pagu_areg_hold_o        (fc2pagu_areg_hold_o),           //maintain stored address
-      .fc2pagu_areg_sel_o         (fc2pagu_areg_sel_o),            //0:AGU output, 1:previous address
+      .fc2pagu_prev_adr_hold_o    (fc2pagu_prev_adr_hold_o),       //maintain stored address
+      .fc2pagu_prev_adr_sel_o     (fc2pagu_prev_adr_sel_o),        //0:AGU output, 1:previous address
 
       //PRS interface
       .fc2prs_hold_o              (fc2prs_hold_o),                 //hold any state tran

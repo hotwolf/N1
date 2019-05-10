@@ -92,6 +92,10 @@ module ftb_N1
     input  wire [15:0]                       irq_req_i,             //requested interrupt vector
 
     //Probe signals
+    //DSP - DSP macro container
+    output wire [15:0]                       prb_dsp_pc_o,          //PC
+    output wire [`SP_WIDTH-1:0]              prb_dsp_psp_o,         //PSP
+    output wire [`SP_WIDTH-1:0]              prb_dsp_rsp_o,         //RSP
     //EXCPT - Exception aggregator
     output wire [2:0]                        prb_excpt_o,           //exception tracker
     output wire                              prb_excpt_en_o,        //exception enable
@@ -103,7 +107,7 @@ module ftb_N1
     output wire [15:0]                       prb_ir_o,              //current instruction register
     output wire [15:0]                       prb_ir_stash_o,        //stashed instruction register
     //PAGU - Program bus AGU
-    output wire [15:0]                       prb_pagu_areg_o,        //address register
+    output wire [15:0]                       prb_pagu_prev_adr_o,        //address register
     //PRS - Parameter and return stack
     output wire [2:0]                        prb_state_task_o,      //current state
     output wire [1:0]                        prb_state_sbus_o,      //current state
@@ -172,6 +176,10 @@ module ftb_N1
       .irq_req_i                (irq_req_i),                        //requested interrupt vector
 
       //Probe signals
+      //DSP - DSP macro container
+      .prb_dsp_pc_o             (prb_dsp_pc_o),                     //PC
+      .prb_dsp_psp_o            (prb_dsp_psp_o),                    //PSP
+      .prb_dsp_rsp_o            (prb_dsp_rsp_o),                    //RSP
       //EXCPT - Exception aggregator
       .prb_excpt_o              (prb_excpt_o),                      //exception tracker
       .prb_excpt_en_o           (prb_excpt_en_o),                   //exception enable
@@ -183,7 +191,7 @@ module ftb_N1
       .prb_ir_o                 (prb_ir_o),                         //current instruction register
       .prb_ir_stash_o           (prb_ir_stash_o),                   //stashed instruction register
       //PAGU - Program bus AGU
-      .prb_pagu_areg_o          (prb_pagu_areg_o),                  //address register
+      .prb_pagu_prev_adr_o      (prb_pagu_prev_adr_o),              //address register
       //PRS - Parameter and return stack
       .prb_state_task_o         (prb_state_task_o),                 //current state
       .prb_state_sbus_o         (prb_state_sbus_o),                 //current state

@@ -77,7 +77,12 @@ module N1_dsp
     input  wire                             sagu2dsp_rsp_hold_i,      //maintain RSP
     input  wire                             sagu2dsp_rsp_op_sel_i,    //1:set new RSP, 0:add offset to RSP
     input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_offs_i,      //relative address
-    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_load_val_i); //absolute address
+    input  wire [SP_WIDTH-1:0]              sagu2dsp_rsp_load_val_i,  //absolute address
+
+    //Probe signals
+    output wire [15:0]                      prb_dsp_pc_o,             //PC
+    output wire [SP_WIDTH-1:0]              prb_dsp_psp_o,            //PSP
+    output wire [SP_WIDTH-1:0]              prb_dsp_rsp_o);           //RSP
 
    //Internal Signals
    //----------------
@@ -120,6 +125,9 @@ module N1_dsp
                                                 {15'h0000,fc2dsp_radr_inc_i};
    assign dsp2pagu_adr_o = pc_next;                                   //program AGU output
 
+   //Probe signals
+   assign prb_dsp_pc_o   = pc_reg;                                    //PC
+
    //Parameter stack AGU
    //-------------------
    //Stack pointer
@@ -133,10 +141,14 @@ module N1_dsp
           psp_reg <= dsp2sagu_psp_next_o;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
-   //Output
+   //Outputs
    assign dsp2sagu_psp_next_o = sagu2dsp_psp_op_sel_i ? sagu2dsp_psp_load_val_i :
                                                         sagu2dsp_psp_offs_i + psp_reg;
-   assign dsp2prs_psp_o       =  psp_reg;
+   assign dsp2prs_psp_o       = psp_reg;                              //PSP
+   //assign dsp2prs_psp_o     = dsp2sagu_psp_next_o;                  //PSP
+
+   //Probe signals
+   assign prb_dsp_psp_o       = psp_reg;                              //PSP
 
    //Return stack AGU
    //----------------
@@ -151,9 +163,13 @@ module N1_dsp
           rsp_reg <= dsp2sagu_rsp_next_o;
      end // always @ (posedge async_rst_i or posedge clk_i)
 
-   //Output
+   //Outputs
    assign dsp2sagu_rsp_next_o = sagu2dsp_rsp_op_sel_i ? sagu2dsp_rsp_load_val_i :
                                                         sagu2dsp_rsp_offs_i + rsp_reg;
-   assign dsp2prs_rsp_o       = rsp_reg;
+   assign dsp2prs_rsp_o       = rsp_reg;                              //RSP
+   //assign dsp2prs_rsp_o     = dsp2sagu_rsp_next_o;                  //RSP
+
+   //Probe signals
+   assign prb_dsp_rsp_o       = rsp_reg;                              //RSP
 
 endmodule // N1_dsp

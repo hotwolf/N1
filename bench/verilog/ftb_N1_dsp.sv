@@ -86,7 +86,12 @@ module ftb_N1_dsp
     input  wire                             sagu2dsp_rsp_hold_i,      //maintain RSP
     input  wire                             sagu2dsp_rsp_op_sel_i,    //1:set new RSP, 0:add offset to RSP
     input  wire [`SP_WIDTH-1:0]             sagu2dsp_rsp_offs_i,      //relative address
-    input  wire [`SP_WIDTH-1:0]             sagu2dsp_rsp_load_val_i); //absolute address
+    input  wire [`SP_WIDTH-1:0]             sagu2dsp_rsp_load_val_i,  //absolute address
+
+    //Probe signals
+    output wire [15:0]                      prb_dsp_pc_o,             //PC
+    output wire [`SP_WIDTH-1:0]             prb_dsp_psp_o,            //PSP
+    output wire [`SP_WIDTH-1:0]             prb_dsp_rsp_o);           //RSP
 
    //Instantiation
    //=============
@@ -132,7 +137,12 @@ module ftb_N1_dsp
       .sagu2dsp_rsp_hold_i      (sagu2dsp_rsp_hold_i),                //maintain RSP
       .sagu2dsp_rsp_op_sel_i    (sagu2dsp_rsp_op_sel_i),              //1:set new RSP, 0:add offset to RSP
       .sagu2dsp_rsp_offs_i      (sagu2dsp_rsp_offs_i),                //relative address
-      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val_i));           //absolute address
+      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val_i),            //absolute address
+
+      //Probe signals
+      .prb_dsp_pc_o             (prb_dsp_pc_o),                       //PC
+      .prb_dsp_psp_o            (prb_dsp_psp_o),                      //PSP
+      .prb_dsp_rsp_o            (prb_dsp_rsp_o));                     //RSP
 
 `ifdef FORMAL
    //Testbench signals

@@ -151,6 +151,10 @@ module N1
     input  wire [15:0]                       irq_req_i,              //requested interrupt vector
 
     //Probe signals
+    //DSP - DSP macro container
+    output wire [15:0]                       prb_dsp_pc_o,           //PC
+    output wire [SP_WIDTH-1:0]               prb_dsp_psp_o,          //PSP
+    output wire [SP_WIDTH-1:0]               prb_dsp_rsp_o,          //RSP
     //EXCPT - Exception aggregator
     output wire [2:0]                        prb_excpt_o,            //exception tracker
     output wire                              prb_excpt_en_o,         //exception enable
@@ -162,7 +166,7 @@ module N1
     output wire [15:0]                       prb_ir_o,               //current instruction register
     output wire [15:0]                       prb_ir_stash_o,         //stashed instruction register
     //PAGU - Program bus AGU
-    output wire [15:0]                       prb_pagu_areg_o,        //address register
+    output wire [15:0]                       prb_pagu_prev_adr_o,        //address register
     //PRS - Parameter and return stack
     output wire [2:0]                        prb_state_task_o,       //current state
     output wire [1:0]                        prb_state_sbus_o,       //current state
@@ -237,8 +241,8 @@ module N1
    wire                                     fc2ir_force_drop;        //load DROP instruction
    wire                                     fc2ir_force_nop;         //load NOP instruction
    //FC -> PAGU
-   wire                                     fc2pagu_areg_hold;       //maintain stored address
-   wire                                     fc2pagu_areg_sel;        //0:AGU output, 1:previous address
+   wire                                     fc2pagu_prev_adr_hold;       //maintain stored address
+   wire                                     fc2pagu_prev_adr_sel;        //0:AGU output, 1:previous address
    //FC -> PRS
    wire                                     fc2prs_hold;             //hold any state tran
    wire                                     fc2prs_dat2ps0;          //capture read data
@@ -299,7 +303,7 @@ module N1
    wire [15:0]                              pagu2dsp_aadr;           //absolute COF address
    wire [15:0]                              pagu2dsp_radr;           //relative COF address
    //PAGU -> PRS
-   wire [15:0]                              pagu2prs_areg;           //address register output
+   wire [15:0]                              pagu2prs_prev_adr;           //address register output
 
    //PRS - Parameter and return stack
    //PRS -> ALU
@@ -408,7 +412,12 @@ module N1
       .sagu2dsp_rsp_hold_i      (sagu2dsp_rsp_hold),                 //maintain RSP
       .sagu2dsp_rsp_op_sel_i    (sagu2dsp_rsp_op_sel),               //1:set new RSP, 0:add offset to RSP
       .sagu2dsp_rsp_offs_i      (sagu2dsp_rsp_offs),                 //relative address
-      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val));            //absolute address
+      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val),             //absolute address
+
+      //Probe signals
+      .prb_dsp_pc_o             (prb_dsp_pc_o),                      //PC
+      .prb_dsp_psp_o            (prb_dsp_psp_o),                     //PSP
+      .prb_dsp_rsp_o            (prb_dsp_rsp_o));                    //RSP
 
    //EXCPT - Exception aggregator
    //----------------------------
@@ -492,8 +501,8 @@ module N1
       .ir2fc_madr_sel_i         (ir2fc_madr_sel),                    //direct memory address
 
       //PAGU interface
-      .fc2pagu_areg_hold_o      (fc2pagu_areg_hold),                 //maintain stored address
-      .fc2pagu_areg_sel_o       (fc2pagu_areg_sel),                  //0:AGU output, 1:previous address
+      .fc2pagu_prev_adr_hold_o  (fc2pagu_prev_adr_hold),             //maintain stored address
+      .fc2pagu_prev_adr_sel_o   (fc2pagu_prev_adr_sel),              //0:AGU output, 1:previous address
 
       //PRS interface
       .fc2prs_hold_o            (fc2prs_hold),                       //hold any state tran
@@ -615,8 +624,8 @@ module N1
       .dsp2pagu_adr_i           (dsp2pagu_adr),                      //AGU output
 
       //FC interface
-      .fc2pagu_areg_hold_i      (fc2pagu_areg_hold),                 //maintain stored address
-      .fc2pagu_areg_sel_i       (fc2pagu_areg_sel),                  //0:AGU output, 1:previous address
+      .fc2pagu_prev_adr_hold_i  (fc2pagu_prev_adr_hold),             //maintain stored address
+      .fc2pagu_prev_adr_sel_i   (fc2pagu_prev_adr_sel),              //0:AGU output, 1:previous address
 
       //IR interface
       .ir2pagu_eow_i            (ir2pagu_eow),                       //end of word (EOW bit)
@@ -632,12 +641,12 @@ module N1
       .ir2pagu_madr_i           (ir2pagu_madr),                      //direct memory address
 
       //PRS interface
-      .pagu2prs_areg_o          (pagu2prs_areg),                     //address register output
+      .pagu2prs_prev_adr_o      (pagu2prs_prev_adr),                 //address register output
       .prs2pagu_ps0_i           (prs2pagu_ps0),                      //PS0
       .prs2pagu_rs0_i           (prs2pagu_rs0),                      //RS0
 
       //Probe signals
-      .prb_pagu_areg_o          (prb_pagu_areg_o));                  //address register
+      .prb_pagu_prev_adr_o      (prb_pagu_prev_adr_o));              //address register
 
 
    //PRS - Parameter and return stack
@@ -708,7 +717,7 @@ module N1
       //PAGU interface
       .prs2pagu_ps0_o           (prs2pagu_ps0),                      //PS0
       .prs2pagu_rs0_o           (prs2pagu_rs0),                      //RS0
-      .pagu2prs_areg_i          (pagu2prs_areg),                     //address register output
+      .pagu2prs_prev_adr_i      (pagu2prs_prev_adr),                 //address register output
 
       //SAGU interface
       .prs2sagu_hold_o          (prs2sagu_hold),                     //maintain stack pointer
