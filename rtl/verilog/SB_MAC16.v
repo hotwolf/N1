@@ -18,7 +18,7 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This is a behavioral model of the SB_MAC16 DSP cell, which ia available  #
+//#    This is a behavioral model of the SB_MAC16 DSP cell, which is available  #
 //#    on several Lattice iCE40 FPGA devices. This model has been written based #
 //#    on the public documentation from Lattice.                                #
 //#                                                                             #

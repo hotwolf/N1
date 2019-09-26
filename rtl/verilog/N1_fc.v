@@ -97,8 +97,8 @@ module N1_fc
     input  wire                      ir2fc_madr_sel_i,                                         //direct memory address
 
     //PAGU interface
-    output wire                      fc2pagu_prev_adr_hold_o,                                  //maintain stored address
-    output wire                      fc2pagu_prev_adr_sel_o,                                   //0:AGU output, 1:previous address
+    output wire                      fc2pagu_prev_adr_hold_o,           //do not use                       //maintain stored address
+    output wire                      fc2pagu_prev_adr_sel_o,            //do not use                       //0:AGU output, 1:previous address
 
     //PRS interface
     output reg                       fc2prs_hold_o,                                            //hold any state tran
@@ -121,12 +121,15 @@ module N1_fc
 
    //Internal signals
    //----------------
-   //PBUS monitor
-   reg                               pbus_acc_reg;                                             //ongoing bus access
-   wire                              pbus_acc_next;                                            //next state of the PBUS monitor
-   //State variable
-   reg  [2:0]                        state_reg;                                                //state variable
-   reg  [2:0]                        state_next;                                               //next state
+   //FSM interfaces
+   reg                               fsm_exec_ir_hold;                                         //keep IR content
+   reg                               fsm_pbus_hold;                                            //bus delay
+
+   //State variables
+   reg                               fsm_pbus_state_reg;                                       //current PBUS state
+   reg                               fsm_pbus_state_next;                                      //next PBUS state
+   reg                               fsm_ir_state_reg;                                         //current IR state
+   reg                               fsm_ir_state_next;                                        //next IR state
 
    //PBUS monitor
    //------------
@@ -153,8 +156,249 @@ module N1_fc
                               ~(ir2fc_bra_i & prs2fc_ps0_false_i) &                            //no BRANCH taken
                               ~ir2fc_eow_i;                                                    //no EOW
 
-   //Finite state machine
-   //--------------------
+   //Finite state machines
+   //---------------------
+
+
+
+//   //Execution state machine
+//   //-----------------------
+//   
+//   always @*
+//     begin
+//        //Default outputs	
+//        fsm_exec_pc_hold             = 1'b0;                                         //update PC
+//        fsm_exec_pbus_hold             = 1'b0;                                         //continous bus requests
+//
+//	fsm_exec_state_next = STATE_EXEC_OPC;
+//	
+//	
+//
+//	case (fsm_exec_state_reg)
+//	  //Execute opcode
+//	  STATE_EXEC_OPC:
+//	    begin
+//	       //Wait until 
+//	       if (~fsm_pbus_hold &
+//		   ~fsm_ir_hold)
+//		 begin
+//
+//		    
+//
+//		    
+//		    if (fsm_exec__hold
+//
+//
+//
+//
+//
+//		    
+//		    //Memory I/O		    
+//		    if (ir2fc_mem_i)
+//		      begin
+//			 //Maintain PC
+//			 fsm_exec_pc_hold             = 1'b1;                                         //hold PC
+//			 fsm_exec_pbus_hold            = prs2fc_hold_i;                               //stacks not ready
+//			 
+//			 
+//
+//			 
+//	    
+//		    //Change of flow 
+//		    if (ir2fc_jump_or_call_i               |                                           //JUMP or CALL
+//			(ir2fc_bra_i & prs2fc_ps0_false_i) |                                           //BRANCH taken
+//			(ir2fc_eow_i & ~ir2fc_mem_i)       |                                           //EOW
+//			excpt2fc_irq_i                     |                                           //pending interrupt request
+//			excpt2fc_excpt_i)                                                              //pending exception
+//		      begin
+//			 
+//
+//
+//
+//
+//	     
+//		 end
+//
+//
+//
+//	       
+//	       if (fsm_pbus_rty_opc)
+//		 begin
+//		    
+//		    
+//		    
+//
+//
+//		 end
+//
+//	       if (fsm_pbus_rty_dat)
+//		 begin
+//		    
+//		    
+//		    
+//
+//
+//		 end
+//
+//	       if (fsm_pbus_rty_err)
+//		 begin
+//		    
+//		    
+//		    
+//
+//
+//		 end
+//
+//	       if (~fsm_pbus_hold &
+//		   ~fsm_ir_hold)
+//		 begin
+//		    
+//
+//
+//
+//
+//	     
+//		 end
+//	       
+//
+//
+//
+//
+   //PBUS state machine
+   //------------------
+   //The PBUS state machine handles the wishbone protocol ob the PBUS and all 
+   //delays that come along with it.
+
+   //PBUS state
+   localparam STATE_PBUS_RESET           = 2'b00;                                              //inhibit bus requests
+   localparam STATE_PBUS_IDLE            = 2'b01;                                              //bus is idle
+   localparam STATE_PBUS_OPCODE          = 2'b10;                                              //ongoing opcode fetch
+   localparam STATE_PBUS_DATA            = 2'b11;                                              //ongoing read access
+  				         
+   //State transitions and outputs       
+   always @*			         
+     begin			         
+        //Default outputs	         
+	pbus_cyc_o                       = 1'b1;                                               //bus is busy
+        pbus_stb_o                       = 1'b1;                                               //new bus request
+	fsm_pbus_capture_opc             = 1'b0;                                               //don't capture opcode
+	fsm_pbus_halt                    = 1'b1;                                               //bus not ready
+	fsm_pbus_state_next              = fsm_pbus_state_reg;                                 //idle state
+				         
+	case (state_pbus_reg)	         
+	  STATE_PBUS_RESET:	         
+	    begin		         
+	       pbus_cyc_o                = 1'b0;                                               //bus is idle
+               pbus_stb_o                = 1'b0;                                               //no bus request
+	       fsm_pbus_state_next       = STATE_PBUS_IDLE;                                    //idle state
+	    end // case: STATE_PBUS_RESET
+	  			         
+	  STATE_PBUS_IDLE:	         
+	    begin		         
+	       if (~pbus_stall_i)                                                              //bus is not stalled
+		 begin		         
+		    state_pbus_next      = ir2fc_mem_i ? STATE_PBUS_DATA : STATE_PBUS_OPCODE;  //opcode fetch od data access
+		 end		         
+	    end // case: STATE_PBUS_IDLE
+				         
+	  STATE_PBUS_OPCODE:	         
+	    begin		         
+	       fsm_pbus_capture_opccode  =  pbus_ack_i;                                        //capture opcode when available
+	       fsm_pbus_halt             =  pbus_stall_i |                                     //access delay
+					    ~(pbus_ack_i | pbus_err_i | pbus_rty_i);           //    
+	       fsm_pbus_error            =  pbus_err_i;                                        //access error
+	       fsm_pbus_refetch_opcode   =  pbus_rty_i;                                        //retry request
+	       pbus_stb_o                = ~(pbus_err_i | pbus_rty_i);                         //block bus request for one cycle
+	    end // case: STATE_PBUS_OPCODE
+	  	  
+	  STATE_PBUS_DATA:	         
+	    begin		         
+	       fsm_pbus_halt             =  pbus_stall_i |                                     //access delay
+					    ~(pbus_ack_i | pbus_err_i | pbus_rty_i);           //    
+	       fsm_pbus_error            =  pbus_err_i;                                        //access error
+	       fsm_pbus_refetch_data     =  pbus_rty_i;                                        //retry request
+	       pbus_stb_o                = ~(pbus_err_i | pbus_rty_i);                         //block bus request for one cycle
+	    end // case: STATE_PBUS_DATA	  
+	endcase // case (state_pbus_reg)
+     end // always @ *
+
+   //IR state machine
+   //----------------
+   //The IR state machine monitors and controls the instruction register.
+   
+   //IR state
+   localparam STATE_IR_NOT_STASHED = 1'b0;                                                     //no stashed opcode
+   localparam STATE_IR_STASHED     = 1'b1;                                                     //stashed opcode
+		   
+   //State transitions and outputs
+   always @*
+     begin
+        //Default outputs
+	fc2ir_capture_o = 1'b0;                                                                //don't capture current IR
+	fc2ir_stash_o   = 1'b0;                                                                //don't capture stashed IR
+	fc2ir_expend_o  = 1'b0;                                                                //don't expend stashed IR
+	fsm_ir_state_next = fsm_ir_state_reg;                                                  //stay in current state
+	
+	case (fsm_ir_state_reg)
+	  STATE_IR_NOT_STASHED:
+	    begin
+	       if (fsm_pbus_capture_opcode)
+		 begin
+		    if (fsm_exec_ir_hold |                                                     //multy cycle instruction
+			fsm_pbus_hold)                                                         //bus stalled
+		      begin
+			 fc2ir_stash_o = 1'b1;                                                 //capture stashed IR
+			 fsm_ir_state_next = STATE_IR_STASHED;                                 //stash opcode
+		      end
+		    else
+		      begin
+			 fc2ir_capture_o = 1'b1;                                               //capture current IR
+		      end
+		 end // if (fsm_pbus_capture_opcode)
+	    end // case: STATE_IR_NOT_STASHED
+	  
+	  STATE_IR_STASHED:
+	    begin
+	       if (~fsm_exec_ir_hold)                                                          //IR may be updated
+		 begin
+		    fc2ir_expend_o = 1'b1;                                                     //stashed IR -> current IR
+		    fsm_ir_state_next = STATE_IR_NOT_STASHED;                                  //discard stashed opcode
+		 end // if (~fsm_exec_ir_hold)	       
+	    end // case: STATE_IR_STASHE
+	  
+	endcase // case (fsm_ir_state_reg)
+     end // always @ *
+   
+   //State variable
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+        if (async_rst_i)                                                                       //asynchronous reset
+          fsm_ir_state_reg <= STATE_IR_NOT_STASHED;
+        else if (sync_rst_i)                                                                   //synchronous reset
+          fsm_ir_state_reg <= STATE_IR_NOT_STASHED;
+        else                                                                                   //state transition
+          fsm_ir_state_reg <= fsm_ir_state_next;
+     end // always @ (posedge async_rst_i or posedge clk_i)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+  
+
    localparam STATE_RESET       = 3'b000;                                                      //reset state -> delay first bus access
    localparam STATE_EXEC        = 3'b001;                                                      //execute single cycle instruction (next upcode on read data bus)
    localparam STATE_EXEC_STASH  = 3'b010;                                                      //execute single cycle instruction (next opcode stached)

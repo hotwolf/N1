@@ -33,15 +33,12 @@
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
-//#   December 4, 2018                                                          #
+//#   September 25, 2019                                                        #
 //#      - Initial release                                                      #
 //###############################################################################
 `default_nettype none
 
 module N1_us
-  #(localparam 16  = 16,   //cell width
-    localparam 12   = 12)   //width of the stack transition pattern
-
    (//Clock and reset
     input wire                             clk_i,             //module clock
     input wire                             async_rst_i,       //asynchronous reset
@@ -51,8 +48,76 @@ module N1_us
     input  wire [15:0]                     pbus_dat_o,        //write data bus
     input  wire [15:0]                     pbus_dat_i,        //read data bus
 
+    //Internal signals
+    //----------------
+
+
+
+
+    //IPS interface
+    //+-------------------------------------------+------------------------------------------+----------------------------------+
+    //| Requests (mutually exclusive)             | Response on success                      | Response on failure              |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    //| Type                | Input data          | Signals            | Output data         | Signals            | Cause       |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    //| Push to IS          | cell data           | One or more cycles | none                | One or more cycles | LS          |
+    //| (us2ips_push_req_o) | (us2ips_req_data_o) | after the request: |                     | after the request: | overflow    |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Pull from LS        | none                |  ips2us_ack_i &    | cell data           |  ips2us_ack_i &    | LS+IS       |
+    //| (us2ips_pull_req_o) |                     | ~lps2us_fail_i     | (ips2us_ack_data_o) |  ips2us_fail_i     | underflow   |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Overwrite PSP       | new PSP             |                    | none                |                    | LS          |
+    //| (us2ips_wrsp_req_o) | (us2ips_req_data_o) |                    |                     |                    | overflow    |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Read PSP            | none                |                    | PSP                 |                    | LS          |
+    //| (us2ips_rdsp_req_o) |                     |                    | (ips2us_ack_data_o) |                    | overflow    |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    output wire                             us2ips_ls_push_req_o,                    //push request
+    output wire                             us2ips_pull_req_o,                       //pull request
+    output wire                             us2ips_wrsp_req_o,                       //stack pointer write request
+    output wire                             us2ips_rdsp_req_o,                       //stack pointer read request     
+    input  wire                             ips2us_ack_i,                            //acknowledge IPS request
+    input  wire                             ips2us_fail_i,                           //IPS over or underflow
+    input  wire [15:0]                      ips2us_ack_data_i,                       //requested data
+
+
+    //IRS interface
+    //+-------------------------------------------+------------------------------------------+----------------------------------+
+    //| Requests (mutually exclusive)             | Response on success                      | Response on failure              |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    //| Type                | Input data          | Signals            | Output data         | Signals            | Cause       |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    //| Push to IS          | cell data           | One or more cycles | none                | One or more cycles | LS          |
+    //| (us2irs_push_req_o) | (us2irs_req_data_o) | after the request: |                     | after the request: | overflow    |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Pull from LS        | none                |  irs2us_ack_i &    | cell data           |  irs2us_ack_i &    | LS+IS       |
+    //| (us2irs_pull_req_o) |                     | ~lps2us_fail_i     | (irs2us_ack_data_o) |  irs2us_fail_i     | underflow   |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Overwrite RSP       | new RSP             |                    | none                |                    | LS          |
+    //| (us2irs_wrsp_req_o) | (us2irs_req_data_o) |                    |                     |                    | overflow    |
+    //+---------------------+---------------------+                    +---------------------+                    +-------------+
+    //| Read RSP            | none                |                    | RSP                 |                    | LS          |
+    //| (us2irs_rdsp_req_o) |                     |                    | (irs2us_ack_data_o) |                    | overflow    |
+    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
+    output wire                             us2irs_ls_push_req_o,                    //push request
+    output wire                             us2irs_pull_req_o,                       //pull request
+    output wire                             us2irs_wrsp_req_o,                       //stack pointer write request
+    output wire                             us2irs_rdsp_req_o,                       //stack pointer read request     
+    input  wire                             irs2us_ack_i,                            //acknowledge IRS request
+    input  wire                             irs2us_fail_i,                           //IRS over or underflow
+    input  wire [15:0]                      irs2us_ack_data_i,                       //requested data
+
+
+
+
+
+
+
+
+
+
     //Instruction decoder output
-    input  wire             `               ir_eow_i,          //end of word
+    input  wire             `              ir_eow_i,          //end of word
     input  wire                            ir_jmp_i,          //jump instruction (any)
     input  wire                            ir_jmp_ind_i,      //jump instruction (indirect addressing)
     input  wire                            ir_jmp_dir_i,      //jump instruction (direct addressing)

@@ -103,7 +103,7 @@ module N1_prs
     //FC interface
     output reg                               prs2fc_hold_o,                         //stacks not ready
     output wire                              prs2fc_ps0_false_o,                    //PS0 is zero
-    input  wire                              fc2prs_hold_i,                         //hold any state tran
+    input  wire                              fc2prs_hold_i,                         //hold any state transition
     input  wire                              fc2prs_dat2ps0_i,                      //capture read data
     input  wire                              fc2prs_tc2ps0_i,                       //capture throw code
     input  wire                              fc2prs_isr2ps0_i,                      //capture ISR
