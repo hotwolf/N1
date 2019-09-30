@@ -18,12 +18,12 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This module implements one instance of an intermediate stack. The        #
+//#    This module implements one instance of an intermediate stack (IS). The   #
 //#    intermediate stack serves as a buffer between the upper and the lower    #
-//#    stack. It is designed to handle smaller fluctuations in stack content,   #
-//#    minimizing accesses to the lower stack.                                  # 
+//#    stack (LS). It is designed to handle smaller fluctuations in stack       #
+//#    content, minimizing accesses to the lower stack.                         # 
 //#                                                                             #
-//#        Upper Stack           Intermediate Stack                             #
+//#        Upper Stack     top   Intermediate Stack   bottom                    #
 //#    ...+---+---+---+   +---+---+---+---+---+...+---+---+                     #
 //#       |   |   |   |<=>| 0 | 1 | 2 | 3 | 4 |   |n-1| n |                     #
 //#    ...+---+---+---+   +---+---+---+---+---+...+---+-+-+                     #
@@ -34,6 +34,34 @@
 //#                       +-------------------------------+   |   Stack) |      #
 //#                                                           +----------+      #
 //#                                                                             #
+//#    The inntermediate stack is able to perform four operations:              #
+//#                                                                             #
+//#    PUSH:                                                                    #
+//#     - Shift all IS cells one position towards the bottom                    #
+//#     - Store the input of the US onto the top of the IS                      #
+//#     - If the bottommost cell of the IS is now occupied, push it's content   #
+//#       to the LS and propagate all overflow errors to the US                 #
+//#     - Flag the bottommost cell of the IS as empty                           #
+//#                                                                             #
+//#     PULL:                                                                   #
+//#      - If the IS is empty, return a failure, otherwise return the content   #
+//#        of the topmost cell.                                                 #
+//#      - Shift  all IS cells one position towards the top                     #
+//#      - If the IS is now empty, but the LS is not, pull one cell from the LS #
+//#        and store it at the top of the IS.                                   #
+//#                                                                             #
+//#     SET: (write stack pointer)                                              #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
+//#     SET: (read stack pointer)                                               #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
+//#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
 //#   September 24, 2019                                                        #
@@ -42,12 +70,12 @@
 `default_nettype none
 
 module N1_is
-  #(parameter   IS_DEPTH        =       8)                                          //depth of the intermediate stack
+  #(parameter IS_DEPTH = 8)                                                         //depth of the intermediate stack
 
    (//Clock and reset
-    input wire                               clk_i,                                 //module clock
-    input wire                               async_rst_i,                           //asynchronous reset
-    input wire                               sync_rst_i,                            //synchronous reset
+    input  wire                              clk_i,                                 //module clock
+    input  wire                              async_rst_i,                           //asynchronous reset
+    input  wire                              sync_rst_i,                            //synchronous reset
 
     //Stack bus (wishbone)
     input  wire [15:0]                       sbus_dat_i,                            //read data bus
@@ -58,20 +86,20 @@ module N1_is
     input  wire [SP_WIDTH-1:0]               dsp2is_sp_i,                           //stack pointer (AGU output)
 
     //LS interface
-    //+-----------------------------------------+-----------------------------------+----------------------------------+
-    //| Requests (mutually exclusive)           | Response on success               | Response on failure              |
-    //+--------------------+--------------------+--------------------+--------------+--------------------+-------------+
-    //| Type               | Input data         | Signals            | Output data  | Signals            | Cause       |
-    //+--------------------+--------------------+--------------------+--------------+--------------------+-------------+
-    //| Push to LS         | cell data          | One or more cycles | none         | One or more cycles | LS          |
-    //| (is2ls_push_req_o) | (is2ls_req_data_o) | after the request: |              | after the request: | overflow    |
-    //+--------------------+--------------------+                    +--------------+                    +-------------+
-    //| Pull from LS       | none               |  ls2is_ack_i &     | cell data    |  ls2is_ack_i &     | LS          |
-    //| (is2ls_pull_req_o) |                    | ~ls2is_fail_i      | (sbus_dat_i) |  ls2is_fail_i      | underflow   |
-    //+--------------------+--------------------+                    +--------------+--------------------+-------------+
-    //| Overwrite SP       | new SP             |                    | none         | Every request is successful      |
-    //| (is2ls_wrsp_req_o) | (is2ls_req_data_o) |                    |              |                                  |
-    //+--------------------+--------------------+--------------------+--------------+----------------------------------+
+    //+-----------------------------------------+-------------------------------+-----------------------------+
+    //| Requests (mutually exclusive)           | Response on success           | Response on failure         |
+    //+--------------------+--------------------+----------------+--------------+----------------+------------+
+    //| Type               | Input data         | Signals        | Output data  | Signals        | Cause      |
+    //+--------------------+--------------------+----------------+--------------+----------------+------------+
+    //| Push to LS         | cell data          | One or more    | none         | One or more    | LS         |
+    //| (is2ls_push_req_o) | (is2ls_req_data_o) | cycles after   |              | cycles after   | overflow   |
+    //+--------------------+--------------------+ the request:   +--------------+ the request:   +------------+
+    //| Pull from LS       | none               |                | cell data    |  ls2is_ack_i & | LS         |
+    //| (is2ls_pull_req_o) |                    |  ls2is_ack_i & | (sbus_dat_i) |  ls2is_fail_i  | underflow  |
+    //+--------------------+--------------------+ ~ls2is_fail_i  +--------------+----------------+------------+
+    //| Overwrite SP       | new SP             |                | none         | Every request is successful |
+    //| (is2ls_wrsp_req_o) | (is2ls_req_data_o) |                |              |                             |
+    //+--------------------+--------------------+----------------+--------------+-----------------------------+
     output  wire                             is2ls_ls_push_req_o,                   //push request from IS to LS
     output  wire                             is2ls_ls_pull_req_o,                   //pull request from IS to LS
     output  wire                             is2ls_wrsp_req_o,                      //pull request from IS to LS
@@ -80,35 +108,92 @@ module N1_is
     input wire                               ls2is_fail_i,                          //LS over or underflow
  
     //US interface
-    //+-----------------------------------------+-----------------------------------------+----------------------------------+
-    //| Requests (mutually exclusive)           | Response on success                     | Response on failure              |
-    //+--------------------+--------------------+--------------------+--------------------+--------------------+-------------+
-    //| Type               | Input data         | Signals            | Output data        | Signals            | Cause       |
-    //+--------------------+--------------------+--------------------+--------------------+--------------------+-------------+
-    //| Push to IS         | cell data          | One or more cycles | none               | One or more cycles | LS          |
-    //| (us2is_push_req_i) | (us2is_req_data_i) | after the request: |                    | after the request: | overflow    |
-    //+--------------------+--------------------+                    +--------------------+                    +-------------+
-    //| Pull from LS       | none               |  is2us_ack_i &     | cell data          |  is2us_ack_i &     | LS+IS       |
-    //| (us2is_pull_req_i) |                    | ~ls2us_fail_i      | (is2us_ack_data_o) |  is2us_fail_i      | underflow   |
-    //+--------------------+--------------------+                    +--------------------+                    +-------------+
-    //| Overwrite SP       | new SP             |                    | none               |                    | LS          |
-    //| (us2is_wrsp_req_i) | (us2is_req_data_i) |                    |                    |                    | overflow    |
-    //+--------------------+--------------------+                    +--------------------+                    +-------------+
-    //| Read SP            | none               |                    | SP                 |                    | LS          |
-    //| (us2is_rdsp_req_i) |                    |                    | (is2us_ack_data_o) |                    | overflow    |
-    //+--------------------+--------------------+--------------------+--------------------+--------------------+-------------+
+    //+-----------------------------------------+-------------------------------------+----------------------------+
+    //| Requests (mutually exclusive)           | Response on success                 | Response on failure        |
+    //+--------------------+--------------------+----------------+--------------------+----------------+-----------+
+    //| Type               | Input data         | Signals        | Output data        | Signals        | Cause     |
+    //+--------------------+--------------------+----------------+--------------------+----------------+-----------+
+    //| Push to IS         | cell data          | One or more    | none               | One or more    | LS        |
+    //| (us2is_push_req_i) | (us2is_req_data_i) |  cycles after  |                    | cycles after   | overflow  |
+    //+--------------------+--------------------+   the request: +--------------------+ the request:   +-----------+
+    //| Pull from LS       | none               |                | cell data          |                | LS+IS     |
+    //| (us2is_pull_req_i) |                    |  is2us_ack_i & | (is2us_ack_data_o) |  is2us_ack_i & | underflow |
+    //+--------------------+--------------------+ ~ls2us_fail_i  +--------------------+  is2us_fail_i  +-----------+
+    //| Overwrite SP       | new SP             |                | none               |                | LS        |
+    //| (us2is_wrsp_req_i) | (us2is_req_data_i) |                |                    |                | overflow  |
+    //+--------------------+--------------------+                +--------------------+                +-----------+
+    //| Read SP            | none               |                | SP                 |                | LS        |
+    //| (us2is_rdsp_req_i) |                    |                | (is2us_ack_data_o) |                | overflow  |
+    //+--------------------+--------------------+----------------+--------------------+----------------+-----------+
     output wire                             is2us_ack_o,                            //acknowledge IS request
     output wire                             is2us_fail_o,                           //IS over or underflow
     output wire [15:0]                      is2us_ack_data_o,                       //requested data
     input  wire                             us2is_push_req_i,                       //push request
     input  wire                             us2is_pull_req_i,                       //pull request
-    input  wire                             us2is_wrsp_req_i,                       //stack pointer write request
-    input  wire                             us2is_rdsp_req_i,                       //stack pointer read request     
+    input  wire                             us2is_set_req_i,                        //stack pointer write request
+    input  wire                             us2is_get_req_i,                        //stack pointer read request     
 
     //Probe signals
-
+    output wire                             prb_o);
+    
    //Internal signals
    //-----------------
+   //Intermediate stack
+   reg  [(16*IS_DEPTH)-1:0] 		    is_reg;                                 //current IS
+   wire [(16*IS_DEPTH)-1:0] 		    is_next;                                //next IS
+   reg  [IS_DEPTH-1:0] 			    is_tags_reg;                            //current IS
+   wire [IS_DEPTH-1:0] 		            is_tags_next;                           //next IS
+
+
+
+
+
+   //Intermediate parameter stack
+   //----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   //Flipflops
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                               //asynchronous reset
+       begin
+          is_reg      <= {IS_DEPTH{16'h0000}};                                      //cells
+          is_tags_reg <= {IS_DEPTH{1'b0}};                                          //tags
+       end
+     else if (sync_rst_i)                                                           //synchronous reset
+       begin
+          is_reg      <= {IS_DEPTH{16'h0000}};                                      //cells
+          is_tags_reg <= {IS_DEPTH{1'b0}};                                          //tags
+       end
+     else if (is_we)
+       begin
+          is_reg      <= is_next;                                                   //cells
+          is_tags_reg <= is_tags_next;                                              //tags
+      end
+
+
+
+
+
+
+   
+
+
+
+
    //FSM
    reg  [2:0]                                state_task_reg;                        //current FSM task
    reg  [2:0]                                state_task_next;                       //next FSM task
