@@ -20,16 +20,13 @@
 //# Description:                                                                #
 //#    This module implements the RAM based lower parameter (LPS) and return    #
 //#    stack (LRS).                                                             #
-//#    Both stacks are allocated to trhe same address space, growong towards    #
+//#    Both stacks are allocated to trhe same address space, growing towards    #
 //#    each other. The stack pointers PSP and RSP show the number of cells on   #
 //#    each stack. Therefore PSP and ~RSP (bitwise inverted RSP) point to the   #
 //#    next free location of the corresponding stack.                           #
-//#    Overflows are only detected when PSP and ~RSP reach a given safety       #
-//#    distance during a push operation. In this case, the overflow condition   #
-//#    is flagged to the IS while the push operation is performed.              #
+//#    Overflows are only detected when both stacks overlap                     #
 //#    Underflows are only detected when a pull operation is attempted on an    #
-//#    empty stack. In this case, the underflow condition is flagged to the IS  #
-//#    and the push operation is inhibited.                                     #
+//#    empty stack.                                                             #
 //#                                                                             #
 //#                       Stack RAM                                             #
 //#                   +---------------+                                         #
@@ -39,17 +36,11 @@
 //#    |               |               |   Top of                                #
 //#    |               |               |<- the PS                                #
 //#    +               +---------------+                                         #
-//#    |               | ^ Safety      |<- PSP                                   #
-//#    |               | | disdtance   |                                         #
-//#    |               | v to ~RSP     |                                         #
-//#    |               |...............|                                         #
+//#    |               |               |<- PSP                                   #
 //#    |               |               |                                         #
+//#    |               |     free      |                                         #
 //#    |               |               |                                         #
-//#    |               |               |                                         #
-//#    |               |...............|                                         #
-//#    |               | ^ Safety      |                                         #
-//#    |               | | disdtance   |                                         #
-//#    |               | v to PSP      |<- ~RSP                                  #
+//#    |               |               |<- ~RSP                                  #
 //#    +               +---------------+                                         #
 //#    |               |               |<- Top of                                #
 //#    |               |               |   the RS                                #
@@ -58,13 +49,13 @@
 //#    |(2^SP_WIDTH)-1 |               |<- the RS                                #
 //#                   +---------------+                                         #
 //#                                                                             #
-//#    SBus access priority:                                                    #
-//#    Concurrent push or pull requests for the two stacks will be executed in  #
-//#    the following order:                                                     #
-//#                         1. Pull request to LPS                              #
-//#                         2. Pull request to LRS                              #
-//#                         3. Push request to LPS                              #
-//#                         4. Push request to LRS                              #
+//#    Both stacks support the following operations:                            #
+//#       PUSH: Push one cell to the TOS                                        #
+//#       PULL:  Pull one cell from the TOS                                     #
+//#       PUSH:  Push one cell to the TOS                                       #
+//#       SET:   Set the PS to the value found at the TOS                       #
+//#       GET:   Push the PS to the TOS                                         #
+//#       RESET: Clear the stack                                                #
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
@@ -83,8 +74,8 @@ module N1_ls
 
     //Stack bus (wishbone)
     output wire                             sbus_cyc_o,                           //bus cycle indicator       +-
-    output reg                              sbus_stb_o,                           //access request            |
-    output reg                              sbus_we_o,                            //write enable              | initiator
+    output wire                             sbus_stb_o,                           //access request            |
+    output wire                             sbus_we_o,                            //write enable              | initiator
     output wire [SP_WIDTH-1:0]              sbus_adr_o,                           //address bus               | to
     output wire                             sbus_tga_ps_o,                        //parameter stack access    | target
     output wire                             sbus_tga_rs_o,                        //return stack access       |
@@ -93,111 +84,152 @@ module N1_ls
     input  wire                             sbus_stall_i,                         //access delay              | initiator
     input  wire [15:0]                      sbus_dat_i,                           //read data bus             +-
 
-    //Internal signals
-    //----------------
+    //Internal interfaces
+    //-------------------
     //DSP interface
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    //| ls2dsp_psp_inc_o | ls2dsp_psp_dec_o | dsp2ls_psp_next_i     |  | ls2dsp_rsp_inc_o | ls2dsp_rsp_dec_o | dsp2ls_rsp_next_i     |
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    //|        0         |        0         | PSP + safety distance |  |        0         |        0         | PSP + safety distance |
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    //|        0         |        1         | PSP - 1               |  |        0         |        1         | PSP - 1               |
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    //|        1         |        0         | PSP + 1               |  |        1         |        0         | PSP + 1               |
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    //|        1         |        1         | !!! FORBIDDEN !!!     |  |        1         |        1         | !!! FORBIDDEN !!!     |
-    //+------------------+------------------+-----------------------+  +------------------+------------------+-----------------------+
-    output reg                              ls2dsp_psp_hold_o,                    //don't update PSP
-    output wire                             ls2dsp_psp_inc_o,                     //increment PSP
-    output wire                             ls2dsp_psp_dec_o,                     //decrement PSP
-    output wire                             ls2dsp_psp_set_o,                     //load new PSP
+    //+------------------+----------------------------------------+
+    //| ls2dsp_psp_opr_o | Action                                 |
+    //+------------------+----------------------------------------+
+    //|      0   0       | add ls2dsp_psp_add_opd_o to PSP        |
+    //+------------------+----------------------------------------+
+    //|      0   1       | subtract ls2dsp_psp_add_opd_o from PSP |
+    //+------------------+----------------------------------------+
+    //|      1   x       | set PSP to ls2dsp_psp_set_opd_o        |
+    //+------------------+----------------------------------------+
+    output reg                              ls2dsp_psp_hold_o,                  //don't update PSP
+    output reg  [1:0]                       ls2dsp_psp_opr_o,                   //PSP operator
+    output wire [SP_WIDTH-1:0]              ls2dsp_psp_set_opd_o,               //PSP SET value
+    output wire [SP_WIDTH-1:0]              ls2dsp_psp_add_opd_o,               //PSP CMP value
+    //+------------------+----------------------------------------+
+    //| ls2dsp_rsp_opr_o | Action                                 |
+    //+------------------+----------------------------------------+
+    //|      0   0       | add ls2dsp_rsp_add_opd_o to RSP        |
+    //+------------------+----------------------------------------+
+    //|      0   1       | subtract ls2dsp_rsp_add_opd_o from RSP |
+    //+------------------+----------------------------------------+
+    //|      1   x       | set RSP to ls2dsp_rsp_set_opd_o        |
+    //+------------------+----------------------------------------+
     output reg                              ls2dsp_rsp_hold_o,                    //don't update RSP
-    output wire                             ls2dsp_rsp_inc_o,                     //increment RSP
-    output wire                             ls2dsp_rsp_dec_o,                     //decrement RSP
-    output wire                             ls2dsp_rsp_set_o,                     //load new RSP
+    output reg  [1:0]                       ls2dsp_rsp_opr_o,                     //RSP operator
+    output wire [SP_WIDTH-1:0]              ls2dsp_psp_set_opd_o,                 //PSP SET value
+    output wire [SP_WIDTH-1:0]              ls2dsp_psp_add_opd_o,                 //PSP CMP value
     input  wire [SP_WIDTH-1:0]              dsp2ls_psp_i,                         //current PSP
     input  wire [SP_WIDTH-1:0]              dsp2ls_rsp_i,                         //current RSP
     input  wire [SP_WIDTH-1:0]              dsp2ls_psp_next_i,                    //next PSP
     input  wire [SP_WIDTH-1:0]              dsp2ls_rsp_next_i,                    //next RSP
+    input  wire                             dsp2ls_psp_sign_i,                    //carry bit
+    input  wire                             dsp2ls_rsp_sign_i,                    //carry bit
 
     //IPS interface
-    //+-------------------------------------------+--------------------------------+-----------------------------+
-    //| Requests (mutually exclusive)             | Response on success            | Response on failure         |
-    //+---------------------+---------------------+-----------------+--------------+-----------------+-----------+
-    //| Type                | Input data          | Signals         | Output data  | Signals         | Cause     |
-    //+---------------------+---------------------+-----------------+--------------+-----------------+-----------+
-    //| Push to LPS         | cell data           | One or more     | none         | One or more     | LPS       |
-    //| (ips2ls_push_req_i) | (ips2ls_req_data_i) | cycles after    |              | cycles after    | overflow  |
-    //+---------------------+---------------------+ the request:    +--------------+ the request:    +-----------+
-    //| Pull from LPS       | none                |                 | cell data    |  ls2ips_ack_o & | LPS       |
-    //| (ips2ls_pull_req_i) |                     |  ls2ips_ack_o & | (sbus_dat_i) |  ls2ips_fail_o  | underflow |
-    //+---------------------+---------------------+ ~ls2ips_fail_o  +--------------+-----------------+-----------+
-    //| Overwrite PSP       | new PSP             |                 | none         | Every request is successful |
-    //| (ips2ls_wrsp_req_i) | (ips2ls_req_data_i) |                 |              |                             |
-    //+---------------------+---------------------+-----------------+--------------+-----------------------------+
-    output wire                             ls2ips_ack_o,                         //acknowledge push or pull request
-    output wire                             ls2ips_fail_o,                        //LPS over or underflow
-    input  wire                             ips2ls_push_req_i,                    //push request from IPS to LS
-    input  wire                             ips2ls_pull_req_i,                    //pull request from IPS to LS
-    input  wire                             ips2ls_set_req_i,                     //request to set PSP
-    input  wire [15:0]                      ips2ls_req_data_i,                    //push data or new PSP value
+    output wire                             ls2ips_ready_o,                       //LPS is ready for the next command
+    output wire                             ls2ips_overflow_o,                    //LPS overflow
+    output wire                             ls2ips_empty_o,                       //LPS is empty
+    output wire [15:0]                      ls2ips_pull_data_o,                   //LPS pull data
+    input  wire                             ips2ls_push_i,                        //push cell from IPS to LS
+    input  wire                             ips2ls_pull_i,                        //pull cell from IPS to LS
+    input  wire                             ips2ls_set_i,                         //set PSP
+    input  wire                             ips2ls_get_i,                         //get PSP
+    input  wire                             ips2ls_reset_i,                       //reset PSP
+    input  wire [15:0]                      ips2ls_push_data_i,                   //LPS push data
 
     //IRS interface
-    //+-------------------------------------------+--------------------------------+-----------------------------+
-    //| Requests (mutually exclusive)             | Response on success            | Response on failure         |
-    //+---------------------+---------------------+-----------------+--------------+-----------------+-----------+
-    //| Type                | Input data          | Signals         | Output data  | Signals         | Cause     |
-    //+---------------------+---------------------+-----------------+--------------+-----------------+-----------+
-    //| Push to LRS         | cell data           | One or more     | none         | One or more     | LRS       |
-    //| (irs2ls_push_req_i) | (irs2ls_req_data_i) | cycles after    |              | cycles after    | overflow  |
-    //+---------------------+---------------------+ the request:    +--------------+ the request:    +-----------+
-    //| Pull from LRS       | none                |                 | cell data    |  ls2irs_ack_o & | LRS       |
-    //| (irs2ls_pull_req_i) |                     |  ls2irs_ack_o & | (sbus_dat_i) |  ls2irs_fail_o  | underflow |
-    //+---------------------+---------------------+ ~ls2irs_fail_o  +--------------+-----------------+-----------+
-    //| Overwrite RSP       | new RSP             |                 | none         | Every request is successful |
-    //| (irs2ls_wrsp_req_i) | (irs2ls_req_data_i) |                 |              |                             |
-    //+---------------------+---------------------+-----------------+--------------+-----------------------------+
-    output wire                             ls2irs_ack_o,                         //acknowledge push or pull request
-    output wire                             ls2irs_fail_o,                        //LRS over or underflow
-    input  wire                             irs2ls_push_req_i,                    //push request from IRS to LS
-    input  wire                             irs2ls_pull_req_i,                    //pull request from IRS to LS
-    input  wire                             irs2ls_set_req_i,                     //request to set RSP
-    input  wire [15:0]                      irs2ls_req_data_i,                    //push data or new RSP value
+    output wire                             ls2irs_ready_o,                       //LRS is ready for the next command
+    output wire                             ls2irs_overflow_o,                    //LRS overflow
+    output wire                             ls2irs_empty_o,                       //LRS is empty
+    output wire [15:0]                      ls2irs_pull_data_o,                   //LRS pull data
+    input  wire                             irs2ls_push_i,                        //push cell from IRS to LS
+    input  wire                             irs2ls_pull_i,                        //pull cell from IRS to LS
+    input  wire                             irs2ls_set_i,                         //set RSP
+    input  wire                             irs2ls_get_i,                         //get RSP
+    input  wire                             irs2ls_reset_i,                       //reset RSP
+    input  wire [15:0]                      irs2ls_push_data_i,                   //LRS push data
 
-    //Probe signals
+   //Probe signals
     output wire [2:0]                       prb_lps_state_o,                      //LPS state
     output wire [2:0]                       prb_lrs_state_o);                     //LRS state 
 
    //FSM state encoding
    //------------------
-   localparam                               STATE_IDLE0     = 3'b000;             //idle, no response pending
-   localparam                               STATE_IDLE1     = 3'b100;             //idle, no response pending
-   localparam                               STATE_IDLE2     = 3'b010;             //idle, no response pending
-   localparam                               STATE_IDLE3     = 3'b110;             //idle, no response pending
-   localparam                               STATE_ACK       = 3'b010;             //signal success
-   localparam                               STATE_ACK_FAIL  = 3'b110;             //signal failure
-   localparam                               STATE_SBUS      = 3'b011;             //wait for SBUS and signal success
-   localparam                               STATE_SBUS_FAIL = 3'b111;             //wait for SBUS and signal failure
+   //localparam                               STATE_IDLE0     = 3'b000;             //idle, no response pending
+   //localparam                               STATE_IDLE1     = 3'b100;             //idle, no response pending
+   //localparam                               STATE_IDLE2     = 3'b010;             //idle, no response pending
+   //localparam                               STATE_IDLE3     = 3'b110;             //idle, no response pending
+   //localparam                               STATE_ACK       = 3'b010;             //signal success
+   //localparam                               STATE_ACK_FAIL  = 3'b110;             //signal failure
+   //localparam                               STATE_SBUS      = 3'b011;             //wait for SBUS and signal success
+   //localparam                               STATE_SBUS_FAIL = 3'b111;             //wait for SBUS and signal failure
 
    //Internal signals
    //----------------
+   //SBUS control signals
+   reg 					    lps_sbus_cyc;                           //bus cycle indicator from LPS
+   reg 					    lps_sbus_stb;                           //bus request from LPS
+   reg 					    lps_sbus_we;                            //write enable from LPS
+   reg 					    lps_psp2sbus;                           //drive address from current PSP
+   reg 					    lps_agu2sbus;                           //drive address from decremented PSP
+   reg 					    lps_ips2sbus;                           //drive write data from IPS
+   reg 					    lps_tos2sbus;                           //drive write data from buffered TOS
+   reg 					    lrs_sbus_cyc;                           //bus cycle indicator from LRS
+   reg 					    lrs_sbus_stb;                           //bus request from LRS
+   reg 					    lrs_sbus_we;                            //write enable from LRS
+   reg 					    lrs_rsp2sbus;                           //drive address from current RSP
+   reg 					    lrs_agu2sbus;                           //drive address from decremented RSP
+   reg 					    lrs_ips2sbus;                           //drive write data from IPS
+   reg 					    lrs_tos2sbus;                           //drive write data from buffered TOS
+
+   
+  
+   
+
+
    //Stack boundaries
    wire                                     lps_empty;                            //LPS is empty
    wire                                     lrs_empty;                            //LRS is empty
    wire                                     ls_overflow;                          //stack overflow
 
+   //TOS buffers
+   reg  [15:0]                              lps_tos_reg;                          //duplicate of the TOS in RAM
+   reg  [15:0]                              lps_tos_next;                         //new TOS buffer value
+   reg                                      lps_tos_we;                           //update TOS buffer
+   reg  [15:0]                              lrs_tos_reg;                          //duplicate of the TOS in RAM
+   reg  [15:0]                              lrs_tos_next;                         //new TOS buffer value
+   reg                                      lrs_tos_we;                           //update TOS buffer
+
+   //TOS buffer input selects
+   reg                                      lps_ips2tos;                          //load TOS buffer from IS
+   reg                                      lps_sbus2tos;                         //load TOS buffer from SBUS
+   reg                                      lrs_irs2tos;                          //load TOS buffer from IS
+   reg                                      lrs_sbus2tos;                         //load TOS buffer from SBUS  
+
+   //Data output selects
+   reg                                      lps_tos2ips;                          //return buffered TOS
+   reg                                      lps_psp2ips;                          //return current PSP
+   reg                                      lps_sbus2ips;                         //return SBUS read data
+   reg                                      lrs_tos2irs;                          //return buffered TOS
+   reg                                      lrs_rsp2irs;                          //return current PSP
+   reg                                      lrs_sbus2irs;                         //return SBUS read data
+
+   //Validateded requests
+   wire                                     lps_pull_val;                         //validated LPS pull request
+   wire                                     lps_push_val;                         //validated LPS push request
+   wire                                     lrs_push_val;                         //validated LRS push request
+   wire                                     lrs_pull_val;                         //validated LRS pull request
+
    //Arbitrated requests
-   wire                                     lps_pull_arb;                         //arbitrateded LPS pull request
-   wire                                     lps_push_arb;                         //arbitrateded LPS push request
-   wire                                     lrs_push_arb;                         //arbitrateded LRS push request
-   wire                                     lrs_pull_arb;                         //arbitrateded LRS pull request
+   //wire                                     lps_pull_arb;                         //arbitrateded LPS pull request
+   //wire                                     lps_push_arb;                         //arbitrateded LPS push request
+   //wire                                     lrs_push_arb;                         //arbitrateded LRS push request
+   //wire                                     lrs_pull_arb;                         //arbitrateded LRS pull request
 
-   //Fail conditions
-   wire                                     lps_pull_fail_cond;                   //fail condition for LPS pull request
-   wire                                     lps_push_fail_cond;                   //fail condition for LRS pull request
-   wire                                     lrs_pull_fail_cond;                   //fail condition for LPS push request
-   wire                                     lrs_push_fail_cond;                   //fail condition for LRS push request
+   //SBUS requests
+   wire                                     lps_sbus_stb;                         //SBUS request from LPS
+   wire                                     lps_sbus_we;                          //SBUS write request from LPS
+   wire                                     lrs_sbus_stb;                         //SBUS request from LRS
+   wire                                     lrs_sbus_we;                          //SBUS write request from LRS
+   
 
+
+   
    //FSM state variables
    reg [2:0]                                lps_state_reg;                        //LPS state
    reg [2:0]                                lps_state_next;                       //next LPS state
@@ -214,25 +246,82 @@ module N1_ls
    wire                                     lrs_state_sbus;                       //LRS in STATE_SBUS
    wire                                     lrs_state_sbus_fail;                  //LRS in STATE_SBUS_FAIL
 
+   //Stack bus
+   //---------
+   assign sbus_cyc_o            = lps_sbus_cyc | lrs_sbus_cyc;                    //SBUS cycle from either stack
+   assign sbus_stb_o            = lps_sbus_stb | lrs_sbus_stb;                    //SBUS request from either stack
+   assign sbus_we_o             = lps_sbus_we  | lrs_sbus_we;                     //write access from either stack
+   assign sbus_adr_o            = ({SP_WIDTH{lps_psp2sbus}} & dsp2ls_psp_i) |     //drive address bus from PSP
+			          ({SP_WIDTH{lps_agu2sbus}} &                     //drive address from AGU
+			                   dsp2ls_psp_next_i[SP_WIDTH-1:0]) |     //
+                                  ({SP_WIDTH{lrs_rsp2sbus}} & dsp2ls_rsp_i) |     //drive address bus from RSP
+			          ({SP_WIDTH{lrs_agu2sbus}} &                     //drive address from AGU
+			        	   dsp2ls_rsp_next_i[SP_WIDTH-1:0]);      //
+   assign sbus_tga_ps_o         =  lps_sbus_cyc                                   //parameter stack access
+   assign sbus_tga_rs_o         = ~lps_sbus_cyc                                   //return stack access
+   assign sbus_dat_o            = ({16{lps_ips2sbus}} & ips2ls_data_i) |          //drive write data from IPS
+			          ({16{lps_tos2sbus}} & lps_tos_reg)   |          //drive write data from TOS
+                                  ({16{lrs_irs2sbus}} & irs2ls_data_i) |          //drive write data from IRS
+			          ({16{lrs_tos2sbus}} & lrs_tos_reg);             //drive write data from TOS
+                                
+   //DSP interface
+   //-------------
+   assign ls2dsp_psp_set_data_o = ips2ls_data_i;                //PSP SET value
+   assign ls2dsp_psp_cmp_data_o = ;                //PSP CMP value
+   assign ls2dsp_rsp_set_data_o = irs2ls_data_i;                //RSP SET value
+   assign ls2dsp_rsp_cmp_data_o = ;                //RSP CMP value
+ 
+
+
+
+   
+
+   
    //Internal status signals
    //-----------------------
    //Stack boundaries
+   assign ls_full             = &(dsp2ls_psp_i^dsp2ls_rsp_i);                     //stack pointer collision
    assign lps_empty           = ~|dsp2ls_psp_i;                                   //PSP is zero
    assign lrs_empty           = ~|dsp2ls_rsp_i;                                   //RSP is zero
-   assign ls_overflow         = &(dsp2ls_psp_next_i^dsp2ls_rsp_next_i);           //stack pointer collision
 
+   //Validated requests
+   assign lps_pull_val        = ips2ls_pull_i & ~lps_empty;                       //validated LPS pull request (1st prio) 
+   assign lrs_pull_val        = irs2ls_pull_i & ~lrs_empty;                       //validated LRS pull request (2nd prio)
+   assign lps_push_val        = ips2ls_push_i & ~ls_overflow;                     //validated LPS push request (3rd prio)
+   assign lrs_push_val        = irs2ls_push_i & ~ls_overflow;                     //validated LRS push request (4th prio)
+   
    //Arbitrated requests
-   assign lps_pull_arb        = ips2ls_pull_req_i;                                //arbitrateded LPS pull request (1st prio) 
-   assign lrs_pull_arb        = irs2ls_pull_req_i & ~ips2ls_pull_req_i;           //arbitrateded LRS pull request (2nd prio)
-   assign lps_push_arb        = ips2ls_push_req_i & ~irs2ls_pull_req_i;           //arbitrateded LPS push request (3rd prio)
-   assign lrs_push_arb        = irs2ls_push_req_i & ~ips2ls_pull_req_i &          //arbitrateded LRS push request (4th prio)
-                                                    ~ips2ls_push_req_i;
+   assign lps_pull_arb        = lps_pull_val;                                     //arbitrateded LPS pull request (1st prio) 
+   assign lrs_pull_arb        = lrs_pull_val & ~lps_pull_val;                     //arbitrateded LRS pull request (2nd prio)
+   assign lps_push_arb        = lps_push_val & ~lrs_pull_val;                     //arbitrateded LPS push request (3rd prio)
+   assign lrs_push_arb        = lrs_push_val & ~lps_pull_val &                    //arbitrateded LRS push request (4th prio)
+                                               ~lps_push_val;
 
-   //Fail conditions
-   assign lps_pull_fail_cond  = lps_empty;                                        //fail condition for LPS pull request
-   assign lps_push_fail_cond  = ls_overflow;                                      //fail condition for LRS pull request
-   assign lps_pull_fail_cond  = lrs_empty;                                        //fail condition for LPS push request
-   assign lps_push_fail_cond  = ls_overflow;                                      //fail condition for LRS push request
+   //TOS buffers
+   assign lps_tos_next        = ({16{lps_ips2tos}}  & ips2ls_data_i) |            //load TOS buffer from IS
+				({16{lps_sbus2tos}} & sbus_dat_i);                //load TOS buffer from SBUS
+   assign lrs_tos_next        = ({16{lrs_irs2tos}}  & irs2ls_data_i) |            //load TOS buffer from IS
+				({16{lrs_sbus2tos}} & sbus_dat_i);                //load TOS buffer from SBUS
+
+
+
+
+
+
+
+   reg                                      lps_ips2tos;                          //load TOS buffer from IS
+   reg                                      lps_sbus2tos;                         //load TOS buffer from SBUS
+   reg                                      lrs_irs2tos;                          //load TOS buffer from IS
+   reg                                      lrs_sbus2tos;                         //load TOS buffer from SBUS  
+
+
+
+
+   
+
+
+
+
 
    //State shortcuts
    assign lps_state_ack       = ~|(lps_state_reg ^ STATE_ACK);                    //LPS in STATE_ACK
@@ -245,6 +334,28 @@ module N1_ls
    assign lrs_state_sbus      = ~|(lrs_state_reg ^ STATE_SBUS);                   //LRS in STATE_SBUS
    assign lrs_state_sbus_fail = ~|(lrs_state_reg ^ STATE_SBUS_FAIL);              //LRS in STATE_SBUS_FAIL
 
+
+   //IPS interface
+   //-------------
+   assign ls2ips_full_o       = ls_full;                                          //LPS is full
+   assign ls2ips_empty_o      = lps_empty;                                        //LPS is empty
+   assign ls2ips_data_o       = ({16{lps_tos2ips}}  & lps_tos_reg)  |             //return buffered TOS
+                                ({16{lps_psp2ips}}  & dsp2ls_psp_i) |             //return current PSP
+                                ({16{lps_sbus2ips}} & sbus_dat_i );               //return SBUS read data
+   
+
+   //IRS interface
+   //-------------
+   assign ls2irs_full_o       = ls_full;                                          //LRS is full
+   assign ls2irs_empty_o      = lrs_empty;                                        //LRS is empty
+   assign ls2irs_data_o       = ({16{lrs_tos2irs}}  & lrs_tos_reg)  |             //return buffered TOS
+                                ({16{lrs_rsp2irs}}  & dsp2ls_rsp_i) |             //return current RSP
+                                ({16{lrs_sbus2irs}} & sbus_dat_i );               //return SBUS read data
+   
+
+
+
+   
    //DSP interface
    //-------------
    assign ls2dsp_psp_inc_o    =  lps_push_arb;                                    //increment PSP
@@ -266,9 +377,11 @@ module N1_ls
                                 lrs_state_sbus      |                             //ongoing LPS push or pull request
                                 lrs_state_sbus_fail;                                  //ongoing LRS push or pull request
    assign sbus_we_o           = lps_push_arb | lrs_push_arb ;                     //push request
-   assign sbus_adr_o          = ({SP_WIDTH{lps_pull_arb}} & dsp2ls_psp_next_i) |  //decremented PSP
-                                ({SP_WIDTH{lrs_pull_arb}} & dsp2ls_rsp_next_i) |  //decremented RSP
-                                ({SP_WIDTH{lps_push_arb}} & dsp2ls_psp_i)      |  //current PSP
+   assign sbus_adr_o          = ({SP_WIDTH{lps_pull_arb}} &                       //decremented PSP
+				               dsp2ls_psp_next_i[SP_WIDTH-1:0]) | //
+                                ({SP_WIDTH{lrs_pull_arb}} &                       //decremented RSP
+				               dsp2ls_rsp_next_i[SP_WIDTH-1:0]) | //
+				({SP_WIDTH{lps_push_arb}} & dsp2ls_psp_i)       | //current PSP
                                 ({SP_WIDTH{lrs_push_arb}} & dsp2ls_rsp_i);        //current RSP
    assign sbus_tga_ps_o       = lps_pull_arb | lps_push_arb;                      //parameter stack access
    assign sbus_tga_rs_o       = ~sbus_tga_ps_o;                                   //return stack access
@@ -299,11 +412,86 @@ module N1_ls
    always @*
      begin
         //Defaults
-        ls2dsp_psp_hold_o    = 1'b1;                                             //don't update PSP
-        lps_state_next       = lps_state_reg;                                    //stay in current state
+	
+	
 
-        //Handle incomming requests
-        if (~lps_state_sbus | sbus_ack_i)
+
+
+        ls2dsp_psp_hold_o    = 1'b1;                                             //don't update PSP
+        lps_state_next       = 0;                                    //stay in current state
+
+        //Handle incoming requests
+	if (lps_pull_val)
+	  //Valid pull request
+	  begin
+	     lps_tos2ips = 1'b1;
+	    
+
+
+
+	     
+
+
+
+
+	  end
+
+	if (lps_push_val)
+	  //Valid push request
+	  begin
+	     lps_ips2tos = 1'b1;
+	     lps_tos_we  = 1'b1;
+	     
+
+	     
+
+
+
+
+	  end
+	
+	if (ips2ls_set_i)
+	  //Set request
+	  begin
+	     ls2dsp_rsp_opr_o = DSP_CMP_PSP;
+	     
+
+
+
+
+	  end
+
+	if (ips2ls_get_i)
+	  //Get request
+	  begin
+	     lps_psp2ips = 1'b1;
+
+
+
+
+	  end
+
+	if (~lps_pull_val &
+	    ~lps_push_val &
+	    ~ips2ls_set_i &
+	    ~ips2ls_get_i)
+	  //No request
+	  begin
+
+
+
+	     lps_state_next = lps_state_next | STATE_IDLE;
+	  end
+
+	
+
+	
+
+
+
+
+
+       if (~lps_state_sbus | sbus_ack_i)
           begin
 
              //Simplify logic, because of one-hot encoding

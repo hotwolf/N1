@@ -985,7 +985,7 @@ The structure transition pattern is shown in \figref{opcodes:stack:transpat}.
 
         \draw [thick, fill=gray!3]  (12,1) rectangle  (14,2);
         \node at (13,1.45)          {\Large{\textbf{TOS}}};        
-        \node at (7.5,0.5)          {\large{Parameter stack}};
+        \node at (12,0.5)          {\large{Parameter stack}};
                
         %Stack boundary
         \draw [ultra thick, ->]     (14,1.8)    --  (15.5,1.8);
@@ -1022,8 +1022,10 @@ the upper four \glspl{cell} of the \gls{ps} and the top \gls{cell} of the \gls{r
   \item Data exchange between two stack \glspl{cell}
 \end{itemize}
 It is possible to put the \gls{ust} fields into a combination which would trigger a data transfer of two
-source \glspl{cell} to a single desination \gls{cell}. In these cases, the resulting data in the desination
-\gls{cell} is a logic OR of all sources.
+source \glspl{cell} to a single desination \gls{cell}.  
+These combinations are reserved for instruction set extensions (see \secref{extensions}).
+If no related instuction set extension is implemented, then the outcome of these stack operations is undefined. 
+In practice, the resulting data in the desination \gls{cell} is then a logic OR of all sources.
 
 \begin{samepage}
 The two remaining \gls{ist} fields in the stack instruction control the data movement of the \glspl{ls}.
@@ -1591,7 +1593,7 @@ Two options are selectable:
 
     %2SWAP
     \texttt{2SWAP} &
-    ( x1 x2 x3 x4 -- x4 x3 x1 x2 ) &
+    ( x1 x2 x3 x4 -- x3 x4 x1 x2 ) &
     \multicolumn{1}{m{21.35em}|}{
     \scalebox{0.4} {
       \begin{tikzpicture}

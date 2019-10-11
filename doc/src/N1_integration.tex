@@ -64,10 +64,9 @@ the design for application specific needs:
   This parameter determines the location of the 511B window for memory I/O with \gls{diradr}.
   This window should cover commonly used \gls{forth} variables. The default value is \texttt{0xFFFF}. 
 
-\item[\texttt{PS\_RS\_DIST}] Safety distance between the \gls{ps} and the \gls{rs}. \\
+\item[\texttt{EXT\_ROT}] Enable the \gls{rotext}. \\
   Recovering from an exception requires some free \gls{stack} space.
-  This parameter determines the remaining \gls{stack} space when a \gls{stack} overflow exception is thrown.
-  The default value is 22. The optimal value depends on the requirements of the exception handler software.
+  This parameter enables the \gls{rotext} if set to a non-zero value. It is disabled by default.
 
 \end{description}
 
