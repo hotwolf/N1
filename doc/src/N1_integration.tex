@@ -38,22 +38,32 @@ the design for application specific needs:
 
 \item[\texttt{SP\_WIDTH}] Stack pointer width. \\
   This parameter determines the address width of the \gls{ls}.
-  Values in the range of 5 to 16 are valid.
-  The default value is 12. 
+  Values in the range of \texttt{5} to \texttt{16} are valid.
+  The default value is \texttt{12}. 
   
-\item[\texttt{IPS\_DEPTH}] Depth of the intermediate parameter stack. \\
+\item[\texttt{IPS\_DEPTH}] Depth of the intermediate \gls{ps}. \\
   This parameter determines the number of \glspl{cell} in the \gls{is} of the \gls{ps}.
-  Any value larger than 2 is valid.
-  The default value is 8. 
+  Any value larger than \texttt{2} is valid.
+  The default value is \texttt{8}. 
   The purpose of the \gls{is} is to conceal fluctuations in stack usage to the \gls{ls}.
   The optimal value should be derived from the application use case.
 
-\item[\texttt{IRS\_DEPTH}] Depth of the intermediate return stack. \\
+\item[\texttt{IPS\_BYPASS}] Bypass the intermediate \gls{ps}. \\
+  This perameter provides the option to bypass the intermediate \gls{ps}.
+  If set to a non-zero value, the \gls{ls} will be directly connected to the \gls{us}.
+  The default value is \texttt{0}. 
+
+\item[\texttt{IRS\_DEPTH}] Depth of the intermediate \gls{rs}. \\
   This parameter determines the number of \glspl{cell} in the \gls{is} of the \gls{rs}.
-  Any value larger than 2 is valid.
-  The default value is 8. 
+  Any value larger than \texttt{2} is valid.
+  The default value is \texttt{8}. 
   The purpose of the \gls{is} is to conceal fluctuations in stack usage to the \gls{ls}.
   The optimal value should be derived from the application use case.
+
+\item[\texttt{IRS\_BYPASS}] Bypass the intermediate \gls{rs}. \\
+  This perameter provides the option to bypass the intermediate \gls{rs}.
+  If set to a non-zero value, the \gls{ls} will be directly connected to the \gls{us}.
+  The default value is \texttt{0}. 
 
 \item[\texttt{PBUS\_AADR\_OFFSET}] Offset for direct \gls{jump} or \gls{call} addressing. \\
   This parameter determines the location of the 32KB window for \glspl{jump} and \glspl{call}

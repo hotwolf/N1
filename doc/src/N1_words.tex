@@ -656,7 +656,11 @@ which can be directly mapped to N1 instructions.
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
           \texttt{0x0460}                                         \\        %PS4  PS3  PS2<>PS100PS0
-          \texttt{0x0418}}}                                       \\ \hline %PS4  PS3  PS2  PS1<>PS0
+          \texttt{0x0418}                                         \\        %PS4  PS3  PS2  PS1<>PS0
+          \textsl{or}                                             \\
+          \texttt{0xXXXX}
+          \footnote{\label{words:list:rotext}Requires \gls{rotext}}
+      }}                                                          \\ \hline 
 
     %S>D                                        
       \texttt{S>D}                                                &
@@ -696,8 +700,12 @@ which can be directly mapped to N1 instructions.
           Copy x1 below x2}}                                      &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
-          \texttt{0x0750}                                         \\        %R>
-          \texttt{0x0460}}}                                       \\ \hline %R>
+          \texttt{0x0750}                                         \\
+          \texttt{0x0460}                                         \\
+          \textsl{or}                                             \\
+          \texttt{0xXXXX}
+          \footnotemark[\ref{words:list:rotext}]
+      }}                                                          \\ \hline
                               
     %U<                                        
       \texttt{U<}                                                 &

@@ -29,23 +29,22 @@ The instruction set of the N1 processor (see \secref{opcodes}) reserves a number
 of undefined \glspl{opcode} for functional extensions.
 These extensions imply a trade-off between hardware complexity and functional 
 improvements.
-They can be selected individually for each system which integrates the N1 processor.    
+They can be selected individually for each system which integrates the N1 processor
+(see \secref{integration}).    
 
 \subsection{ROT Extension}
 \label{extensions:rot}
 
-The \gls{rotext} permits a single cycle execution of \texttt{ROT}, \texttt{-ROT}, 
-and other common \gls{stack} operations (see \tabref{opcodes:stack:mapping}). 
-Depending on the application software, this may gain improvements in execution time
-and code density at the cost of two additional data paths in the \gls{us}.
-\figref{extensions:rot:transpat} illustrates the \gls{stack} transitions which are
-are supported by the \gls{rotext}. 
-
+The \gls{rotext} adds two data paths to the \gls{us}, allowing direct dater transfers
+between the top and the third element of the \gls{ps}. These new stack transitions are
+are perfomed by the regular stack instructions (see \secref{opcodes:stack}), using
+some of the reserved stack transition patterns. 
+\figref{extensions:rot:transpat} illustrates the usage of the \gls{rotext}. 
 
 \begin{figure}[!h]
   %\begin{center}
   \makebox[\textwidth][c]{
-    \scalebox{0.75} {
+    \scalebox{0.72} {
       \begin{tikzpicture}
         
         %Upwards
@@ -380,9 +379,12 @@ are supported by the \gls{rotext}.
   %\end{center}
 \end{figure}
 
-
-A list of common \gls{stack} transitions which can be executed more efficiently with the \gls{rotext}
-is given in \tabref{extensions:rot:mapping}.
+The \gls{rotext} improves the execution time and code density of the three commmon
+stack operations \texttt{TUCK}, \texttt{ROT}, and \texttt{-ROT}
+(see tabref{extensions:rot:mapping}). 
+That means that all common single-cell operations \gls{ps} operations shown in
+\tabref{opcodes:stack:mapping} can be executed in one cycle if the \gls{rotext} is
+enabled.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -509,3 +511,7 @@ is given in \tabref{extensions:rot:mapping}.
   \end{longtable}
 \end{center}  
 \endgroup
+
+N1 processors with \gls{rotext} are backward compatible to the ones without.
+None of the stack operations listed in \tabref{opcodes:stack:mapping} are affected by
+the \gls{rotext}.
