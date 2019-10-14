@@ -29,15 +29,15 @@ The instruction set of the N1 processor (see \secref{opcodes}) reserves a number
 of undefined \glspl{opcode} for functional extensions.
 These extensions imply a trade-off between hardware complexity and functional 
 improvements.
-They can be selected individually for each system which integrates the N1 processor
+They can be selected individually for each system integrating the N1 processor
 (see \secref{integration}).    
 
 \subsection{ROT Extension}
 \label{extensions:rot}
 
-The \gls{rotext} adds two data paths to the \gls{us}, allowing direct dater transfers
-between the top and the third element of the \gls{ps}. These new stack transitions are
-are perfomed by the regular stack instructions (see \secref{opcodes:stack}), using
+The \gls{rotext} adds two data paths to the \gls{us}, allowing direct data transfers
+between the top and the third element of the \gls{ps}. These new stack transitions 
+are performed by the regular stack instructions (see \secref{opcodes:stack}), using
 some of the reserved stack transition patterns. 
 \figref{extensions:rot:transpat} illustrates the usage of the \gls{rotext}. 
 
@@ -381,8 +381,8 @@ some of the reserved stack transition patterns.
 
 The \gls{rotext} improves the execution time and code density of the three commmon
 stack operations \texttt{TUCK}, \texttt{ROT}, and \texttt{-ROT}
-(see tabref{extensions:rot:mapping}). 
-That means that all common single-cell operations \gls{ps} operations shown in
+(see \tabref{extensions:rot:mapping}). 
+This means that all common single-cell \gls{ps} operations shown in
 \tabref{opcodes:stack:mapping} can be executed in one cycle if the \gls{rotext} is
 enabled.
 
@@ -441,7 +441,7 @@ enabled.
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0xxx}
+      \texttt{0x07C0}
     }} \\ \hline
 
     %ROT
@@ -473,7 +473,7 @@ enabled.
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0xxx}
+      \texttt{0x041C}
     }} \\ \hline
     
     %-ROT
@@ -505,7 +505,7 @@ enabled.
     }} &
     \multicolumn{1}{m{4.25em}|}{
     \makecell[c]{ 
-      \texttt{0x0xxx}
+      \texttt{0x04E0}
     }} \\ \hline
 
   \end{longtable}
@@ -513,5 +513,5 @@ enabled.
 \endgroup
 
 N1 processors with \gls{rotext} are backward compatible to the ones without.
-None of the stack operations listed in \tabref{opcodes:stack:mapping} are affected by
-the \gls{rotext}.
+All stack operations can still be executed as listed in \tabref{opcodes:stack:mapping},
+even if the \gls{rotext} is enabled.
