@@ -107,10 +107,11 @@
 module N1
   #(parameter SP_WIDTH         = 12,                                 //width of a stack pointer
     parameter IPS_DEPTH        =  8,                                 //depth of the intermediate parameter stack
+    parameter IPS_BYPASS       =  0,                                 //conncet the LS directly to the US
     parameter IRS_DEPTH        =  8,                                 //depth of the intermediate return stack
+    parameter IRS_BYPASS       =  0,                                 //conncet the LS directly to the US
     parameter PBUS_AADR_OFFSET = 16'h0000,                           //offset for direct program address
-    parameter PBUS_MADR_OFFSET = 16'h0000,                           //offset for direct data address
-    parameter PS_RS_DIST       = 22)                                 //safety distance between PS and RS
+    parameter PBUS_MADR_OFFSET = 16'h0000)                           //offset for direct data address
 
    (//Clock and reset
     input  wire                              clk_i,                  //module clock
@@ -153,8 +154,6 @@ module N1
     //Probe signals
     //DSP - DSP macro container
     output wire [15:0]                       prb_dsp_pc_o,           //PC
-    output wire [SP_WIDTH-1:0]               prb_dsp_psp_o,          //PSP
-    output wire [SP_WIDTH-1:0]               prb_dsp_rsp_o,          //RSP
     //EXCPT - Exception aggregator
     output wire [2:0]                        prb_excpt_o,            //exception tracker
     output wire                              prb_excpt_en_o,         //exception enable
@@ -162,32 +161,24 @@ module N1
     //FC - Flow control
     output wire [2:0]                        prb_fc_state_o,         //state variable
     output wire                              prb_fc_pbus_acc_o,      //ongoing bus access
+    //IPS - Intermediate parameter stack
+    output wire [(16*IPS_DEPTH)-1:0]         prb_ips_cells_o,        //current IS cells
+    output wire [IPS_DEPTH-1:0]              prb_ips_tags_o,         //current IS tags
+    output wire [1:0]                        prb_ips_state_o,        //current state
     //IR - Instruction register
     output wire [15:0]                       prb_ir_o,               //current instruction register
     output wire [15:0]                       prb_ir_stash_o,         //stashed instruction register
+    //IRS - Intermediate return stack	     
+    output wire [(16*IRS_DEPTH)-1:0]         prb_irs_cells_o,        //current IS cells
+    output wire [IRS_DEPTH-1:0]              prb_irs_tags_o,         //current IS tags
+    output wire [1:0]                        prb_irs_state_o,        //current state
+    //LS - Lower stack
+    output wire [2:0]                        prb_lps_state_o,        //LPS state
+    output wire [2:0]                        prb_lrs_state_o,        //LRS state
+    output wire [15:0]                       prb_lps_tos_o,          //LPS TOS
+    output wire [15:0]                       prb_lrs_tos_o,          //LRS TOS
     //PAGU - Program bus AGU
-    output wire [15:0]                       prb_pagu_prev_adr_o,        //address register
-    //PRS - Parameter and return stack
-    output wire [2:0]                        prb_state_task_o,       //current state
-    output wire [1:0]                        prb_state_sbus_o,       //current state
-    output wire [15:0]                       prb_rs0_o,              //current RS0
-    output wire [15:0]                       prb_ps0_o,              //current PS0
-    output wire [15:0]                       prb_ps1_o,              //current PS1
-    output wire [15:0]                       prb_ps2_o,              //current PS2
-    output wire [15:0]                       prb_ps3_o,              //current PS3
-    output wire                              prb_rs0_tag_o,          //current RS0 tag
-    output wire                              prb_ps0_tag_o,          //current PS0 tag
-    output wire                              prb_ps1_tag_o,          //current PS1 tag
-    output wire                              prb_ps2_tag_o,          //current PS2 tag
-    output wire                              prb_ps3_tag_o,          //current PS3 tag
-    output wire [(16*IPS_DEPTH)-1:0]         prb_ips_o,              //current IPS
-    output wire [IPS_DEPTH-1:0]              prb_ips_tags_o,         //current IPS tags
-    output wire [(16*IRS_DEPTH)-1:0]         prb_irs_o,              //current IRS
-    output wire [IRS_DEPTH-1:0]              prb_irs_tags_o,         //current IRS tags
-    //SAGU - Stack bus AGU
-    output wire                              prb_sagu_of_o,          //overflow condition
-    output wire                              prb_sagu_ps_o,          //PS operation
-    output wire                              prb_sagu_rs_o);         //RS operation
+    output wire [15:0]                       prb_pagu_prev_adr_o);   //address register
 
    //Internal interfaces
    //-------------------
@@ -209,12 +200,10 @@ module N1
    wire [31:0]                              dsp2alu_mul_res;         //result from multiplier
    //DSP -> PAGU
    wire [15:0]                              dsp2pagu_adr;            //AGU output
-   //DSP -> PRS
-   wire [SP_WIDTH-1:0]                      dsp2prs_psp;             //parameter stack pointer
-   wire [SP_WIDTH-1:0]                      dsp2prs_rsp;             //return stack pointer
-   //DSP -> SAGU
-   wire [SP_WIDTH-1:0]                      dsp2sagu_psp_next;       //parameter stack pointer
-   wire [SP_WIDTH-1:0]                      dsp2sagu_rsp_next;       //return stack pointer
+   //DSP -> LS
+   wire                                     dsp2ls_overflow,         //stacks overlap
+   wire                                     dsp2ls_sp_carry,         //carry of inc/dec operation
+   wire [SP_WIDTH-1:0]                      dsp2ls_sp_next,          //next PSP or RSP
 
    //EXCPT - Exception aggregator
    //EXCPT -> FC
@@ -241,15 +230,29 @@ module N1
    wire                                     fc2ir_force_drop;        //load DROP instruction
    wire                                     fc2ir_force_nop;         //load NOP instruction
    //FC -> PAGU
-   wire                                     fc2pagu_prev_adr_hold;       //maintain stored address
-   wire                                     fc2pagu_prev_adr_sel;        //0:AGU output, 1:previous address
+   wire                                     fc2pagu_prev_adr_hold;   //maintain stored address
+   wire                                     fc2pagu_prev_adr_sel;    //0:AGU output, 1:previous address
    //FC -> PRS
    wire                                     fc2prs_hold;             //hold any state tran
    wire                                     fc2prs_dat2ps0;          //capture read data
    wire                                     fc2prs_tc2ps0;           //capture throw code
    wire                                     fc2prs_isr2ps0;          //capture ISR
 
-   //IR - Instruction Register and Decoder
+   //IPS - Intermediate parameter stack
+   //IPS -> LS
+   wire                                     ips2ls_push;             //push cell from IS to LS
+   wire                                     ips2ls_pull;             //pull cell from IS to LS
+   wire                                     ips2ls_set;              //set SP
+   wire                                     ips2ls_get;              //get SP
+   wire                                     ips2ls_reset;            //reset SP
+   wire [15:0]                              ips2ls_push_data;        //LS push data
+   //IPS -> US   		            
+   wire                                     ips2us_ready;            //IS is ready for the next command
+   wire                                     ips2us_overflow;         //LS+IS are full or overflowing
+   wire                                     ips2us_underflow;        //LS+IS are empty
+   wire [15:0]                              ips2us_pull_data;        //IS pull data
+   
+   //IR - Instruction register and decoder
    //IR -> ALU
    wire [4:0]                               ir2alu_opr;              //ALU operator
    wire [4:0]                               ir2alu_opd;              //immediate operand
@@ -297,13 +300,39 @@ module N1
    wire [1:0]                               ir2prs_ips_tp;           //10:push, 01:pull
    wire [1:0]                               ir2prs_irs_tp;           //10:push, 01:pull
 
+   //IPS - Intermediate return stack
+   //IRS -> LS
+   wire                                     irs2ls_push;             //push cell from IS to LS
+   wire                                     irs2ls_pull;             //pull cell from IS to LS
+   wire                                     irs2ls_set;              //set SP
+   wire                                     irs2ls_get;              //get SP
+   wire                                     irs2ls_reset;            //reset SP
+   wire [15:0]                              irs2ls_push_data;        //LS push data
+   //IRS -> US   		            
+   wire                                     irs2us_ready;            //IS is ready for the next command
+   wire                                     irs2us_overflow;         //LS+IS are full or overflowing
+   wire                                     irs2us_underflow;        //LS+IS are empty
+   wire [15:0]                              irs2us_pull_data;        //IS pull data
+
+   //LS - Lower stack
+   //LS -> IPS
+   wire                                     ls2ips_ready;            //LS is ready for the next command
+   wire                                     ls2ips_overflow;         //LS is full or overflowing
+   wire                                     ls2ips_underflow;        //LS empty
+   wire [15:0]                              ls2ips_pull_data;        //LS pull data
+   //LS -> IRS
+   wire                                     ls2irs_ready;            //LS is ready for the next command
+   wire                                     ls2irs_overflow;         //LS is full or overflowing
+   wire                                     ls2irs_underflow;        //LS empty
+   wire [15:0]                              ls2irs_pull_data;        //LS pull data
+      
    //PAGU - Program bus address generation unit
    //PAGU -> DSP
    wire                                     pagu2dsp_adr_sel;        //1:absolute COF, 0:relative COF
    wire [15:0]                              pagu2dsp_aadr;           //absolute COF address
    wire [15:0]                              pagu2dsp_radr;           //relative COF address
    //PAGU -> PRS
-   wire [15:0]                              pagu2prs_prev_adr;           //address register output
+   wire [15:0]                              pagu2prs_prev_adr;       //address register output
 
    //PRS - Parameter and return stack
    //PRS -> ALU
@@ -329,20 +358,22 @@ module N1
    wire [SP_WIDTH-1:0]                      prs2sagu_psp_load_val;   //parameter stack load value
    wire [SP_WIDTH-1:0]                      prs2sagu_rsp_load_val;   //return stack load value
 
-   //SAGU - Stack bus address generation unit
-   //SAGU -> DSP
-   wire                                     sagu2dsp_psp_hold;       //maintain PSP
-   wire                                     sagu2dsp_psp_op_sel;     //1:set new PSP, 0:add offset to PSP
-   wire [SP_WIDTH-1:0]                      sagu2dsp_psp_offs;       //PSP offset
-   wire [SP_WIDTH-1:0]                      sagu2dsp_psp_load_val;   //new PSP
-   wire                                     sagu2dsp_rsp_hold;       //maintain RSP
-   wire                                     sagu2dsp_rsp_op_sel;     //1:set new RSP, 0:add offset to RSP
-   wire [SP_WIDTH-1:0]                      sagu2dsp_rsp_offs;       //relative address
-   wire [SP_WIDTH-1:0]                      sagu2dsp_rsp_load_val;   //absolute address
-   //SAGU -> EXCPT
-   wire                                     sagu2excpt_psof;         //PS overflow
-   wire                                     sagu2excpt_rsof;         //RS overflow
-
+   //US - Upper stack
+   //US -> IPS
+   wire                                     us2ips_push;             //push cell from US to IS
+   wire                                     us2ips_pull;             //pull cell from US to IS
+   wire                                     us2ips_set;              //set SP
+   wire                                     us2ips_get;              //get SP
+   wire                                     us2ips_reset;            //reset SP
+   wire [15:0]                              us2ips_push_data;        //IS push data
+   //US -> IRS
+   wire                                     us2irs_push;             //push cell from US to IS
+   wire                                     us2irs_pull;             //pull cell from US to IS
+   wire                                     us2irs_set;              //set SP
+   wire                                     us2irs_get;              //get SP
+   wire                                     us2irs_reset;            //reset SP
+   wire [15:0]                              us2irs_push_data;        //IS push data
+   
    //ALU - Arithmetic logic unit
    //---------------------------
    N1_alu
@@ -392,32 +423,23 @@ module N1
       .fc2dsp_pc_hold_i         (fc2dsp_pc_hold),                    //maintain PC
       .fc2dsp_radr_inc_i        (fc2dsp_radr_inc),                   //increment relative address
 
+      //LS interface
+      .dsp2ls_overflow_o	(dsp2ls_overflow),                   //stacks overlap
+      .dsp2ls_sp_carry_o	(dsp2ls_sp_carry),                   //carry of inc/dec operation
+      .dsp2ls_sp_next_o		(dsp2ls_sp_next),                    //next PSP or RSP
+      .ls2dsp_sp_opr_i		(ls2dsp_sp_opr),                     //0:inc, 1:dec
+      .ls2dsp_sp_sel_i		(ls2dsp_sp_sel),                     //0:PSP, 1:RSP
+      .ls2dsp_psp_i		(ls2dsp_psp),                        //PSP
+      .ls2dsp_rsp_i		(ls2dsp_rsp),                        //RSP
+
       //PAGU interface
       .dsp2pagu_adr_o           (dsp2pagu_adr),                      //program AGU output
       .pagu2dsp_adr_sel_i       (pagu2dsp_adr_sel),                  //1:absolute COF, 0:relative COF
       .pagu2dsp_aadr_i          (pagu2dsp_aadr),                     //absolute COF address
       .pagu2dsp_radr_i          (pagu2dsp_radr),                     //relative COF address
 
-      //PRS interface
-      .dsp2prs_psp_o            (dsp2prs_psp),                       //parameter stack pointer
-      .dsp2prs_rsp_o            (dsp2prs_rsp),                       //return stack pointer
-
-      //SAGU interface
-      .dsp2sagu_psp_next_o      (dsp2sagu_psp_next),                 //parameter stack pointer
-      .dsp2sagu_rsp_next_o      (dsp2sagu_rsp_next),                 //return stack pointer
-      .sagu2dsp_psp_hold_i      (sagu2dsp_psp_hold),                 //maintain PSP
-      .sagu2dsp_psp_op_sel_i    (sagu2dsp_psp_op_sel),               //1:set new PSP, 0:add offset to PSP
-      .sagu2dsp_psp_offs_i      (sagu2dsp_psp_offs),                 //PSP offset
-      .sagu2dsp_psp_load_val_i  (sagu2dsp_psp_load_val),             //new PSP
-      .sagu2dsp_rsp_hold_i      (sagu2dsp_rsp_hold),                 //maintain RSP
-      .sagu2dsp_rsp_op_sel_i    (sagu2dsp_rsp_op_sel),               //1:set new RSP, 0:add offset to RSP
-      .sagu2dsp_rsp_offs_i      (sagu2dsp_rsp_offs),                 //relative address
-      .sagu2dsp_rsp_load_val_i  (sagu2dsp_rsp_load_val),             //absolute address
-
       //Probe signals
-      .prb_dsp_pc_o             (prb_dsp_pc_o),                      //PC
-      .prb_dsp_psp_o            (prb_dsp_psp_o),                     //PSP
-      .prb_dsp_rsp_o            (prb_dsp_rsp_o));                    //RSP
+      .prb_dsp_pc_o             (prb_dsp_pc_o));                     //PC
 
    //EXCPT - Exception aggregator
    //----------------------------
@@ -523,7 +545,47 @@ module N1
       .prb_fc_state_o           (prb_fc_state_o),                    //state variable
       .prb_fc_pbus_acc_o        (prb_fc_pbus_acc_o));                //ongoing bus access
 
-   //IR - Instruction Register and Decoder
+   //IPS - Intermediate parameter stack
+   //----------------------------------
+   N1_is
+     #(.IS_DEPTH  (IPS_DEPTH),                                       //depth of the IS (must be >=2)
+       .IS_BYPASS (IPS_BYPASS))                                      //conncet the LS directly to the US
+   ips
+   (//Clock and reset
+    .clk_i			(clk_i),                             //module clock
+    .async_rst_i		(async_rst_i),                       //asynchronous reset
+    .sync_rst_i			(sync_rst_i),                        //synchronous reset
+    
+    //LS interface
+    .is2ls_push_o		(ips2ls_push),                       //push cell from IS to LS
+    .is2ls_pull_o		(ips2ls_pull),                       //pull cell from IS to LS
+    .is2ls_set_o		(ips2ls_set),                        //set SP
+    .is2ls_get_o		(ips2ls_get),                        //get SP
+    .is2ls_reset_o		(ips2ls_reset),                      //reset SP
+    .is2ls_push_data_o		(ips2ls_push_data),                  //LS push data
+    .ls2is_ready_i		(ls2ips_ready),                      //LS is ready for the next command
+    .ls2is_overflow_i		(ls2ips_overflow),                   //LS is full or overflowing
+    .ls2is_underflow_i		(ls2ips_underflow),                  //LS empty
+    .ls2is_pull_data_i		(ls2ips_pull_data),                  //LS pull data
+		
+    //US interface
+    .is2us_ready_o		(ips2us_ready),                      //IS is ready for the next command
+    .is2us_overflow_o		(ips2us_overflow),                   //LS+IS are full or overflowing
+    .is2us_underflow_o		(ips2us_underflow),                  //LS+IS are empty
+    .is2us_pull_data_o		(ips2us_pull_data),                  //IS pull data
+    .us2is_push_i		(us2ips_push),                       //push cell from US to IS
+    .us2is_pull_i		(us2ips_pull),                       //pull cell from US to IS
+    .us2is_set_i		(us2ips_set),                        //set SP
+    .us2is_get_i		(us2ips_get),                        //get SP
+    .us2is_reset_i		(us2ips_reset),                      //reset SP
+    .us2is_push_data_i		(us2ips_push_data),                  //IS push data
+		
+    //Probe signals	
+    .prb_ips_cells_o		(prb_ips_cells),                     //current IS cells
+    .prb_ips_tags_o		(prb_ips_tags),                      //current IS tags
+    .prb_ips_state_o		(prb_ips_state));                    //current state
+   
+   //IR - Instruction register and decoder
    //-------------------------------------
    N1_ir
    ir
@@ -603,6 +665,109 @@ module N1
       .prb_ir_o                 (prb_ir_o),                          //current instruction register
       .prb_ir_stash_o           (prb_ir_stash_o));                   //stashed instruction register
 
+   //IRS - Intermediate parameter stack
+   //----------------------------------
+   N1_is
+     #(.IS_DEPTH  (IRS_DEPTH),                                       //depth of the IS (must be >=2)
+       .IS_BYPASS (IRS_BYPASS))                                      //conncet the LS directly to the US
+   irs
+   (//Clock and reset
+    .clk_i			(clk_i),                             //module clock
+    .async_rst_i		(async_rst_i),                       //asynchronous reset
+    .sync_rst_i			(sync_rst_i),                        //synchronous reset
+    
+    //LS interface
+    .is2ls_push_o		(irs2ls_push),                       //push cell from IS to LS
+    .is2ls_pull_o		(irs2ls_pull),                       //pull cell from IS to LS
+    .is2ls_set_o		(irs2ls_set),                        //set SP
+    .is2ls_get_o		(irs2ls_get),                        //get SP
+    .is2ls_reset_o		(irs2ls_reset),                      //reset SP
+    .is2ls_push_data_o		(irs2ls_push_data),                  //LS push data
+    .ls2is_ready_i		(ls2irs_ready),                      //LS is ready for the next command
+    .ls2is_overflow_i		(ls2irs_overflow),                   //LS is full or overflowing
+    .ls2is_underflow_i		(ls2irs_underflow),                  //LS empty
+    .ls2is_pull_data_i		(ls2irs_pull_data),                  //LS pull data
+		
+    //US interface
+    .is2us_ready_o		(irs2us_ready),                      //IS is ready for the next command
+    .is2us_overflow_o		(irs2us_overflow),                   //LS+IS are full or overflowing
+    .is2us_underflow_o		(irs2us_underflow),                  //LS+IS are empty
+    .is2us_pull_data_o		(irs2us_pull_data),                  //IS pull data
+    .us2is_push_i		(us2irs_push),                       //push cell from US to IS
+    .us2is_pull_i		(us2irs_pull),                       //pull cell from US to IS
+    .us2is_set_i		(us2irs_set),                        //set SP
+    .us2is_get_i		(us2irs_get),                        //get SP
+    .us2is_reset_i		(us2irs_reset),                      //reset SP
+    .us2is_push_data_i		(us2irs_push_data),                  //IS push data
+		
+    //Probe signals	
+    .prb_irs_cells_o		(prb_irs_cells),                     //current IS cells
+    .prb_irs_tags_o		(prb_irs_tags),                      //current IS tags
+    .prb_irs_state_o		(prb_irs_state));                    //current state
+
+   //LS - Lower stack
+   //----------------
+   N1_ls
+     #(.SP_WIDTH (SP_WIDTH))                                         //width of either stack pointer
+   ls
+     (//Clock and reset
+      .clk_i			(clk_i),                             //module clock
+      .async_rst_i		(async_rst_i),                       //asynchronous reset
+      .sync_rst_i		(sync_rst_i),                        //synchronous reset
+
+      //Stack bus (wishbone)
+      .sbus_cyc_o		(sbus_cyc_o),                        //bus cycle indicator       +-
+      .sbus_stb_o		(sbus_stb_o),                        //access request            |
+      .sbus_we_o		(sbus_we_o),                         //write enable              | initiator
+      .sbus_adr_o		(sbus_adr_o),                        //address bus               | to
+      .sbus_tga_ps_o		(sbus_tga_ps_o),                     //parameter stack access    | target
+      .sbus_tga_rs_o		(sbus_tga_rs_o),                     //return stack access       |
+      .sbus_dat_o		(sbus_dat_o),                        //write data bus            |
+      .sbus_ack_i		(sbus_ack_i),                        //bus cycle acknowledge     +-
+      .sbus_stall_i		(sbus_stall_i),                      //access delay              | initiator
+      .sbus_dat_i		(sbus_dat_i),                        //read data bus             +-
+
+      //Internal interfaces
+      //-------------------
+      //DSP interface
+      .ls2dsp_sp_opr_o		(ls2dsp_sp_opr),                     //0:inc, 1:dec
+      .ls2dsp_sp_sel_o		(ls2dsp_sp_sel),                     //0:PSP, 1:RSP
+      .ls2dsp_psp_o		(ls2dsp_psp),                        //PSP
+      .ls2dsp_rsp_o		(ls2dsp_rsp),                        //RSP
+      .dsp2ls_overflow_i	(dsp2ls_overflow),                   //stacks overlap
+      .dsp2ls_sp_carry_i	(dsp2ls_sp_carry),                   //carry of inc/dec operation
+      .dsp2ls_sp_next_i		(dsp2ls_sp_next),                    //next PSP or RSP
+      					
+      //IPS interface			
+      .ls2ips_ready_o		(ls2ips_ready),                      //LPS is ready for the next command
+      .ls2ips_overflow_o	(ls2ips_overflow),                   //LPS overflow
+      .ls2ips_underflow_o	(ls2ips_underflow),                  //LPS underflow
+      .ls2ips_pull_data_o	(ls2ips_pull_data),                  //LPS pull data
+      .ips2ls_push_i		(ips2ls_push),                       //push cell from IPS to LS
+      .ips2ls_pull_i		(ips2ls_pull),                       //pull cell from IPS to LS
+      .ips2ls_set_i		(ips2ls_set),                        //set PSP
+      .ips2ls_get_i		(ips2ls_get),                        //get PSP
+      .ips2ls_reset_i		(ips2ls_reset),                      //reset PSP
+      .ips2ls_push_data_i	(ips2ls_push_data),                  //LPS push data
+      			
+      //IRS interface	
+      .ls2irs_ready_o		(ls2irs_ready),                      //LRS is ready for the next command
+      .ls2irs_overflow_o	(ls2irs_overflow),                   //LRS overflow
+      .ls2irs_underflow_o	(ls2irs_underflow),                  //LRS underflow
+      .ls2irs_pull_data_o	(ls2irs_pull_data),                  //LRS pull data
+      .irs2ls_push_i		(irs2ls_push),                       //push cell from IRS to LS
+      .irs2ls_pull_i		(irs2ls_pull),                       //pull cell from IRS to LS
+      .irs2ls_set_i		(irs2ls_set),                        //set RSP
+      .irs2ls_get_i		(irs2ls_get),                        //get RSP
+      .irs2ls_reset_i		(irs2ls_reset),                      //reset RSP
+      .irs2ls_push_data_i	(irs2ls_push_data),                  //LRS push data
+      			
+      //Probe signals	
+      .prb_lps_state_o		(prb_lps_state),                     //LPS state
+      .prb_lrs_state_o		(prb_lrs_state),                     //LRS state
+      .prb_lps_tos_o		(prb_lps_tos),                       //LPS TOS
+      .prb_lrs_tos_o		(prb_lrs_tos));                      //LRS TOS
+   
    //PAGU - Program bus address generation unit
    //------------------------------------------
    N1_pagu
@@ -647,153 +812,5 @@ module N1
 
       //Probe signals
       .prb_pagu_prev_adr_o      (prb_pagu_prev_adr_o));              //address register
-
-
-   //PRS - Parameter and return stack
-   //--------------------------------
-   N1_prs
-     #(.SP_WIDTH (SP_WIDTH))                                         //width of either stack pointer
-   prs
-     (//Clock and reset
-      .clk_i                    (clk_i),                             //module clock
-      .async_rst_i              (async_rst_i),                       //asynchronous reset
-      .sync_rst_i               (sync_rst_i),                        //synchronous reset
-
-      //Program bus (wishbone)
-      .pbus_dat_o               (pbus_dat_o),                        //write data bus
-      .pbus_dat_i               (pbus_dat_i),                        //read data bus
-
-      //Stack bus (wishbone)
-      .sbus_cyc_o               (sbus_cyc_o),                        //bus cycle indicator       +-
-      .sbus_stb_o               (sbus_stb_o),                        //access request            | initiator
-      .sbus_we_o                (sbus_we_o),                         //write enable              | to
-      .sbus_dat_o               (sbus_dat_o),                        //write data bus            | target
-      .sbus_ack_i               (sbus_ack_i),                        //bus cycle acknowledge     +-
-      .sbus_stall_i             (sbus_stall_i),                      //access delay              | target to initiator
-      .sbus_dat_i               (sbus_dat_i),                        //read data bus             +-
-
-      //Interrupt interface
-      .irq_req_i                (irq_req_i),                         //requested interrupt vector
-
-      //ALU interface
-      .prs2alu_ps0_o            (prs2alu_ps0),                       //current PS0 (TOS)
-      .prs2alu_ps1_o            (prs2alu_ps1),                       //current PS1 (TOS+1)
-      .alu2prs_ps0_next_i       (alu2prs_ps0_next),                  //new PS0 (TOS)
-      .alu2prs_ps1_next_i       (alu2prs_ps1_next),                  //new PS1 (TOS+1)
-
-      //DSP interface
-      .dsp2prs_psp_i            (dsp2prs_psp),                       //parameter stack pointer (AGU output)
-      .dsp2prs_rsp_i            (dsp2prs_rsp),                       //return stack pointer (AGU output)
-
-      //EXCPT interface
-      .prs2excpt_psuf_o         (prs2excpt_psuf),                    //parameter stack underflow
-      .prs2excpt_rsuf_o         (prs2excpt_rsuf),                    //return stack underflow
-      .excpt2prs_tc_i           (excpt2prs_tc),                      //throw code
-
-      //FC interface
-      .prs2fc_hold_o            (prs2fc_hold),                       //stacks not ready
-      .prs2fc_ps0_false_o       (prs2fc_ps0_false),                  //PS0 is zero
-      .fc2prs_hold_i            (fc2prs_hold),                       //hold any state tran
-      .fc2prs_dat2ps0_i         (fc2prs_dat2ps0),                    //capture read data
-      .fc2prs_tc2ps0_i          (fc2prs_tc2ps0),                     //capture throw code
-      .fc2prs_isr2ps0_i         (fc2prs_isr2ps0),                    //capture ISR
-
-      //IR interface
-      .ir2prs_lit_val_i         (ir2prs_lit_val),                    //literal value
-      .ir2prs_us_tp_i           (ir2prs_us_tp),                      //upper stack transition pattern
-      .ir2prs_ips_tp_i          (ir2prs_ips_tp),                     //10:push, 01:pull
-      .ir2prs_irs_tp_i          (ir2prs_irs_tp),                     //10:push, 01:pull
-      .ir2prs_alu2ps0_i         (ir2prs_alu2ps0),                    //ALU output  -> PS0
-      .ir2prs_alu2ps1_i         (ir2prs_alu2ps1),                    //ALU output  -> PS1
-      .ir2prs_lit2ps0_i         (ir2prs_lit2ps0),                    //literal     -> PS0
-      .ir2prs_pc2rs0_i          (ir2prs_pc2rs0),                     //PC          -> RS0
-      .ir2prs_ps_rst_i          (ir2prs_ps_rst),                     //reset parameter stack
-      .ir2prs_rs_rst_i          (ir2prs_rs_rst),                     //reset return stack
-      .ir2prs_psp_get_i         (ir2prs_psp_get),                    //read parameter stack pointer
-      .ir2prs_psp_set_i         (ir2prs_psp_set),                    //write parameter stack pointer
-      .ir2prs_rsp_get_i         (ir2prs_rsp_get),                    //read return stack pointer
-      .ir2prs_rsp_set_i         (ir2prs_rsp_set),                    //write return stack pointer
-
-      //PAGU interface
-      .prs2pagu_ps0_o           (prs2pagu_ps0),                      //PS0
-      .prs2pagu_rs0_o           (prs2pagu_rs0),                      //RS0
-      .pagu2prs_prev_adr_i      (pagu2prs_prev_adr),                 //address register output
-
-      //SAGU interface
-      .prs2sagu_hold_o          (prs2sagu_hold),                     //maintain stack pointer
-      .prs2sagu_psp_rst_o       (prs2sagu_psp_rst),                  //reset PSP
-      .prs2sagu_rsp_rst_o       (prs2sagu_rsp_rst),                  //reset RSP
-      .prs2sagu_stack_sel_o     (prs2sagu_stack_sel),                //1:RS, 0:PS
-      .prs2sagu_push_o          (prs2sagu_push),                     //increment stack pointer
-      .prs2sagu_pull_o          (prs2sagu_pull),                     //decrement stack pointer
-      .prs2sagu_load_o          (prs2sagu_load),                     //load stack pointer
-      .prs2sagu_psp_load_val_o  (prs2sagu_psp_load_val),             //parameter stack load value
-      .prs2sagu_rsp_load_val_o  (prs2sagu_rsp_load_val),             //return stack load value
-
-      //Probe signals
-      .prb_state_task_o         (prb_state_task_o),                  //current state
-      .prb_state_sbus_o         (prb_state_sbus_o),                  //current state
-      .prb_rs0_o                (prb_rs0_o),                         //current RS0
-      .prb_ps0_o                (prb_ps0_o),                         //current PS0
-      .prb_ps1_o                (prb_ps1_o),                         //current PS1
-      .prb_ps2_o                (prb_ps2_o),                         //current PS2
-      .prb_ps3_o                (prb_ps3_o),                         //current PS3
-      .prb_rs0_tag_o            (prb_rs0_tag_o),                     //current RS0 tag
-      .prb_ps0_tag_o            (prb_ps0_tag_o),                     //current PS0 tag
-      .prb_ps1_tag_o            (prb_ps1_tag_o),                     //current PS1 tag
-      .prb_ps2_tag_o            (prb_ps2_tag_o),                     //current PS2 tag
-      .prb_ps3_tag_o            (prb_ps3_tag_o),                     //current PS3 tag
-      .prb_ips_o                (prb_ips_o),                         //current IPS
-      .prb_ips_tags_o           (prb_ips_tags_o),                    //current IPS
-      .prb_irs_o                (prb_irs_o),                         //current IRS
-      .prb_irs_tags_o           (prb_irs_tags_o));                   //current IRS
-
-   //SAGU - Stack bus address generation unit
-   //----------------------------------------
-   N1_sagu
-     #(.SP_WIDTH   (SP_WIDTH),                                       //width of either stack pointer
-       .PS_RS_DIST (PS_RS_DIST))                                     //safety distance between PS and RS
-   sagu
-     (//Clock and reset
-      .clk_i                    (clk_i),                             //module clock
-      .async_rst_i              (async_rst_i),                       //asynchronous reset
-      .sync_rst_i               (sync_rst_i),                        //synchronous reset
-
-      //Stack bus (wishbone)
-      .sbus_adr_o               (sbus_adr_o),                        //address bus
-      .sbus_tga_ps_o            (sbus_tga_ps_o),                     //parameter stack access
-      .sbus_tga_rs_o            (sbus_tga_rs_o),                     //return stack access
-
-      //DSP interface
-      .sagu2dsp_psp_hold_o      (sagu2dsp_psp_hold),                 //maintain PSP
-      .sagu2dsp_psp_op_sel_o    (sagu2dsp_psp_op_sel),               //1:set new PSP, 0:add offset to PSP
-      .sagu2dsp_psp_offs_o      (sagu2dsp_psp_offs),                 //PSP offset
-      .sagu2dsp_psp_load_val_o  (sagu2dsp_psp_load_val),             //new PSP
-      .sagu2dsp_rsp_hold_o      (sagu2dsp_rsp_hold),                 //maintain RSP
-      .sagu2dsp_rsp_op_sel_o    (sagu2dsp_rsp_op_sel),               //1:set new RSP, 0:add offset to RSP
-      .sagu2dsp_rsp_offs_o      (sagu2dsp_rsp_offs),                 //relative address
-      .sagu2dsp_rsp_load_val_o  (sagu2dsp_rsp_load_val),             //absolute address
-      .dsp2sagu_psp_next_i      (dsp2sagu_psp_next),                 //parameter stack pointer
-      .dsp2sagu_rsp_next_i      (dsp2sagu_rsp_next),                 //return stack pointer
-
-      //EXCPT  interface
-      .sagu2excpt_psof_o        (sagu2excpt_psof),                   //PS overflow
-      .sagu2excpt_rsof_o        (sagu2excpt_rsof),                   //RS overflow
-
-      //PRS interface
-      .prs2sagu_hold_i          (prs2sagu_hold),                     //maintain stack pointers
-      .prs2sagu_psp_rst_i       (prs2sagu_psp_rst),                  //reset PSP
-      .prs2sagu_rsp_rst_i       (prs2sagu_rsp_rst),                  //reset RSP
-      .prs2sagu_stack_sel_i     (prs2sagu_stack_sel),                //1:RS, 0:PS
-      .prs2sagu_push_i          (prs2sagu_push),                     //increment stack pointer
-      .prs2sagu_pull_i          (prs2sagu_pull),                     //decrement stack pointer
-      .prs2sagu_load_i          (prs2sagu_load),                     //load stack pointer
-      .prs2sagu_psp_load_val_i  (prs2sagu_psp_load_val),             //parameter stack load value
-      .prs2sagu_rsp_load_val_i  (prs2sagu_rsp_load_val),             //return stack load value
-
-      //Probe signals
-      .prb_sagu_of_o            (prb_sagu_of_o),                     //overflow condition
-      .prb_sagu_ps_o            (prb_sagu_ps_o),                     //PS operation
-      .prb_sagu_rs_o            (prb_sagu_rs_o));                    //RS operation
 
 endmodule // N1

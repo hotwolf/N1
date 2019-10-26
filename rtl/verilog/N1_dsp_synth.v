@@ -67,7 +67,6 @@ module N1_dsp
     input  wire                             ls2dsp_sp_sel_i,              //0:PSP, 1:RSP
     input  wire [SP_WIDTH-1:0]              ls2dsp_psp_i,                 //PSP
     input  wire [SP_WIDTH-1:0]              ls2dsp_rsp_i,                 //RSP
-    input  wire [SP_WIDTH-1:0]              ls2dsp_rsp_b_i,           //~RSP
 
     //PAGU interface
     output wire [15:0]                      dsp2pagu_adr_o,             //program AGU output

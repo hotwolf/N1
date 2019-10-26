@@ -65,8 +65,6 @@ module N1_is
     //Internal signals
     //----------------
     //LS interface
-    //!!! ls2is_overflow_i is only valid when the RSP is incremented (combinational feedback)
-    //!!! ls2is_underflow_i is only valid when the RSP is decremented (combinational feedback)
     output wire                             is2ls_push_o,                                         //push cell from IS to LS
     output wire                             is2ls_pull_o,                                         //pull cell from IS to LS
     output wire                             is2ls_set_o,                                          //set SP
@@ -79,8 +77,6 @@ module N1_is
     input  wire [15:0]                      ls2is_pull_data_i,                                    //LS pull data
 
     //US interface
-    //!!! is2us_overflow_o is only valid when the RSP is incremented (combinational feedback)
-    //!!! is2us_underflow_o is only valid when the RSP is decremented (combinational feedback)
     output wire                             is2us_ready_o,                                        //IS is ready for the next command
     output wire                             is2us_overflow_o,                                     //LS+IS are full or overflowing
     output wire                             is2us_underflow_o,                                    //LS+IS are empty

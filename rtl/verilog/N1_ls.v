@@ -119,7 +119,7 @@ module N1_ls
     input  wire                             irs2ls_reset_i,                       //reset RSP
     input  wire [15:0]                      irs2ls_push_data_i,                   //LRS push data
 
-   //Probe signals
+    //Probe signals
     output wire [2:0]                       prb_lps_state_o,                      //LPS state
     output wire [2:0]                       prb_lrs_state_o,                      //LRS state
     output wire [15:0]                      prb_lps_tos_o,                        //LPS TOS
