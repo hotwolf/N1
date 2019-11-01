@@ -39,73 +39,270 @@
 `default_nettype none
 
 module N1_us
-   (//Clock and reset
-    input wire                             clk_i,             //module clock
-    input wire                             async_rst_i,       //asynchronous reset
-    input wire                             sync_rst_i,        //synchronous reset
-
-    //Program bus (wishbone)
-    input  wire [15:0]                     pbus_dat_o,        //write data bus
-    input  wire [15:0]                     pbus_dat_i,        //read data bus
-
-    //Internal signals
-    //----------------
-
-
-
-
-    //IPS interface
-    //+-------------------------------------------+------------------------------------------+----------------------------------+
-    //| Requests (mutually exclusive)             | Response on success                      | Response on failure              |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    //| Type                | Input data          | Signals            | Output data         | Signals            | Cause       |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    //| Push to IS          | cell data           | One or more cycles | none                | One or more cycles | LS          |
-    //| (us2ips_push_req_o) | (us2ips_req_data_o) | after the request: |                     | after the request: | overflow    |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Pull from LS        | none                |  ips2us_ack_i &    | cell data           |  ips2us_ack_i &    | LS+IS       |
-    //| (us2ips_pull_req_o) |                     | ~lps2us_fail_i     | (ips2us_ack_data_o) |  ips2us_fail_i     | underflow   |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Overwrite PSP       | new PSP             |                    | none                |                    | LS          |
-    //| (us2ips_wrsp_req_o) | (us2ips_req_data_o) |                    |                     |                    | overflow    |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Read PSP            | none                |                    | PSP                 |                    | LS          |
-    //| (us2ips_rdsp_req_o) |                     |                    | (ips2us_ack_data_o) |                    | overflow    |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    output wire                             us2ips_ls_push_req_o,                    //push request
-    output wire                             us2ips_pull_req_o,                       //pull request
-    output wire                             us2ips_wrsp_req_o,                       //stack pointer write request
-    output wire                             us2ips_rdsp_req_o,                       //stack pointer read request     
-    input  wire                             ips2us_ack_i,                            //acknowledge IPS request
-    input  wire                             ips2us_fail_i,                           //IPS over or underflow
-    input  wire [15:0]                      ips2us_ack_data_i,                       //requested data
-
+  #(parameter EXT_ROT  = 0)                                                            //ROT extension
+   (//Clock and reset					                               
+    input wire                            clk_i,                                       //module clock
+    input wire                            async_rst_i,                                 //asynchronous reset
+    input wire                            sync_rst_i,                                  //synchronous reset
+					  		                                 
+    //Program bus (wishbone)		  		                                 
+    input  wire [15:0]                    pbus_dat_o,                                  //write data bus
+    input  wire [15:0]                    pbus_dat_i,                                  //read data bus
+										       
+    //Internal signals								       
+    //----------------								       
+    //ALU interface								       
+    output wire [15:0]                    s2alu_ps0_o,                                 //current PS0 (TOS)
+    output wire [15:0]                    s2alu_ps1_o,                                 //current PS1 (TOS+1)
+    input  wire [15:0]                    lu2us_ps0_next_i,                            //new PS0 (TOS)
+    input  wire [15:0]                    lu2us_ps1_next_i,                            //new PS1 (TOS+1)
+										       
+    //Flow control interface							       
+    output wire                           us2fc_ready_o,                               //stacks not ready
+    output wire                           us2fc_ps_overflow_o,                         //PS overflow
+    output wire                           us2fc_ps_underflow_o,                        //PS underflow
+    output wire                           us2fc_rs_overflow_o,                         //RS overflow
+    output wire                           us2fc_rs_underflow_o,                        //RS underflow
+    output wire                           us2fc_ps0_false_o,                           //PS0 is zero
+    input  wire                           fc2us_hold_i,                                //hold any state tran
+    input  wire                           fc2us_dat2ps0_i,                             //capture read data
+    input  wire                           fc2us_tc2ps0_i,                              //capture throw code
+    input  wire                           fc2us_isr2ps0_i,                             //capture ISR
+										       
+    //IPS interface								       
+    output wire                           us2ips_push_o,                               //push cell from US to IPS
+    output wire                           us2ips_pull_o,                               //pull cell from US to IPS
+    output wire                           us2ips_set_o,                                //set SP
+    output wire                           us2ips_get_o,                                //get SP
+    output wire                           us2ips_reset_o,                              //reset SP
+    output wire [15:0]                    us2ips_push_data_o,                          //IS push data
+    input  wire                           ips2us_ready_i,                              //IS is ready for the next command
+    input  wire                           ips2us_overflow_i,                           //LS+IPS are full or overflowing
+    input  wire                           ips2us_underflow_i,                          //LS+IPS are empty
+    input  wire [15:0]                    ips2us_pull_data_i,                          //IPS pull data
+										       
+    //Instruction register interface						       
+    input wire                            ir2us_alu2ps0_i,                             //ALU output  -> PS0
+    input wire                            ir2us_alu2ps1_i,                             //ALU output  -> PS1
+    input wire                            ir2us_lit2ps0_i,                             //literal     -> PS0
+    input wire                            ir2us_pc2rs0_i,                              //PC          -> RS0
+    input wire                            ir2us_ps_rst_i,                              //reset parameter stack
+    input wire                            ir2us_rs_rst_i,                              //reset return stack
+    input wire                            ir2us_psp_get_i,                             //read parameter stack pointer
+    input wire                            ir2us_psp_set_i,                             //write parameter stack pointer
+    input wire                            ir2us_rsp_get_i,                             //read return stack pointer
+    input wire                            ir2us_rsp_set_i,                             //write return stack pointer
+    input wire [15:0]                     ir2us_lit_val_i,                             //literal value
+    input wire [9:0]                      ir2us_us_tp_i,                               //upper stack transition pattern
 
     //IRS interface
-    //+-------------------------------------------+------------------------------------------+----------------------------------+
-    //| Requests (mutually exclusive)             | Response on success                      | Response on failure              |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    //| Type                | Input data          | Signals            | Output data         | Signals            | Cause       |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    //| Push to IS          | cell data           | One or more cycles | none                | One or more cycles | LS          |
-    //| (us2irs_push_req_o) | (us2irs_req_data_o) | after the request: |                     | after the request: | overflow    |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Pull from LS        | none                |  irs2us_ack_i &    | cell data           |  irs2us_ack_i &    | LS+IS       |
-    //| (us2irs_pull_req_o) |                     | ~lps2us_fail_i     | (irs2us_ack_data_o) |  irs2us_fail_i     | underflow   |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Overwrite RSP       | new RSP             |                    | none                |                    | LS          |
-    //| (us2irs_wrsp_req_o) | (us2irs_req_data_o) |                    |                     |                    | overflow    |
-    //+---------------------+---------------------+                    +---------------------+                    +-------------+
-    //| Read RSP            | none                |                    | RSP                 |                    | LS          |
-    //| (us2irs_rdsp_req_o) |                     |                    | (irs2us_ack_data_o) |                    | overflow    |
-    //+---------------------+---------------------+--------------------+---------------------+--------------------+-------------+
-    output wire                             us2irs_ls_push_req_o,                    //push request
-    output wire                             us2irs_pull_req_o,                       //pull request
-    output wire                             us2irs_wrsp_req_o,                       //stack pointer write request
-    output wire                             us2irs_rdsp_req_o,                       //stack pointer read request     
-    input  wire                             irs2us_ack_i,                            //acknowledge IRS request
-    input  wire                             irs2us_fail_i,                           //IRS over or underflow
-    input  wire [15:0]                      irs2us_ack_data_i,                       //requested data
+    output wire                           us2irs_push_o,                               //push cell from US to IRS
+    output wire                           us2irs_pull_o,                               //pull cell from US to IRS
+    output wire                           us2irs_set_o,                                //set SP
+    output wire                           us2irs_get_o,                                //get SP
+    output wire                           us2irs_reset_o,                              //reset SP
+    output wire [15:0]                    us2irs_push_data_o,                          //IS push data
+    input  wire                           irs2us_ready_i,                              //IS is ready for the next command
+    input  wire                           irs2us_overflow_i,                           //LS+IRS are full or overflowing
+    input  wire                           irs2us_underflow_i,                          //LS+IRS are empty
+    input  wire [15:0]                    irs2us_pull_data_i,                          //IRS pull data
+										       
+    //Probe signals								       
+    output wire [15:0]                    prb_us_p0_cell_o,                            //UPS cell P0
+    output wire [15:0]                    prb_us_p1_cell_o,                            //UPS cell P1
+    output wire [15:0]                    prb_us_p2_cell_o,                            //UPS cell P2
+    output wire [15:0]                    prb_us_p3_cell_o,                            //UPS cell P3
+    output wire [15:0]                    prb_us_r0_cell_o,                            //URS cell R0
+    output wire                           prb_us_p0_tag_o,                             //UPS cell P0
+    output wire                           prb_us_p1_tag_o,                             //UPS cell P1
+    output wire                           prb_us_p2_tag_o,                             //UPS cell P2
+    output wire                           prb_us_p3_tag_o,                             //UPS cell P3
+    output wire                           prb_us_r0_tag_o,                             //URS cell R0
+    output wire [3:0]                     prb_us_state_o);                             //state register
+										       
+   //P0										       
+   reg                                    p0_cell_reg;                                 //current P0 cell value
+   reg 					  p0_cell_next;                                //next p0 cell value   
+   reg                                    p0_tag_reg;                                  //current P0 tag
+   reg 					  p0_tag_next;                                 //next P0 tag   
+   reg 					  p0_we;                                       //P0 write enable
+   wire                                   move_alu_2_p0;                               //ALU  -> P0
+   wire                                   move_p1_2_p0;                                //P1   -> P0
+   wire                                   move_p2_2_p0;                                //P2   -> P0
+   wire                                   move_pbus_2_p0;                              //PBUS -> P0
+   wire                                   move_r0_2_p0;                                //R0   -> P0
+   
+   //P1
+   reg                                    p1_cell_reg;                                 //current P1 cell value
+   reg 					  p1_cell_next;                                //next P1 cell value   
+   reg                                    p1_tag_reg;                                  //current P1 tag
+   reg 					  p1_tag_next;                                 //next P1 tag   
+   reg 					  p1_we;                                       //P1 write enable
+   wire                                   move_alu_2_p1;                               //ALU  -> P1
+   wire                                   move_p0_2_p1;                                //P0   -> P1
+   wire                                   move_p2_2_p1;                                //P2   -> P1
+ 										       
+   //P2										       
+   reg                                    p2_cell_reg;                                 //current P2 cell value
+   reg 					  p2_cell_next;                                //next p2 cell value   
+   reg                                    p2_tag_reg;                                  //current P2 tag
+   reg 					  p2_tag_next;                                 //next P2 tag   
+   reg 					  p2_we;                                       //P2 write enable
+   wire                                   move_p0_2_p2;                                //P0   -> P2
+   wire                                   move_p1_2_p2;                                //P1   -> P2
+   wire                                   move_p3_2_p2;                                //P3   -> P2
+    										       
+   //P3										       
+   reg                                    p3_cell_reg;                                 //current P3 cell value
+   reg 					  p3_cell_next;                                //next P3 cell value   
+   reg                                    p3_tag_reg;                                  //current P3 tag
+   reg 					  p3_tag_next;                                 //next P3 tag
+   reg 					  p3_we;                                       //P3 write enable
+   wire                                   move_ips_2_p3;                               //IPS  -> P1
+   wire                                   move_p2_2_p3;                                //P3   -> P1
+ 										       
+   //IPS
+   wire                                   move_p3_2_ips;                               //P3  -> IPS
+
+   //R0										       
+   reg                                    r0_cell_reg;                                 //current R0 cell value
+   reg 					  r0_cell_next;                                //next R0 cell value   
+   reg                                    r0_tag_reg;                                  //current R0 tag
+   reg 					  r0_tag_next;                                 //next R0 tag  
+   reg 					  r0_we;                                       //R0 write enable  
+   wire                                   move_irs_2_r0;                               //IRS -> R0
+   wire                                   move_p0_2_r0;                                //P0  -> R0
+
+   //IRS
+   wire                                   move_r0_2_irs;                               //R0  -> IRS
+
+   //Over and underflow conditions
+   wire                                   ps_overflow;                                 //PS overflow
+   wire                                   ps_underflow;                                //PS undrflow
+   wire                                   rs_overflow;                                 //RS overflow
+   wire                                   rs_underflow;                                //RS undrflow
+
+
+										       
+   //Program bus (wishbone)		  		                                 
+   //----------------------							       
+   assign pbus_dat_o           = p0_cell_reg;                                          //P0 is the only write data source
+			       							       
+   //ALU interface	       							       
+   //-------------	       							       
+   assign s2alu_ps0_o          = p0_cell_reg;                                          //current PS0 (TOS)
+   assign s2alu_ps1_o          = p1_cell_reg;                                          //current PS1 (TOS+1)
+										       
+   //Flow control interface							       
+   //----------------------							       
+   assign us2fc_ready_o        = (~p3_tag_reg | ips2us_ready_i) &                      //propagate readiness from IPS
+			         (~r0_tag_reg | irs2us_ready_i) &                      //propagate readiness from IRS
+			         1'b1;                                                 //FSM is ready
+										       
+   assign us2fc_ps_overflow_o  = 1'b0;                                                 //PS overflow
+   assign us2fc_ps_underflow_o = 1'b0;                                                 //PS underflow
+   assign us2fc_rs_overflow_o  = 1'b0;                                                 //RS overflow
+   assign us2fc_rs_underflow_o = 1'b0;                                                 //RS underflow
+										       
+   //IPS interface								       
+   //----------------------							       
+   assign us2ips_push_o        = 1'b0;                                                 //push cell from US to IPS
+   assign us2ips_pull_o        = 1'b0;                                                 //pull cell from US to IPS
+   assign us2ips_set_o         = 1'b0;                                                 //set SP
+   assign us2ips_get_o         = 1'b0;                                                 //get SP
+   assign us2ips_reset_o       = 1'b0;                                                 //reset SP
+   assign us2ips_push_data_o   = p3_cell_reg;                                          //IS push data
+										       
+   //IRS interface								       
+   //----------------------							       
+   assign us2irs_push_o        = 1'b0;                                                 //push cell from US to IRS
+   assign us2irs_pull_o        = 1'b0;                                                 //pull cell from US to IRS
+   assign us2irs_set_o         = 1'b0;                                                 //set SP
+   assign us2irs_get_o         = 1'b0;                                                 //get SP
+   assign us2irs_reset_o       = 1'b0;                                                 //reset SP
+   assign us2irs_push_data_o   = r0_cell_reg;                                          //IS push data
+
+  
+   //Transition decoding
+   //-------------------
+   assign move_alu_2_p0        =  ir2us_alu2ps0_i;                                     //ALU  -> P0
+   assign move_p1_2_p0         =  (|EXT_ROT) ?  ir2us_us_tp_i[3] & ~ir2us_us_tp_i[2] : //P1   -> P0
+                                                ir2us_us_tp_i[3];                      //
+   assign move_p2_2_p0         =  (|EXT_ROT) ?  ir2us_us_tp_i[3] &  ir2us_us_tp_i[2] : //P2   -> P0
+			                        1'b0;                                  //
+   assign move_pbus_2_p0       =  ir2us_pbus2ps0_i;                                    //PBUS -> P0
+   assign move_r0_2_p0         =  (|EXT_ROT) ? ~ir2us_us_tp_i[3] &  ir2us_us_tp_i[2] : //R0   -> P0
+                                                                    ir2us_us_tp_i[2];  //
+			       
+   assign move_alu_2_p1        =  ir2us_alu2ps1_i;                                     //ALU  -> P1
+   assign move_p0_2_p1         =  ir2us_us_tp_i[4];                                    //P0   -> P1
+   assign move_p2_2_p1         =  ir2us_us_tp_i[5];                                    //P2   -> P1
+			       
+   assign move_p0_2_p2         =  (|EXT_ROT) ?  ir2us_us_tp_i[7] &  ir2us_us_tp_i[6] : //P0   -> P2
+			                        1'b0;                                  //
+   assign move_p1_2_p2         =  (|EXT_ROT) ? ~ir2us_us_tp_i[7] &  ir2us_us_tp_i[6] : //P1   -> P2
+                                                                    ir2us_us_tp_i[6];  //
+   assign move_p3_2_p2         =  (|EXT_ROT) ?  ir2us_us_tp_i[7] & ~ir2us_us_tp_i[6] : //P3   -> P2
+                                                ir2us_us_tp_i[7];                      //
+			       
+   assign move_ips_2_p3        =                ir2us_us_tp_i[9] & ~ir2us_us_tp_i[8];  //IPS  -> P1
+   assign move_p2_2_p3         =                                    ir2us_us_tp_i[8];  //P3   -> P1
+
+   assign move_p3_2_ips        =                ir2us_us_tp_i[9] &  ir2us_us_tp_i[8];  //P3   -> IPS
+			       
+   assign move_irs_2_r0        =               ~ir2us_us_tp_i[1] &  ir2us_us_tp_i[0];  //IRS -> R0
+   assign move_p0_2_r0         =                ir2us_us_tp_i[1];                      //P0  -> R0
+
+   assign move_r0_2_irs        =                ir2us_us_tp_i[1] &  ir2us_us_tp_i[0];  //R0  -> IRS
+
+   //Over and underflow conditions
+   //-----------------------------
+   //PS overflow
+   assign ps_overflow  =  move_p3_2_ips    &                                            //shift P3 to IPS 
+			  p3_tag_reg       &                                            //P3 holds data
+			  ips2us_overflow_i;                                            //IPS overflow
+
+   //PS underflow
+   assign ps_underflow = ( ~p3_tag_reg               & move_ips_2_p3 & ~move_p3_2_p2) | //invalid P3 drop			  
+			 ( ~p2_tag_reg               & move_p3_2_p2  & ~move_p2_2_p1) | //invalid P2 drop			  
+			 ( ~p1_tag_reg               & move_p2_2_p1  & ~move_p1_2_p0) | //invalid P1 drop			  
+			 ( ~p0_tag_reg               & move_p1_2_p0)                  | //invalid P0 drop			  
+			 (~(p1_tag_reg & p0_tag_reg) & move_p0_2_p2)                  | //invalid P0 nip
+			 ( ~p2_tag_reg               & move_p0_2_p2)                  | //invalid P2 ocer 			  
+			 (~(p3_tag_reg & p2_tag_reg) & move_p3_2_p2  & move_p2_2_p3)  | //invalid P3<->P2 swap
+			 (~(p2_tag_reg & p1_tag_reg) & move_p2_2_p1  & move_p1_2_p2)  | //invalid P2<->P1 swap
+			 (~(p1_tag_reg & p0_tag_reg) & move_p1_2_p1  & move_p0_2_p1)  | //invalid P1<->P0 swap
+			 ( ~p0_tag_reg               & move_p0_2_r0);                   //invalid P0->R0 shift
+
+   //RS overflow
+   assign rs_overflow  =  move_r0_2_irs    &                                            //shift R0 to IRS 
+			  r0_tag_reg       &                                            //R0 holds data
+			  irs2us_overflow_i;                                            //IRS overflow
+
+   //RS underflow
+   assign rs_underflow =  ( ~r0_tag_reg               & move_irs_2_r0)                 | //invalid R0 drop		
+                          ( ~p0_tag_reg               & move_r0_2_p0);                   //invalid R0->P0 shift
+
+   //US data paths
+   //-------------
+   //P0
+   assign p0_cell_next = ;                                //next p0 cell value   
+                         ({16{move_alu_2_p0}}  & ) |;                               //ALU  -> P0
+                         ({16{move_p1_2_p0}}  & ) |;                               //ALU  -> P0
+                         ({16{move_p1_2_p0}}  & ) |;                                //P1   -> P0
+                         ({16{move_p2_2_p0}}  & ) |;                                //P2   -> P0
+                         ({16{move_pbus_2_p0}}  & ) |;                              //PBUS -> P0
+                         ({16{move_r0_2_p0}}  & ) |;                                //R0   -> P0
+
+
+
+   assign p0_tag_next  = ;                                 //next P0 tag   
+
+   wire                                   move_alu_2_p0;                               //ALU  -> P0
+   wire                                   move_p1_2_p0;                                //P1   -> P0
+   wire                                   move_p2_2_p0;                                //P2   -> P0
+   wire                                   move_pbus_2_p0;                              //PBUS -> P0
+   wire                                   move_r0_2_p0;                                //R0   -> P0
 
 
 
@@ -113,221 +310,119 @@ module N1_us
 
 
 
+   assign p0_we        = ;                                       //P0 write enable
 
 
-
-    //Instruction decoder output
-    input  wire             `              ir_eow_i,          //end of word
-    input  wire                            ir_jmp_i,          //jump instruction (any)
-    input  wire                            ir_jmp_ind_i,      //jump instruction (indirect addressing)
-    input  wire                            ir_jmp_dir_i,      //jump instruction (direct addressing)
-    input  wire                            ir_call_i,         //call instruction (any)
-    input  wire                            ir_call_ind_i,     //call instruction (indirect addressing)
-    input  wire                            ir_call_dir_i,     //call instruction (direct addressing)
-    input  wire                            ir_bra_i,          //branch instruction (any)
-    input  wire                            ir_bra_ind_i,      //branch instruction (indirect addressing)
-    input  wire                            ir_bra_dir_i,      //branch instruction (direct addressing)
-    input  wire                            ir_lit_i,          //literal instruction
-    input  wire                            ir_alu_i,          //ALU instruction (any)
-    input  wire                            ir_alu_x_x_i,      //ALU instruction (   x --   x )
-    input  wire                            ir_alu_xx_x_i,     //ALU instruction ( x x --   x )
-    input  wire                            ir_alu_x_xx_i,     //ALU instruction (   x -- x x )
-    input  wire                            ir_alu_xx_xx_i,    //ALU instruction ( x x -- x x )
-    input  wire                            ir_sop_i,          //stack operation
-    input  wire                            ir_fetch_i,        //memory read (any)
-    input  wire                            ir_fetch_ind_i,    //memory read (indirect addressing)
-    input  wire                            ir_fetch_dir_i,    //memory read (direct addressing)
-    input  wire                            ir_store_i,        //memory write (any)
-    input  wire                            ir_store_ind_i,    //memory write (indirect addressing)
-    input  wire                            ir_store_dir_i,    //memory write (direct addressing)
-    input  wire [13:0]                     ir_abs_adr_i,      //direct absolute COF address
-    input  wire [12:0]                     ir_rel_adr_i,      //direct relative COF address
-    input  wire [11:0]                     ir_lit_val_i,      //literal value
-    input  wire [4:0]                      ir_opr_i,          //ALU operator
-    input  wire [4:0]                      ir_op_i,           //immediate operand
-    input  wire [9:0]                      ir_stp_i,          //stack transition pattern
-    input  wire [7:0]                      ir_mem_adr_i,      //direct absolute data address
-
-    //Flow control - upper stack interface
-    output wire                            fc_us_busy_o,      //upper stack is busy
-
-    //Upper stack - ALU interface
-    input  wire [15:0]                     us_alu_ps0_next_i, //new PS0 (TOS)
-    input  wire [15:0]                     us_alu_ps1_next_i, //new PS1 (TOS+1)
-    output wire [15:0]                     us_alu_ps0_cur_o,  //current PS0 (TOS)
-    output wire [15:0]                     us_alu_ps1_cur_o,  //current PS1 (TOS+1)
-    output wire [3:0]                      us_alu_pstat_o,    //UPS status
-    output wire                            us_alu_rstat_o,    //URS status
-
-    //Upper stack - intermediate parameter stack interface
-    wire                                    us_ips_rst;         //reset stack
-    wire                                    us_ips_psh;         //US  -> IRS
-    wire                                    us_ips_pul;         //IRS -> US
-    wire                                    us_ips_psh_ctag;    //upper stack cell tag
-    wire [15:0]                             us_ips_psh_cell;    //upper stack cell
-    wire                                    us_ips_busy;        //intermediate stack is busy
-    wire                                    us_ips_pul_ctag;    //intermediate stack cell tag
-    wire [15:0]                             us_ips_pul_cell;    //intermediate stack cell
-
-    //Upper stack - intermediate return stack interface
-    wire                                    us_irs_rst;         //reset stack
-    wire                                    us_irs_psh;         //US  -> IRS
-    wire                                    us_irs_pul;         //IRS -> US
-    wire                                    us_irs_psh_ctag;    //upper stack tag
-    wire [15:0]                             us_irs_psh_cell;    //upper stack data
-    wire                                    us_irs_busy;        //intermediate stack is busy
-    wire                                    us_irs_pul_ctag;    //intermediate stack tag
-    wire [15:0]                             us_irs_pul_cell;    //intermediate stack data
-
-
-
-    //IR interface
-    input wire [15:0]                      ir_ps0_i,          //literal value
-    input wire [15:0]                      ir_rs0_i,          //COF address
-
-    input wire                             ir_ps_reset_i,     //reset stack
-    input wire                             ir_rs_reset_i,     //reset stack
-
-    input wire                             ir_pagu_to_rs0_i   //pbus_dat_i -> RS0
-    input wire                             ir_ir_to_rs0_i     //opcode     -> RS0
-    input wire                             ir_ps0_to_rs0_i    //PS0        -> RS0
-    input wire                             ir_rs1_to_rs0_i    //RS1        -> RS0
-
-    input wire                             ir_rs0_to_rs1_i    //RS0        -> RS1
-
-    input wire                             ir_pbus_to_ps0_i   //pbus_dat_i -> PS0
-    input wire                             ir_ir_to_ps0_i     //opcode     -> RS0
-    input wire                             ir_alu_to_ps0_i    //ALU        -> PS0
-    input wire                             ir_rs0_to_ps0_i    //RS0        -> PS0
-    input wire                             ir_ps1_to_ps0_i    //PS1        -> PS0
-
-    input wire                             ir_alu_to_ps1_i    //ALU        -> RS1
-    input wire                             ir_ps0_to_ps1_i    //PS0        -> PS1
-    input wire                             ir_ps2_to_ps1_i    //PS2        -> PS1
-
-    input wire                             ir_ps1_to_ps2_i    //PS1        -> PS2
-    input wire                             ir_ps3_to_ps2_i    //PS3        -> PS2
-
-    input wire                             ir_ps2_to_ps3_i    //PS2        -> PS3
-    input wire                             ir_ps4_to_ps3_i    //PS4        -> PS3
-
-    input wire                             ir_ps3_to_ps4_i    //PS3        -> PS4
-
-    //Flow control interface
-    input wire                             fc_update_stacks_i //do stack transition
-
-    //ALU interface
-    input wire [15:0]            alu_ps0_i          //ALU output for PS0
-    input wire [15:0]            alu_ps1_i          //overwrite PS1
-
-    //Program AGU interface
-    input wire [15:0]            pagu_pc_next_i     //PAGU output for S0
-
-    //Dbus interface
-    input  wire [15:0]           pbus_dat_i,        //read data
-
-    //Upper stack interface
-    output wire [16:0]             us_rs0_o           //RS0 (TOS)
-    output wire [16:0]             us_ps0_o           //PS0 (TOS)
-    output wire [16:0]             us_ps1_o           //PS1 (TOS+1)
-    output wire [16:0]             us_ps2_o           //PS2 (TOS+2)
-    output wire [16:0]             us_ps3_o           //PS3 (TOS+3)
-
-    //Lower return stack interface
-    input  wire [16:0]             irs_rs1_i,         //RS1 (TOS+1)
-
-    //Lower parameter stack
-    input  wire [16:0]             ips_ps4_i);        //PS4 (TOS+4)
-
-   //Stack cells (MSB = tag)
-   reg  [16:0]                     rs0_reg;           //RS0 (TOS)
-   reg  [16:0]                     ps0_reg;           //PS0 (TOS)
-   reg  [16:0]                     ps1_reg;           //PS1 (TOS+1)
-   reg  [16:0]                     ps2_reg;           //PS2 (TOS+2)
-   reg  [16:0]                     ps3_reg;           //PS3 (TOS+3)
-
-   //RS0
+   
+   
+    //Flip flops
+   //-----------
+   //P0
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                         //asynchronous reset
-       rs0_reg <= {16+1{1'b0}};
-     else if (sync_rst_i)                                     //synchronous reset
-       rs0_reg <= {16+1{1'b0}};
-     else if (fc_update_stacks_i &                            //stack transition
-              |{ir_rs_reset,
-                ps0_to_rs0,
-                ir_to_rs0,
-                ps0_to_rs0,
-                rs1_to_rs0})
-       rs0_reg <= ({16+1{ps0_to_rs0}}       & {1'b1, pagu_pc_next_i}) |
-                  ({16+1{ir_to_rs0}}        & {1'b1, ir_rs0_i})       |
-                  ({16+1{ps0_to_rs0}}       &        ps0_reg)         |
-                  ({16+1{rs1_to_rs0}}       &        irs_rs1_i);
-
-   //PS0 (TOS)
+     if (async_rst_i)                                                                  //asynchronous reset
+       p0_cell_reg <= 16'h0000;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p0_cell_reg <= 16'h0000;
+     else if (p0_we)                                                                   //state transition
+       p0_cell_reg <= p0_cell_next;
+  
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                         //asynchronous reset
-       ps0_reg <= {16+1{1'b0}};
-     else if (sync_rst_i)                                     //synchronous reset
-       ps0_reg <= {16+1{1'b0}};
-     else if (fc_update_stacks_i &                            //stack transition
-              |{ir_ps_reset,
-                ir_pbus_to_ps0_i,
-                ir_ir_to_ps0_i,
-                ir_alu_to_ps0_i,
-                ir_rs0_to_ps0_i,
-                ir_ps1_to_ps0_i})
-       ps0_reg <= ({16+1{ir_pbus_to_ps0_i}} & {1'b1, pbus_dat_i}) |
-                  ({16+1{ir_ir_to_ps0_i}}   & {1'b1, ir_ps0_i})   |
-                  ({16+1{ir_alu_to_ps0_i}}  & {1'b1, alu_ps0_i})  |
-                  ({16+1{ir_rs0_to_ps0_i}}  &        rs0_reg)     |
-                  ({16+1{ir_ps1_to_ps0_i}}  &        ps1_rs1_i);
-
-   //PS1
+     if (async_rst_i)                                                                  //asynchronous reset
+       p0_tag_reg  <= 1'b0;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p0_tag_reg  <= 1'b0;
+     else if (p0_we)                                                                   //state transition
+       p0_tag_reg  <= p0_tag_next;
+  
+   //P1
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                         //asynchronous reset
-       ps1_reg <= {16+1{1'b0}};
-     else if (sync_rst_i)                                     //synchronous reset
-       ps1_reg <= {16+1{1'b0}};
-     else if (fc_update_stacks_i &                            //stack transition
-              |{ir_ps_reset,
-                ir_alu_to_ps1_i,
-                ir_ps0_to_ps1_i,
-                ir_ps2_to_ps1_i})
-       ps1_reg <= ({16+1{ir_alu_to_ps1_i}}  & {1'b1, alu_ps1_i})  |
-                  ({16+1{ir_ps0_to_ps1_i}}  &        ps0_reg)     |
-                  ({16+1{ir_ps2_to_ps1_i}}  &        ps2_reg);
-
-   //PS2
+     if (async_rst_i)                                                                  //asynchronous reset
+       p1_cell_reg <= 16'h0000;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p1_cell_reg <= 16'h0000;
+     else if (p1_we)                                                                   //state transition
+       p1_cell_reg <= p1_cell_next;
+  
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                         //asynchronous reset
-       ps2_reg <= {16+1{1'b0}};
-     else if (sync_rst_i)                                     //synchronous reset
-       ps2_reg <= {16+1{1'b0}};
-     else if (fc_update_stacks_i &                            //stack transition
-              |{ir_ps_reset,
-                ir_ps0_to_ps1_i,
-                ir_ps2_to_ps1_i})
-       ps2_reg <= ({16+1{ir_ps1_to_ps2_i}}  &        ps1_reg)     |
-                  ({16+1{ir_ps3_to_ps2_i}}  &        ips_ps3_reg);
-
-   //PS3
+     if (async_rst_i)                                                                  //asynchronous reset
+       p1_tag_reg  <= 1'b0;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p1_tag_reg  <= 1'b0;
+     else if (p1_we)                                                                   //state transition
+       p1_tag_reg  <= p1_tag_next;
+  
+   //P2
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                         //asynchronous reset
-       ps3_reg <= {16+1{1'b0}};
-     else if (sync_rst_i)                                     //synchronous reset
-       ps3_reg <= {16+1{1'b0}};
-     else if (fc_update_stacks_i &                            //stack transition
-              |{ir_ps_reset,
-                ir_ps2_to_ps3_i,
-                ir_ps4_to_ps3_i})
-       ps3_reg <= ({16+1{ir_ps1_to_ps2_i}}  &        ps1_reg)     |
-                  ({16+1{ir_ps3_to_ps2_i}}  &        ps3_reg);
-
-   //Outputs
-   assign us_rs0_o = rs0_reg;                                //RS0 (TOS)
-   assign us_ps0_o = ps0_reg;                                //PS0 (TOS)
-   assign us_ps3_o = ps1_reg;                                //PS1 (TOS+1)
-   assign us_ps3_o = ps2_reg;                                //PS2 (TOS+2)
-   assign us_ps3_o = ps3_reg;                                //PS3 (TOS+3)
-
+     if (async_rst_i)                                                                  //asynchronous reset
+       p2_cell_reg <= 16'h0000;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p2_cell_reg <= 16'h0000;
+     else if (p2_we)                                                                   //state transition
+       p2_cell_reg <= p2_cell_next;
+  
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       p2_tag_reg  <= 1'b0;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p2_tag_reg  <= 1'b0;
+     else if (p2_we)                                                                   //state transition
+       p2_tag_reg  <= p2_tag_next;
+  
+    //P3
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       p3_cell_reg <= 16'h0000;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p3_cell_reg <= 16'h0000;
+     else if (p3_we)                                                                   //state transition
+       p3_cell_reg <= p3_cell_next;
+  
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       p3_tag_reg  <= 1'b0;
+     else if (sync_rst_i)                                                              //synchronous reset
+       p3_tag_reg  <= 1'b0;
+     else if (p3_we)                                                                   //state transition
+       p3_tag_reg  <= p3_tag_next;
+  
+   //R0
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       r0_cell_reg <= 16'h0000;
+     else if (sync_rst_i)                                                              //synchronous reset
+       r0_cell_reg <= 16'h0000;
+     else if (r0_we)                                                                   //state transition
+       r0_cell_reg <= r0_cell_next;
+  
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       r0_tag_reg  <= 1'b0;
+     else if (sync_rst_i)                                                              //synchronous reset
+       r0_tag_reg  <= 1'b0;
+     else if (r0_we)                                                                   //state transition
+       r0_tag_reg  <= r0_tag_next;
+  
+   //FSM
+   always @(posedge async_rst_i or posedge clk_i)
+     if (async_rst_i)                                                                  //asynchronous reset
+       state_reg <= STATE_IDLE;
+     else if (sync_rst_i)                                                              //synchronous reset
+       state_reg <= STATE_IDLE;
+     else                                                                              //state transition
+       state_reg <= state_next;
+  
+   //Probe signals
+   //-------------
+   assign prb_us_p0_cell_o = p0_cell_reg;                                              //UPS cell P0
+   assign prb_us_p1_cell_o = p1_cell_reg;                                              //UPS cell P1
+   assign prb_us_p2_cell_o = p2_cell_reg;                                              //UPS cell P2
+   assign prb_us_p3_cell_o = p3_cell_reg;                                              //UPS cell P3
+   assign prb_us_r0_cell_o = r0_cell_reg;                                              //URS cell R0
+   assign prb_us_p0_tag_o  = p0_tag_reg;                                               //UPS cell P0
+   assign prb_us_p1_tag_o  = p1_tag_reg;                                               //UPS cell P1
+   assign prb_us_p2_tag_o  = p2_tag_reg;                                               //UPS cell P2
+   assign prb_us_p3_tag_o  = p3_tag_reg;                                               //UPS cell P3
+   assign prb_us_r0_tag_o  = r0_tag_reg;                                               //URS cell R0
+   assign prb_us_state_o   = state_reg;                                                //state instruction register
+   
 endmodule // N1_us
