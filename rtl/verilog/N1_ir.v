@@ -60,7 +60,7 @@ module N1_ir
     output wire                   ir2fc_eow_o,                                       //end of word (EOW bit set)
     output wire                   ir2fc_eow_postpone_o,                              //EOW conflict detected
     output wire                   ir2fc_jump_or_call_o,                              //either JUMP or CALL
-    output wire                   ir2fc_bra_o,                                       //conditonal BRANCG instruction
+    output wire                   ir2fc_bra_o,                                       //conditonal BRANCH instruction
     output wire                   ir2fc_scyc_o,                                      //linear flow
     output wire                   ir2fc_mem_o,                                       //memory I/O
     output wire                   ir2fc_mem_rd_o,                                    //memory read
@@ -87,21 +87,19 @@ module N1_ir
     output wire [12:0]            ir2pagu_radr_o,                                    //direct relative address
     output wire [7:0]             ir2pagu_madr_o,                                    //direct memory address
 
-    //PRS interface
-    output wire                   ir2prs_alu2ps0_o,                                  //ALU output  -> PS0
-    output wire                   ir2prs_alu2ps1_o,                                  //ALU output  -> PS1
-    output wire                   ir2prs_lit2ps0_o,                                  //literal     -> PS0
-    output wire                   ir2prs_pc2rs0_o,                                   //PC          -> RS0
-    output wire                   ir2prs_ps_rst_o,                                   //reset parameter stack
-    output wire                   ir2prs_rs_rst_o,                                   //reset return stack
-    output wire                   ir2prs_psp_get_o,                                  //read parameter stack pointer
-    output wire                   ir2prs_psp_set_o,                                  //write parameter stack pointer
-    output wire                   ir2prs_rsp_get_o,                                  //read return stack pointer
-    output wire                   ir2prs_rsp_set_o,                                  //write return stack pointer
-    output wire [15:0]            ir2prs_lit_val_o,                                  //literal value
-    output wire [7:0]             ir2prs_us_tp_o,                                    //upper stack transition pattern
-    output wire [1:0]             ir2prs_ips_tp_o,                                   //10:push, 01:pull
-    output wire [1:0]             ir2prs_irs_tp_o,                                   //10:push, 01:pull
+    //US interface
+    output wire                   ir2us_alu2ps0_o,                                   //ALU output  -> PS0
+    output wire                   ir2us_alu2ps1_o,                                   //ALU output  -> PS1
+    output wire                   ir2us_lit2ps0_o,                                   //literal     -> PS0
+    output wire                   ir2us_pc2rs0_o,                                    //PC          -> RS0
+    output wire                   ir2us_ps_rst_o,                                    //reset parameter stack
+    output wire                   ir2us_rs_rst_o,                                    //reset return stack
+    output wire                   ir2us_psp_get_o,                                   //read parameter stack pointer
+    output wire                   ir2us_psp_set_o,                                   //write parameter stack pointer
+    output wire                   ir2us_rsp_get_o,                                   //read return stack pointer
+    output wire                   ir2us_rsp_set_o,                                   //write return stack pointer
+    output wire [15:0]            ir2us_lit_val_o,                                   //literal value
+    output wire [9:0]             ir2us_us_tp_o,                                     //upper stack transition pattern
 
     //Probe signals
     output wire [15:0]            prb_ir_o,                                          //current instruction register
@@ -304,6 +302,21 @@ module N1_ir
    assign ir2pagu_aadr_o          = arg_aadr;                                        //direct absolute address
    assign ir2pagu_radr_o          = arg_radr;                                        //direct relative address
    assign ir2pagu_madr_o          = arg_madr;                                        //direct memory address
+
+   //US
+   assign ir2us_alu2ps0_o	  = instr_alu;                                       //ALU output  -> PS0
+   assign ir2us_alu2ps1_o	  = instr_alu_2cell;                                 //ALU output  -> PS1
+   assign ir2us_lit2ps0_o	  = instr_lit;                                       //literal     -> PS0
+   assign ir2us_pc2rs0_o	  = instr_call;                                      //PC          -> RS0
+   assign ir2us_ps_rst_o	  = instr_ctrl_conc & act_ps_rst;                    //reset parameter stack
+   assign ir2us_rs_rst_o	  = instr_ctrl_conc & act_rs_rst;                    //reset return stack
+   assign ir2us_psp_get_o	  = instr_ctrl_psp_get;                              //read parameter stack pointer
+   assign ir2us_psp_set_o	  = instr_ctrl_psp_set;                              //write parameter stack pointer
+   assign ir2us_rsp_get_o	  = instr_ctrl_rsp_get;                              //read return stack pointer
+   assign ir2us_rsp_set_o	  = instr_ctrl_rsp_set;                              //write return stack pointer
+   assign ir2us_lit_val_o	  = {{4{arg_lit[11]}}, arg_lit};                     //literal value
+   assign ir2us_us_tp_o		  = {10{instr_call}} ;                                     //upper stack transition pattern
+
 
    //PRS
    assign ir2prs_lit_val_o        = {{4{arg_lit[11]}}, arg_lit};                     //literal value

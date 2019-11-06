@@ -68,6 +68,7 @@ module N1_us
     input  wire                           fc2us_dat2ps0_i,                             //capture read data
     input  wire                           fc2us_tc2ps0_i,                              //capture throw code
     input  wire                           fc2us_isr2ps0_i,                             //capture ISR
+    input  wire                           fc2us_eow_i,                                 //drop RS0
 										       
     //IPS interface								       
     output wire                           us2ips_push_o,                               //push cell from US to IPS
@@ -81,19 +82,19 @@ module N1_us
     input  wire                           ips2us_underflow_i,                          //LS+IPS are empty
     input  wire [15:0]                    ips2us_pull_data_i,                          //IPS pull data
 										       
-    //Instruction register interface						       
-    input wire                            ir2us_alu2ps0_i,                             //ALU output  -> PS0
-    input wire                            ir2us_alu2ps1_i,                             //ALU output  -> PS1
-    input wire                            ir2us_lit2ps0_i,                             //literal     -> PS0
-    input wire                            ir2us_pc2rs0_i,                              //PC          -> RS0
-    input wire                            ir2us_ps_rst_i,                              //reset parameter stack
-    input wire                            ir2us_rs_rst_i,                              //reset return stack
-    input wire                            ir2us_psp_get_i,                             //read parameter stack pointer
-    input wire                            ir2us_psp_set_i,                             //write parameter stack pointer
-    input wire                            ir2us_rsp_get_i,                             //read return stack pointer
-    input wire                            ir2us_rsp_set_i,                             //write return stack pointer
-    input wire [15:0]                     ir2us_lit_val_i,                             //literal value
-    input wire [9:0]                      ir2us_us_tp_i,                               //upper stack transition pattern
+    //IR interface						       
+    input  wire                           ir2us_alu2ps0_i,                             //ALU output  -> PS0
+    input  wire                           ir2us_alu2ps1_i,                             //ALU output  -> PS1
+    input  wire                           ir2us_lit2ps0_i,                             //literal     -> PS0
+    input  wire                           ir2us_pc2rs0_i,                              //PC          -> RS0
+    input  wire                           ir2us_ps_rst_i,                              //reset parameter stack
+    input  wire                           ir2us_rs_rst_i,                              //reset return stack
+    input  wire                           ir2us_psp_get_i,                             //read parameter stack pointer
+    input  wire                           ir2us_psp_set_i,                             //write parameter stack pointer
+    input  wire                           ir2us_rsp_get_i,                             //read return stack pointer
+    input  wire                           ir2us_rsp_set_i,                             //write return stack pointer
+    input  wire [15:0]                    ir2us_lit_val_i,                             //literal value
+    input  wire [11:0]                    ir2us_us_tp_i,                               //upper stack transition pattern
 
     //IRS interface
     output wire                           us2irs_push_o,                               //push cell from US to IRS
@@ -225,6 +226,14 @@ module N1_us
   
    //Transition decoding
    //-------------------
+   //
+   //
+   //
+   //
+   //
+   //
+   
+   
    assign move_alu_2_p0        =  ir2us_alu2ps0_i;                                     //ALU  -> P0
    assign move_p1_2_p0         =  (|EXT_ROT) ?  ir2us_us_tp_i[3] & ~ir2us_us_tp_i[2] : //P1   -> P0
                                                 ir2us_us_tp_i[3];                      //
