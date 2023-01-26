@@ -24,7 +24,7 @@
 //#    Linear program flow:                                                     #
 //#                                                                             #
 //#                     +----+----+----+----+----+----+                         #
-//#    Program Counter  |PC0 |PC1 |PC2 |PC3 |PC4 |PC5 |                         #
+//#    Program counter  |PC0 |PC1 |PC2 |PC3 |PC4 |PC5 |                         #
 //#                +----+----+----+----+----+----+----+                         #
 //#    Address bus | A0 | A1 | A2 | A3 | A4 | A5 |                              #
 //#                +----+----+----+----+----+----+----+                         #

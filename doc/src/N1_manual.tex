@@ -51,6 +51,7 @@
             pdfauthor={Dirk Heisswolf},
             pdfdisplaydoctitle=true]{hyperref}
 \usepackage[automake, numberedsection, nonumberlist]{glossaries}
+\usepackage{amssymb}
 
 %Tables
 \makeatletter
@@ -77,6 +78,7 @@
 \makeatother
 
 \pagestyle{fancy}
+\setlength{\parindent}{0pt}
 
 %Glossary
 \makeglossaries
@@ -99,6 +101,8 @@
 \renewcommand{\thefigure}{\thesection-\@arabic\c@figure}
 \@addtoreset{figure}{section}
 \makeatother
+
+\setcounter{secnumdepth}{4}
 
 %References
 \newcommand{\secref}[2][Section]{\hyperref[{#2}]{\mbox{#1~\ref*{#2}} \mbox{``\nameref*{#2}``}}}
@@ -183,7 +187,7 @@
 %--------------------
 % N1 Architecture
 %--------------------
-%\include{N1_architecture}
+\include{N1_architecture}
 
 %--------------------
 % Verification 

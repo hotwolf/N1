@@ -20,6 +20,8 @@
 %# Version History:                                                            #
 %#   November 26, 2018                                                         #
 %#      - Initial release                                                      #
+%#   November 11, 2022                                                         #
+%#      - Fixed typos                                                          #
 %###############################################################################
 
 \section{Instruction Set}
@@ -430,7 +432,7 @@ format.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{1}}};
           \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)    {\LARGE{8-bit address $<$ 0xFE}};
+          \node         at (12,0.45)    {\LARGE{8-bit address $\leqslant$ 0xFE}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
@@ -482,7 +484,7 @@ format.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{1}}};
           \node         at (7.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (12,0.45)     {\LARGE{8-bit address $<$ 0xFE}};
+          \node         at (12,0.45)     {\LARGE{8-bit address $\leqslant$ 0xFE}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
@@ -2650,7 +2652,7 @@ of execution time. \tabref{opcodes:ctrl:cmplx} lists the encoding of these compl
        ( +n -- )}}                  \\ \hline
     
     %Read RSP
-    \texttt{0xb00FD}                &
+    \texttt{0x00FD}                 &
     \multicolumn{1}{m{15em}|}{      
     \makecell[l]{                   
        Fetch return stack pointer   \\
