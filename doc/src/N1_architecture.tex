@@ -36,7 +36,8 @@ The RTL implementation of the N1 follows a number of design principles which are
 \subsubsection{Naming Convention of Interface Signals}
 \label{architecture:principles:naming}
 
-The following signal naming rules are used throughout the design:
+For all signals, which do not implement a common standard (e.g. \gls{wb}),
+the following signal naming rules are used throughout the design:
 \begin{itemize}
 
 \item   
@@ -50,10 +51,19 @@ Control signals which represent a request, end with a verb in imperative form. \
 Example: \texttt{fc2ir\_\underline{expend}}
 
 \item   
-Status signals represening a busy indicator, have the postfix \dots\texttt{bsy} \\
-  
+Status signals represening a busy indicator, have the postfix \dots\texttt{\_bsy} \\
 Example: \texttt{prs2fc\_\underline{bsy}}
 
+\item   
+If a signal is connected to the interface of a module, a further postfix is added to indicate the signal direction:
+  \begin{itemize}
+    \item   
+    Input signals: \dots\texttt{\_i} \\
+    \item   
+    Output signals: \dots\texttt{\_o} \\
+  \end{itemize}
+Example: \texttt{prs2fc\_bsy\underline{\_o}}
+  
 \item   
 Names of signals which are only used within one design block are kept short and don't follow a particular naming convention.
 
