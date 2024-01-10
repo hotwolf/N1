@@ -494,18 +494,18 @@ format.
           \end{minipage}};
         \end{scope}
 
-        %Control instructions
+        %Function register access
         \draw [thick] (21.5,3.5) -- (22.5,3.5) -- (22.5,0.5) -- (21.5,0.5);
-        \node [right] at (23,1.5) {
+        \node [right] at (23,2) {
           \begin{minipage}[l]{12em}
             \Huge{
-              %Status and \\
-              Control \\
-              Instructions
+              Function \\
+              Register \\
+              Access
             }
            \end{minipage}};
        
-        %Control command
+        %Function register read
         \begin{scope}[shift={(1,2.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -517,7 +517,7 @@ format.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
           \node         at (7.5,0.5)     {\huge{\texttt{1}}};
-          \node         at (12,0.45)     {\LARGE{register address}};
+          \node         at (12,0.45)     {\LARGE{function register address}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
@@ -527,7 +527,7 @@ format.
           \end{minipage}};
         \end{scope}
 
-        %
+        %Function register write
         \begin{scope}[shift={(1,0.5)}]
           \node at (0,0) {\usebox{\instruction}};
           \node         at (0.5,0.5)     {\huge{\texttt{;}}};
@@ -539,7 +539,7 @@ format.
           \node         at (5.5,0.5)     {\huge{\texttt{0}}};
           \node         at (6.5,0.5)     {\huge{\texttt{0}}};
           \node         at (7.5,0.5)     {\huge{\texttt{0}}};
-          \node         at (12,0.45)     {\LARGE{register address}};
+          \node         at (12,0.45)     {\LARGE{function register address}};
           \node [right] at (16.2,0.5) {
            \begin{minipage}[l]{14em}
               \large{
@@ -2549,31 +2549,69 @@ Memory access instruction perform read or write acesses to the system's 64K word
 Data is solely accessed in 16-bit entities.
 Accesses to a 255 word (510B) window in the main address space, can be done through an immediate
 addressing. This offers faster access to frequently used system variables.
-The offset of the immediate address window is determined by the Immediate Address Offset Register
-(see \secref{opcodes:ctrl:iaoffs}).
 
-%Control Instructions
-\subsection{Control Instructions}
-\label{opcodes:ctrl}
+%Function Register access
+\subsection{Function Register Access}
+\label{opcodes:freg}
 
-Control instruction provide read and write access to a special 256-word address space containing registers for various hardware features.
-These registers and their functionality are described in the following sections. 
+The N1 processor provides a set \glspl{freg}, which provide access to a number of processor features
+(see \tabref{opcodes:freg:tab}).
+These \glspl{freg} are read and written through special \glspl{opcode}.
 
-%Interrupt and Exception Enables
-\subsubsection{Interrupt and Exception Enables}
-\label{opcodes:ctrl:irq}
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|}
+    \rowcolor{white}
+    \caption{\Glspl{freg}}
+    \label{opcodes:freg:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Address}} &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Mnemonic}} &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Name}}     \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{3}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
 
-Interrupt and exception handling can be disabled through two control register bits:
-\texttt{IEN} (interrupt enable) and \texttt{EEN} (exception enable)
-(see \figref{opcodes:ctrl:irq:fig} and \tabref{opcodes:ctrl:irq:tab}).
-This is to \gls{rs} overflow, caused by nested execution of exceptions and interrupt sevice routines.
+    %Carry register (CRY)
+    \texttt{0x00}                               &
+    \hyperref[opcodes:freg:cry]{CRY}            &
+    \hyperref[opcodes:freg:cry]{Carry Register} \\ \hline
 
-The \texttt{IEN} bit is automatically cleared when an interrupt service routine is started.
-The \texttt{IEN} bit is automatically cleared when an exception handler is executed.
-Both flags mut be set manually as soon as new interrupts or exceptions can be processed.
-Each one of these bits is protected by a mask bit to atomic bit manipulations.
+    %Parameter Stack Depth Register (PSD)
+    \texttt{0x01}                                               &
+    \hyperref[opcodes:freg:psd]{PSD}                            &
+    \hyperref[opcodes:freg:psd]{Parameter Stack Depth Register} \\ \hline
 
-\begin{figure}[!htb]
+    %Return Stack Depth Register (PSD)
+    \texttt{0x02}                                            &
+    \hyperref[opcodes:freg:psd]{RSD}                         &
+    \hyperref[opcodes:freg:psd]{Return Stack Depth Register} \\ \hline
+    
+    %Exception and Interrupt Mask Register (EIM)
+    \texttt{0x03}                                                      &
+    \hyperref[opcodes:freg:eim]{EIM}                                   &
+    \hyperref[opcodes:freg:eim]{Exception and Interrupt Mask Register} \\ \hline
+
+  \end{longtable}
+\end{center}  
+\endgroup
+
+%Carry register (CRY)
+\subsubsection{Carry Register (CRY)}
+\label{opcodes:freg:cry}
+
+\begin{figure}[H]
   %\begin{center}
   \makebox[\textwidth][c]{
     %\scalebox{0.5125} {
@@ -2591,55 +2629,41 @@ Each one of these bits is protected by a mask bit to atomic bit manipulations.
         \node [above] at  (7,2) {12};
         \node [above] at  (9,2) {11};
         \node [above] at (11,2) {10};
-        \node [above] at (13,2)  {9};
-        \node [above] at (15,2)  {8};
-        \node [above] at (17,2)  {7};
-        \node [above] at (19,2)  {6};
-        \node [above] at (21,2)  {5};
-        \node [above] at (23,2)  {4};
-        \node [above] at (25,2)  {3};
-        \node [above] at (27,2)  {2};
-        \node [above] at (29,2)  {1};
-        \node [above] at (31,2)  {0};
+        \node [above] at (13,2) {9};
+        \node [above] at (15,2) {8};
+        \node [above] at (17,2) {7};
+        \node [above] at (19,2) {6};
+        \node [above] at (21,2) {5};
+        \node [above] at (23,2) {4};
+        \node [above] at (25,2) {3};
+        \node [above] at (27,2) {2};
+        \node [above] at (29,2) {1};
+        \node [above] at (31,2) {0};
         %Read
         \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        \draw [thick, fill=white] (0,1) rectangle (32,2);
-        \node at ( 1,1.5) {\huge{\texttt{0}}};               %15
-        \node at ( 3,1.5) {\huge{\texttt{0}}};               %14
-        \node at ( 5,1.5) {\huge{\texttt{0}}};               %13
-        \node at ( 7,1.5) {\huge{\texttt{0}}};               %12
-        \node at ( 9,1.5) {\huge{\texttt{0}}};               %11
-        \node at (11,1.5) {\huge{\texttt{0}}};               %10
-        \node at (13,1.5) {\huge{\texttt{0}}};               % 9
-        \node at (15,1.5) {\huge{\texttt{0}}};               % 8
-        \node at (17,1.5) {\huge{\texttt{0}}};               % 7
-        \node at (19,1.5) {\huge{\texttt{0}}};               % 6
-        \node at (21,1.5) {\huge{\texttt{0}}};               % 5
-        \node at (23,1.5) {\huge{\texttt{0}}};               % 4
-        \node at (25,1.5) {\huge{\texttt{0}}};               % 3
-       %\draw [thick, fill=gray!3] (26,1) rectangle (28,2);  % 2
-       %\node at (27,1.5) {\Large{\texttt{EEN}}};
-        \node at (29,1.5) {\huge{\texttt{0}}};               % 1
-       %\draw [thick, fill=gray!3] (30,1) rectangle (32,2);  % 0
-       %\node at (31,1.5) {\Large{\texttt{IEN}}};
+        %\draw [thick, fill=white]  (0,1) rectangle (32,2);
+        \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
+        \node at (15,1.5) {\huge{\texttt{CRY}}};
         %Write
         \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        \draw [thick, fill=white] (0,0) rectangle (32,1);
-        \draw [thick, fill=gray!3] (24,0) rectangle (26,1);  % 3
-        \node at (25,0.5) {\Large{\texttt{EENMSK}}};
-        \draw [thick, fill=gray!3] (26,0) rectangle (28,2);  % 2
-        \node at (27,1)   {\Large{\texttt{EEN}}};
-        \draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
-        \node at (29,0.5) {\Large{\texttt{IENMSK}}};
-        \draw [thick, fill=gray!3] (30,0) rectangle (32,2);  % 0
-        \node at (31,1)   {\Large{\texttt{IEN}}};
-        \end{tikzpicture}
+        \draw [thick, fill=white]  (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3]  (0,0) rectangle  (32,2); %15..0
+        %\node at (15,0.5) {\huge{\texttt{CRY}}};
+      \end{tikzpicture}
     }
   }
-  \caption{Interrupt and Exception Enable Register}
-  \label{opcodes:ctrl:irq:fig}
+  %\caption{Carry Register}
+  %\label{opcodes:freg:cry:fig}
   %\end{center}
 \end{figure}
+
+The Carry Register captures the carry or borrow flag of the last addition or suntraction.
+It alwyayread one of the three values:
+\begin{itemize}
+  \item \texttt{1} (carry from the last addition
+  \item \texttt{0} (no carry or borrow)
+  \item \texttt{-1} (borrow from the last subtraction)
+\end{itemize}
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2648,8 +2672,8 @@ Each one of these bits is protected by a mask bit to atomic bit manipulations.
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Interrupt and Exception Enable Register Bit Description}
-    \label{opcodes:ctrl:irq:tab} \\
+    \caption{Carry  Register Bit Description}
+    \label{opcodes:freg:cry:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2666,111 +2690,31 @@ Each one of these bits is protected by a mask bit to atomic bit manipulations.
     \hline
     \endlastfoot
 
-    %EENMSK
-    \texttt{EENMSK} &
-    3               &
+    %CRY
+    \texttt{CRY} &
+    15..0        &
     \multicolumn{1}{m{36em}|}{
       \makecell[l]{
         \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Exception Enable Mask}}
+          \centerline{\textbf{Return Stack Depth}}
           \begin{description}[style=nextline]
-          %\item[Read:]
-          %  Always reads zero.
-          \item[Write:]
-            Writing a \texttt{1} allows modification of the \texttt{EEN} bit in the same access.
+          \item[Read:]
+            Carry or borrow from last addition or subtraction.\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
-    
-   %EEN
-   \texttt{EEN} &
-   2               &
-   \multicolumn{1}{m{36em}|}{
-   \makecell[l]{ 
-     \begin{minipage}[t]{\linewidth}%  
-     \centerline{\textbf{Exception Enable Bit}}
-     \begin{description}[style=nextline]
-     \item[Read:]
-     \begin{minipage}[t]{\linewidth}  
-       \begin{description}[style=multiline]
-         \item[\texttt{0}:]
-           Exceptions are disabled.
-         \item[\texttt{1}:]
-           Exceptions are enabled.
-         \end{description}
-     \end{minipage}
-     \item[Write:]
-     \begin{minipage}[t]{\linewidth}
-       \begin{description}[style=multiline]
-         \item[\texttt{0}:]
-            Disable exceptions. Only possible while instantly writing a \texttt{1} to \texttt{EENMSK}. 
-         \item[\texttt{1}:]
-           Disable exceptions. Only possible while instantly writing a \texttt{1} to \texttt{EENMSK}.
-       \end{description}
-     \end{minipage}  
-     \end{description}
-     \end{minipage}%
-   }}  \\ \hline
-   
-    %IENMSK
-    \texttt{IENMSK} &
-    1               &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Interrupt Enable Mask}}
-          \begin{description}[style=nextline]
-          %\item[Read:]
-          %  Always reads zero.
-          \item[Write:]
-            Writing a \texttt{1} allows modification of the \texttt{IEN} bit in the same access.
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-    
-   %IEN
-   \texttt{IEN} &
-   0               &
-   \multicolumn{1}{m{36em}|}{
-   \makecell[l]{ 
-     \begin{minipage}[t]{\linewidth}%  
-     \centerline{\textbf{Interrupt Enable Bit}}
-     \begin{description}[style=nextline]
-     \item[Read:]
-     \begin{minipage}[t]{\linewidth}  
-       \begin{description}[style=multiline]
-         \item[\texttt{0}:]
-           Interrupts are disabled.
-         \item[\texttt{1}:]
-           Interrupts are enabled.
-         \end{description}
-     \end{minipage}
-     \item[Write:]
-     \begin{minipage}[t]{\linewidth}
-       \begin{description}[style=multiline]
-         \item[\texttt{0}:]
-            Disable interrupts. Only possible while instantly writing a \texttt{1} to \texttt{IENMSK}. 
-         \item[\texttt{1}:]
-           Disable interrupts. Only possible while instantly writing a \texttt{1} to \texttt{IENMSK}.
-       \end{description}
-     \end{minipage}  
-     \end{description}
-     \end{minipage}%
-   }}  \\ \hline
-   
+
   \end{longtable}
 \end{center}  
 \endgroup
 
-%Parameter Stack Depth
-\subsubsection{Parameter Stack Depth}
-\label{opcodes:ctrl:psd}
+~\\
 
-The current depth of the \gls{ps} is captured in the parameter stack depth register
-(see \figref{opcodes:ctrl:psd:fig} and \tabref{opcodes:ctrl:psd:fig}). \\
-Writing \texttt{0x0000} to this register will clear the \gls{ps}.
+%Parameter Stack Depth Reggister (PSD)
+\subsubsection{Parameter Stack Depth Register (PSD)}
+\label{opcodes:freg:psd}
 
-\begin{figure}[!htb]
+\begin{figure}[H]
   %\begin{center}
   \makebox[\textwidth][c]{
     %\scalebox{0.5125} {
@@ -2802,19 +2746,22 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
         \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
         %\draw [thick, fill=white]  (0,1) rectangle (32,2);
         \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
-        \node at (15,1.5) {\huge{\texttt{PSP}}};
+        \node at (15,1.5) {\huge{\texttt{PSD}}};
         %Write
         \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
         %\draw [thick, fill=white]  (0,0) rectangle (32,1);
         \draw [thick, fill=gray!3]  (0,0) rectangle  (32,1); %15..0
-        \node at (15,0.5) {\huge{\texttt{PSPCLR}}};
+        \node at (15,0.5) {\huge{\texttt{PSDCLR}}};
       \end{tikzpicture}
     }
   }
-  \caption{Parameter Stack Depth Register}
-  \label{opcodes:ctrl:psd:fig}
+  %\caption{Parameter Stack Depth Register}
+  %\label{opcodes:freg:psd:fig}
   %\end{center}
 \end{figure}
+
+The current depth of the \gls{ps} is captured in the parameter stack depth register. \\
+Writing \texttt{0x0000} to this register will clear the \gls{ps}.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2823,8 +2770,8 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Parameter Stack Depth Register Description}
-    \label{opcodes:ctrl:psd:tab} \\
+    \caption{Parameter Stack Depth Register Bit Description}
+    \label{opcodes:freg:psd:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2850,7 +2797,7 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
           \centerline{\textbf{Parameter Stack Depth}}
           \begin{description}[style=nextline]
           \item[Read:]
-            Current parameter stack depth
+            Current parameter stack depth\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
@@ -2864,8 +2811,8 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
           \centerline{\textbf{Clear Parameter Stack}}
           \begin{description}[style=nextline]
           \item[Write:]
-            Writing the value \texttt{0x0000} will clrear the \gls{ps}.
-            All other write accesses have no effect.
+            Writing the value \texttt{0x0000} will clrear the \gls{ps}.\\
+            All other write accesses have no effect.\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
@@ -2874,15 +2821,13 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
 \end{center}  
 \endgroup
 
-%Return Stack Depth
-\subsubsection{Return Stack Depth}
-\label{opcodes:ctrl:rsd}
+~\\
 
-The current depth of the \gls{rs} is captured in the parameter stack depth register
-(see \figref{opcodes:ctrl:rsd:fig} and \tabref{opcodes:ctrl:rsd:fig}). \\
-Writing \texttt{0x0000} to this register will clear the \gls{rs}.
+%Return Stack Depth Register (RSD)
+\subsubsection{Return Stack Depth Register (RSD}
+\label{opcodes:freg:rsd}
 
-\begin{figure}[!htb]
+\begin{figure}[H]
   %\begin{center}
   \makebox[\textwidth][c]{
     %\scalebox{0.5125} {
@@ -2923,10 +2868,13 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
       \end{tikzpicture}
     }
   }
-  \caption{Return Stack Depth Register}
-  \label{opcodes:ctrl:rsd:fig}
+  %\caption{Return Stack Depth Register}
+  %\label{opcodes:freg:rsd:fig}
   %\end{center}
 \end{figure}
+
+The current depth of the \gls{rs} is captured in the parameter stack depth register. \\
+Writing \texttt{0x0000} to this register will clear the \gls{rs}.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2935,8 +2883,8 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Return Stack Depth Register Description}
-    \label{opcodes:ctrl:rsd:tab} \\
+    \caption{Return Stack Depth Register Bit Description}
+    \label{opcodes:freg:rsd:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -2962,7 +2910,7 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
           \centerline{\textbf{Return Stack Depth}}
           \begin{description}[style=nextline]
           \item[Read:]
-            Current return stack depth.
+            Current return stack depth.\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
@@ -2976,8 +2924,8 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
           \centerline{\textbf{Return Stack Depth}}
           \begin{description}[style=nextline]
           \item[Write:]
-            Writing the value \texttt{0x0000} will clrear the \gls{rs}.
-            All other write accesses have no effect.
+            Writing the value \texttt{0x0000} will clrear the \gls{rs}.\\
+            All other write accesses have no effect.\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
@@ -2986,15 +2934,13 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
 \end{center}  
 \endgroup
 
-%Immediate Address Offset
-\subsubsection{Immediate Address Offset}
-\label{opcodes:ctrl:iaoffs}
+~\\
 
-Immediate address offset register (see \figref{opcodes:ctrl:iaoffs:fig} and \tabref{opcodes:ctrl:iaoffs:tab})
-provides an address offset fore the immediate address mode. \\
-The effectife address is the sum of immediate address and immediate address offset.
+%Exception and Interrupt Mask Register (EIM)
+\subsubsection{Exception and Interrupt Mask Register (EIM)}
+\label{opcodes:freg:eim}
 
-\begin{figure}[!htb]
+\begin{figure}[H]
   %\begin{center}
   \makebox[\textwidth][c]{
     %\scalebox{0.5125} {
@@ -3012,41 +2958,60 @@ The effectife address is the sum of immediate address and immediate address offs
         \node [above] at  (7,2) {12};
         \node [above] at  (9,2) {11};
         \node [above] at (11,2) {10};
-        \node [above] at (13,2) {9};
-        \node [above] at (15,2) {8};
-        \node [above] at (17,2) {7};
-        \node [above] at (19,2) {6};
-        \node [above] at (21,2) {5};
-        \node [above] at (23,2) {4};
-        \node [above] at (25,2) {3};
-        \node [above] at (27,2) {2};
-        \node [above] at (29,2) {1};
-        \node [above] at (31,2) {0};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
         %Read
         \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        \draw [thick, fill=white]   (0,1) rectangle (32,2);
-       %\draw [thick, fill=gray!3]  (0,1) rectangle (16,2); %15..8
-       %\node at  (8,1.5) {\huge{\texttt{IAOFFS}}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+        \node at ( 1,1.5) {\huge{\texttt{0}}};               %15
+        \node at ( 3,1.5) {\huge{\texttt{0}}};               %14
+        \node at ( 5,1.5) {\huge{\texttt{0}}};               %13
+        \node at ( 7,1.5) {\huge{\texttt{0}}};               %12
+        \node at ( 9,1.5) {\huge{\texttt{0}}};               %11
+        \node at (11,1.5) {\huge{\texttt{0}}};               %10
+        \node at (13,1.5) {\huge{\texttt{0}}};               % 9
+        \node at (15,1.5) {\huge{\texttt{0}}};               % 8
         \node at (17,1.5) {\huge{\texttt{0}}};               % 7
         \node at (19,1.5) {\huge{\texttt{0}}};               % 6
         \node at (21,1.5) {\huge{\texttt{0}}};               % 5
         \node at (23,1.5) {\huge{\texttt{0}}};               % 4
         \node at (25,1.5) {\huge{\texttt{0}}};               % 3
-        \node at (27,1.5) {\huge{\texttt{0}}};               % 2
         \node at (29,1.5) {\huge{\texttt{0}}};               % 1
-        \node at (31,1.5) {\huge{\texttt{0}}};               % 0
         %Write
         \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        \draw [thick, fill=white]   (0,0) rectangle (32,1);
-        \draw [thick, fill=gray!3]  (0,0) rectangle (16,2); %15..8
-        \node at  (8,1)   {\huge{\texttt{IAOFFS}}};
-      \end{tikzpicture}
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        \draw [thick, fill=gray!3] (24,0) rectangle (26,1);  % 3
+        \node at (25,0.5) {\Large{\texttt{EMWE}}};
+        \draw [thick, fill=gray!3] (26,0) rectangle (28,2);  % 2
+        \node at (27,1)   {\Large{\texttt{EM}}};
+        \draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        \node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (30,0) rectangle (32,2);  % 0
+        \node at (31,1)   {\Large{\texttt{IM}}};
+        \end{tikzpicture}
     }
   }
-  \caption{Immediate Address Offset Register}
-  \label{opcodes:ctrl:iaoffs:fig}
+  %\caption{Interrupt and Exception Enable Register}
+  %\label{opcodes:freg:eim:fig}
   %\end{center}
 \end{figure}
+
+Interrupt and exception handling can be disabled through two control register bits:
+\texttt{IM} (interrupt mask) and \texttt{EM} (exception mask).
+This is to avoid \gls{rs} overflows, caused by nested execution of exceptions and interrupt sevice routines.
+
+The \texttt{IM} bit is automatically set when an interrupt service routine is started.
+The \texttt{eM} bit is automatically set when an exception handler is executed.
+Both flags mut be set manually as soon as new interrupts or exceptions can be processed.
+Each one of these bits is protected by a write enable bit to atomic bit manipulations.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -3055,12 +3020,12 @@ The effectife address is the sum of immediate address and immediate address offs
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Parameter Stack Depth Register Description}
-    \label{opcodes:ctrl:iaoffs:tab} \\
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{opcodes:freg:eim:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
      \hline
@@ -3073,96 +3038,99 @@ The effectife address is the sum of immediate address and immediate address offs
     \hline
     \endlastfoot
 
-    %
-    \texttt{IAOFFS} &
-    15..8        &
+    %EMWE
+    \texttt{EMWE} &
+    3               &
     \multicolumn{1}{m{36em}|}{
       \makecell[l]{
         \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Immidiate Address Offset}}
+          \centerline{\textbf{Exception Mask Write Enable}}
           \begin{description}[style=nextline]
-          \item[Read:]
-            Upper byte of the immediate address offset.
+          %\item[Read:]
+          %  Always reads zero.
           \item[Write:]
-            Upper byte of the immediate address offset.
+            Writing a \texttt{1} allows modification of the \texttt{EM} bit in the same access.\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
- 
+    
+   %EM
+   \texttt{EM} &
+   2               &
+   \multicolumn{1}{m{36em}|}{
+   \makecell[l]{ 
+     \begin{minipage}[t]{\linewidth}%  
+     \centerline{\textbf{Exception Mask}}
+     \begin{description}[style=nextline]
+     \item[Read:]
+     \begin{minipage}[t]{\linewidth}  
+       \begin{description}[style=multiline]
+         \item[\texttt{0}:]
+           Exceptions are enabled.
+         \item[\texttt{1}:]
+           Exceptions are disbled.
+         \end{description}
+     \end{minipage}
+     \item[Write:]
+     \begin{minipage}[t]{\linewidth}
+       \begin{description}[style=multiline]
+         \item[\texttt{0}:]
+            Disable exceptions. Only possible while instantly writing a \texttt{1} to \texttt{EMWE}. 
+         \item[\texttt{1}:]
+           Disable exceptions. Only possible while instantly writing a \texttt{1} to \texttt{EMWE}.\\[1pt]
+       \end{description}
+     \end{minipage}  
+     \end{description}
+     \end{minipage}%
+   }}  \\ \hline
+   
+    %IMWE
+    \texttt{IMWE} &
+    1               &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Interrupt Mask Write Enable}}
+          \begin{description}[style=nextline]
+          %\item[Read:]
+          %  Always reads zero.
+          \item[Write:]
+            Writing a \texttt{1} allows modification of the \texttt{IM} bit in the same access.\\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+   %IM
+   \texttt{IEN} &
+   0               &
+   \multicolumn{1}{m{36em}|}{
+   \makecell[l]{ 
+     \begin{minipage}[t]{\linewidth}%  
+     \centerline{\textbf{Interrupt Mask}}
+     \begin{description}[style=nextline]
+     \item[Read:]
+     \begin{minipage}[t]{\linewidth}  
+       \begin{description}[style=multiline]
+         \item[\texttt{0}:]
+           Interrupts are enabled.
+         \item[\texttt{1}:]
+           Interrupts are disabled.
+         \end{description}
+     \end{minipage}
+     \item[Write:]
+     \begin{minipage}[t]{\linewidth}
+       \begin{description}[style=multiline]
+         \item[\texttt{0}:]
+            Disable interrupts. Only possible while instantly writing a \texttt{1} to \texttt{IMWE}. 
+         \item[\texttt{1}:]
+           Disable interrupts. Only possible while instantly writing a \texttt{1} to \texttt{IMWE}.\\[1pt]
+       \end{description}
+     \end{minipage}  
+     \end{description}
+     \end{minipage}%
+   }}  \\ \hline
+   
   \end{longtable}
 \end{center}  
 \endgroup
-
-%subsubsection{General Purpose Registers}
-%label{opcodes:ctrl:gpr}
-%
-%subsubsection{Internal Communication Registers}
-%label{opcodes:ctrl:intcom}
-%
-%subsubsection{Interrupt Triggers}
-%label{opcodes:ctrl:gpr}
-%
-%subsubsection{External Communication Register}
-%label{opcodes:ctrl:extcom}
-%
-%subsubsection{Unimplemented Register Space}
-%label{opcodes:ctrl:unimpl}
-%
-%begin{figure}[!htb]
-% %\begin{center}
-% \makebox[\textwidth][c]{
-%   %\scalebox{0.5125} {
-%   \scalebox{0.515} {
-%     \begin{tikzpicture}
-%
-%       %Offset
-%       \node [align=left, anchor=west] at (-2,3) {
-%         \huge{Any unimplementes register location}
-%       };        
-%       %Index
-%       \node [above] at  (1,2) {15};
-%       \node [above] at  (3,2) {14};
-%       \node [above] at  (5,2) {13};
-%       \node [above] at  (7,2) {12};
-%       \node [above] at  (9,2) {11};
-%       \node [above] at (11,2) {10};
-%       \node [above] at (13,2)  {9};
-%       \node [above] at (15,2)  {8};
-%       \node [above] at (17,2)  {7};
-%       \node [above] at (19,2)  {6};
-%       \node [above] at (21,2)  {5};
-%       \node [above] at (23,2)  {4};
-%       \node [above] at (25,2)  {3};
-%       \node [above] at (27,2)  {2};
-%       \node [above] at (29,2)  {1};
-%       \node [above] at (31,2)  {0};
-%       %Read
-%       \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-%       \draw [thick, fill=white] (0,1) rectangle (32,2);
-%       \node at ( 1,1.5) {\huge{\texttt{0}}};               %15
-%       \node at ( 3,1.5) {\huge{\texttt{0}}};               %14
-%       \node at ( 5,1.5) {\huge{\texttt{0}}};               %13
-%       \node at ( 7,1.5) {\huge{\texttt{0}}};               %12
-%       \node at ( 9,1.5) {\huge{\texttt{0}}};               %11
-%       \node at (11,1.5) {\huge{\texttt{0}}};               %10
-%       \node at (13,1.5) {\huge{\texttt{0}}};               % 9
-%       \node at (15,1.5) {\huge{\texttt{0}}};               % 8
-%       \node at (17,1.5) {\huge{\texttt{0}}};               % 7
-%       \node at (19,1.5) {\huge{\texttt{0}}};               % 6
-%       \node at (21,1.5) {\huge{\texttt{0}}};               % 5
-%       \node at (23,1.5) {\huge{\texttt{0}}};               % 4
-%       \node at (25,1.5) {\huge{\texttt{0}}};               % 3
-%       \node at (27,1.5) {\huge{\texttt{0}}};               % 2
-%       \node at (29,1.5) {\huge{\texttt{0}}};               % 1
-%       \node at (31,1.5) {\huge{\texttt{0}}};               % 0
-%       %Write
-%       \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-%       \draw [thick, fill=white] (0,0) rectangle (32,1);    %15..0
-%       \end{tikzpicture}
-%   }
-% }
-% \caption{Interrupt and Exception Enable Register}
-% \label{opcodes:ctrl:unimpl:fig}
-% %\end{center}
-%end{figure}
 

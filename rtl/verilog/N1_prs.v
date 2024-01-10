@@ -68,7 +68,7 @@ module N1_prs
     input wire                               sync_rst_i,                            //synchronous reset
 
     //Program bus (wishbone)
-    output  wire [15:0]                      pbus_dat_o,                            //write data bus
+    output wire [15:0]                       pbus_dat_o,                            //write data bus
     input  wire [15:0]                       pbus_dat_i,                            //read data bus
 
     //Stack bus (wishbone)
@@ -228,6 +228,16 @@ module N1_prs
    //Lower return stack
    wire                                      lrs_empty;                             //RSP is zero
 
+
+
+
+
+
+
+
+
+
+   
    //Upper stack
    //-----------
    //RS0
