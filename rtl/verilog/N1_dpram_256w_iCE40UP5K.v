@@ -32,29 +32,29 @@ module N1_dpram_256w
     input  wire                             clk_i,                                                //module clock
 
     //RAM interface
-    input  wire [7:0]                       raddr_i,                                              //read address
-    input  wire [7:0]                       waddr_i,                                              //write address
-    input  wire [15:0]                      wdata_i,                                              //write data
-    input  wire                             re_i,                                                 //read enable
-    input  wire                             we_i,                                                 //write enable
-    output wire [15:0]                      rdata_o);                                             //read data
+    input  wire [7:0]                       ram_raddr_i,                                          //read address
+    input  wire [7:0]                       ram_waddr_i,                                          //write address
+    input  wire [15:0]                      ram_wdata_i,                                          //write data
+    input  wire                             ram_re_i,                                             //read enable
+    input  wire                             ram_we_i,                                             //write enable
+    output wire [15:0]                      ram_rdata_o);                                         //read data
 
    //Memory
    //------
-   SB_RAM40_4K 
+   SB_RAM40_4K
      #(.WRITE_MODE (0),
        .READ_MODE  (0))
    mem
       (.RCLK       (clk_i),
        .WCLK       (clk_i),
-       .RADDR      (raddr_i),
-       .WADDR      (waddr_i),
-       .WDATA      (wdata_i),
-       .RCLKE      (re_i),
+       .RADDR      (ram_raddr_i),
+       .WADDR      (ram_waddr_i),
+       .WDATA      (ram_wdata_i),
+       .RCLKE      (ram_re_i),
        .RE         (1'b1),
-       .WCLKE      (we_i),
+       .WCLKE      (ram_we_i),
        .WE         (1'b1),
        .MASK       (15'h0000),
-       .RDATA      (rdata_o));
-   
+       .RDATA      (ram_rdata_o));
+
 endmodule // N1_dpram_256w

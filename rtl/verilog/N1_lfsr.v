@@ -41,19 +41,19 @@ module N1_lsfr
 
     //LFSR status
     output wire [WIDTH-1:0]                 lfsr_val_o,                                           //LFSR value
-    output wire [WIDTH-1:0]                 inc_val_o,                                            //incremented LFSR value
-    output wire [WIDTH-1:0]                 dec_val_o,                                            //decremented LFSR value
-    output wire                             at_upper_limit_o,                                     //LFSR is at upper limit
-    output wire                             at_lower_limit_o,                                     //LFSR is at lower limit
+    output wire [WIDTH-1:0]                 lfsr_inc_val_o,                                       //incremented LFSR value
+    output wire [WIDTH-1:0]                 lfsr_dec_val_o,                                       //decremented LFSR value
+    output wire                             lfsr_at_upper_limit_o,                                //LFSR is at upper limit
+    output wire                             lfsr_at_lower_limit_o,                                //LFSR is at lower limit
 
     //LFSR control
-    input  wire                             soft_rst_i,                                           //soft reset
-    input  wire                             inc_i,                                                //increment LFSR
-    input  wire                             dec_i,                                                //decrement LFSR
-   
+    input  wire                             lfsr_soft_rst_i,                                      //soft reset
+    input  wire                             lfsr_inc_i,                                           //increment LFSR
+    input  wire                             lfsr_dec_i,                                           //decrement LFSR
+
     //LFSR limits
-    input  wire [WIDTH-1:0]                 upper_limit_i,                                        //upper limit
-    input  wire [WIDTH-1:0]                 lower_limit_i);                                       //lower limit
+    input  wire [WIDTH-1:0]                 lfsr_upper_limit_i,                                   //upper limit
+    input  wire [WIDTH-1:0]                 lfsr_lower_limit_i);                                  //lower limit
 
    //Internal parameters
    //-------------------
@@ -93,8 +93,8 @@ module N1_lsfr
 
    //Internal registers
    //-----------------
-   reg [WIDTH-1:0] 			    lfsr_reg;                                             //LFSR
-    
+   reg [WIDTH-1:0]                          lfsr_reg;                                             //LFSR
+
    //Internal signals
    //----------------
    //Increment calculation
@@ -122,40 +122,40 @@ module N1_lsfr
    assign  inc_feedback_with_0     = inc_feedback_without_0 ^ ~|lfsr_reg[WIDTH-2:0];
    assign  inc_feedback            = INCLUDE_0 ? inc_feedback_with_0 : inc_feedback_without_0;
    assign  inc_val                 = {lfsr_reg[WIDTH-2:0],inc_feedback};
-     
+
    //Decrement calculation
    assign  dec_feedback_without_0  = ^(lfsr_reg & {TABS[WIDTH-2:0],1'b1});
    assign  dec_feedback_with_0     = dec_feedback_without_0 ^ ~|lfsr_reg[WIDTH-1:1];
    assign  dec_feedback            = INCLUDE_0 ? dec_feedback_with_0 : dec_feedback_without_0;
    assign  dec_val                 = {dec_feedback,lfsr_reg[WIDTH-1:1]};
-     
+
    //Limit check
-   assign  at_upper_limit          = ~|(lfsr_reg ^ upper_limit_i);
-   assign  at_lower_limit          = ~|(lfsr_reg ^ lower_limit_i);
-   assign  inc_within_limit        = inc_i & ~(at_upper_limit & |USE_UPPER_LIMIT);                       
-   assign  dec_within_limit        = dec_i & ~(at_lower_limit & |USE_LOWER_LIMIT);   
-    
+   assign  at_upper_limit          = ~|(lfsr_reg ^ lfsr_upper_limit_i);
+   assign  at_lower_limit          = ~|(lfsr_reg ^ lfsr_lower_limit_i);
+   assign  inc_within_limit        = lfsr_inc_i & ~(at_upper_limit & |USE_UPPER_LIMIT);
+   assign  dec_within_limit        = lfsr_dec_i & ~(at_lower_limit & |USE_LOWER_LIMIT);
+
    //Shift register
    always @(posedge async_rst_i or posedge clk_i)
      if (async_rst_i)                                                                             //asynchronous reset
        lfsr_reg <= RST_VAL[WIDTH-1:0];                                                            //reset state
      else if (sync_rst_i)                                                                         //synchronous reset
        lfsr_reg <= RST_VAL[WIDTH-1:0];                                                            //reset state
-     else if (soft_rst_i       |
-              inc_within_limit |
+     else if (lfsr_soft_rst_i)                                                                    //soft reset
+       lfsr_reg <= RST_VAL[WIDTH-1:0];                                                            //reset state
+     else if (inc_within_limit |
               dec_within_limit)
-       lfsr_reg <= (({WIDTH{      soft_rst_i}} & RST_VAL[WIDTH-1:0]) |
-                    ({WIDTH{inc_within_limit}} & inc_val)            |
+       lfsr_reg <= (({WIDTH{inc_within_limit}} & inc_val)            |
                     ({WIDTH{dec_within_limit}} & dec_val));
 
-   
+
    //Outputs
    //-------
    assign  lfsr_val_o              = lfsr_reg;                                                    //LFSR value
-   assign  inc_val_o               = inc_val;                                                     //incremented LFSR value
-   assign  dec_val_o               = dec_val;                                                     //decremented LFSR value
-   assign  at_upper_limit_o        = at_upper_limit;                                              //LFSR is at upper limit
-   assign  at_lower_limit_o        = at_lower_limit;                                              //LFSR is at lower limit
+   assign  lfsr_inc_val_o          = inc_val;                                                     //incremented LFSR value
+   assign  lfsr_dec_val_o          = dec_val;                                                     //decremented LFSR value
+   assign  lfsr_at_upper_limit_o   = at_upper_limit;                                              //LFSR is at upper limit
+   assign  lfsr_at_lower_limit_o   = at_lower_limit;                                              //LFSR is at lower limit
 
 
     //Assertions
@@ -163,72 +163,77 @@ module N1_lsfr
 `ifdef FORMAL
     //Input checks
     //------------
-    //Inputs "soft_rst_i", "inc_i", and "dec_i" must be mutual exclusive
+    //Inputs "lfsr_inc_i" and "lfsr_dec_i" must be mutual exclusive
     N1_lsfr_iasrt1:
-    assert (&{~soft_rst_i, ~inc_i, ~dec_i} |
-            &{ soft_rst_i, ~inc_i, ~dec_i} |
-            &{~soft_rst_i,  inc_i, ~dec_i} |
-            &{~soft_rst_i, ~inc_i,  dec_i});
+    assert (&{~lfsr_inc_i, ~lfsr_ec_i} |
+            &{ lfsr_inc_i, ~lfsr_ec_i} |
+            &{~lfsr_inc_i,  lfsr_ec_i});
 
     //State consistency checks
     //------------------------
     always @(posedge clk_i) begin
        //After an increment "lfsr_reg" must hold the value of the prior "inc_val"
        N1_lsfr_sasrt1:
-       assert (      ~async_rst_i    &
-               $past(~async_rst_i    &
-                     ~sync_rst_i     &
-                     ~at_upper_limit &
-                      inc_i           ) ? ~|($past(inc_val) ^ lfsr_reg) : 1'b1);
-       
+       assert (      ~async_rst_i     &
+               $past(~async_rst_i     &
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                     ~at_upper_limit  &
+                      inc_i            ) ? ~|($past(inc_val) ^ lfsr_reg) : 1'b1);
+
        //After an increment "dec_val" must hold the value of the prior "lfsr_reg"
        N1_lsfr_sasrt2:
-       assert (      ~async_rst_i    &
-               $past(~async_rst_i    &
-                     ~sync_rst_i     &
-                     ~at_upper_limit &
-                      inc_i           ) ? ~|(dec_val ^ $past(lfsr_reg) : 1'b1);
-       
+       assert (      ~async_rst_i     &
+               $past(~async_rst_i     &
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                     ~at_upper_limit  &
+                      inc_i            ) ? ~|(dec_val ^ $past(lfsr_reg) : 1'b1);
+
        //After a decrement "lfsr_reg" must hold the value of the prior "dec_val"
        N1_lsfr_sasrt3:
-       assert       ~async_rst_i    &
+       assert       ~async_rst_i      &
                ($past(~async_rst_i    &
-                     ~sync_rst_i     &
-                     ~at_lower_limit &
-                      dec_i           ) ? ~|($past(dec_val) ^ lfsr_reg) : 1'b1);
-       
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                     ~at_lower_limit  &
+                      dec_i            ) ? ~|($past(dec_val) ^ lfsr_reg) : 1'b1);
+
        //After a decrement "inc_val" must hold the value of the prior "lfsr_reg"
        N1_lsfr_sasrt4:
-       assert (      ~async_rst_i    &
-               $past(~async_rst_i    &
-                     ~sync_rst_i     &
-                     ~at_lower_limit &
-                      dec_i           ) ? ~|(inc_val ^ $past(lfsr_reg) : 1'b1);
-       
+       assert (      ~async_rst_i     &
+               $past(~async_rst_i     &
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                     ~at_lower_limit  &
+                      dec_i            ) ? ~|(inc_val ^ $past(lfsr_reg) : 1'b1);
+
        //No increment above the upper limit
        N1_lsfr_sasrt5:
-       assert (      USE_UPPER_LIMIT &
-                     ~async_rst_i    &
-               $past(~async_rst_i    &
-                     ~sync_rst_i     &
-                      at_upper_limit &
-                      inc_i           ) ? $stable(lfsr_reg) : 1'b1);
-       
+       assert (      USE_UPPER_LIMIT  &
+                     ~async_rst_i     &
+               $past(~async_rst_i     &
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                      at_upper_limit  &
+                      inc_i            ) ? $stable(lfsr_reg) : 1'b1);
+
        //No decrement below the lower limit
        N1_lsfr_sasrt6:
-       assert (      USE_LOWER_LIMIT &
-                     ~async_rst_i    &
-               $past(~async_rst_i    &
-                     ~sync_rst_i     &
-                     ~at_lower_limit &
-                      dec_i           ) ? $stable(lfsr_reg) : 1'b1);
+       assert (      USE_LOWER_LIMIT  &
+                     ~async_rst_i     &
+               $past(~async_rst_i     &
+                     ~sync_rst_i      &
+                     ~lfsr_soft_rst_i &
+                     ~at_lower_limit  &
+                      dec_i            ) ? $stable(lfsr_reg) : 1'b1);
 
        //Soft reset
        N1_lsfr_sasrt7:
-       assert ($past(soft_rst_i) ? ~|(lfsr_reg ^ RST_VAL[WIDTH-1:0]) : 1'b1);
+       assert ($past(lfsr_soft_rst_i) ? ~|(lfsr_reg ^ RST_VAL[WIDTH-1:0]) : 1'b1);
 
     end // always @ (posedge clk_i)
-                            
+
 `endif //  `ifdef FORMAL
 
 endmodule // N1_lsfr

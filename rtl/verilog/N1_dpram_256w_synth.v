@@ -33,19 +33,19 @@ module N1_dpram_256w
     input  wire                             clk_i,                                                //module clock
 
     //RAM interface
-    input  wire [7:0]                       raddr_i,                                              //read address
-    input  wire [7:0]                       waddr_i,                                              //write address
-    input  wire [15:0]                      wdata_i,                                              //write data
-    input  wire                             re_i,                                                 //read enable
-    input  wire                             we_i,                                                 //write enable
-    output reg  [15:0]                      rdata_o);                                             //read data
+    input  wire [7:0]                       ram_raddr_i,                                          //read address
+    input  wire [7:0]                       ram_waddr_i,                                          //write address
+    input  wire [15:0]                      ram_wdata_i,                                          //write data
+    input  wire                             ram_re_i,                                             //read enable
+    input  wire                             ram_we_i,                                             //write enable
+    output reg  [15:0]                      ram_rdata_o);                                         //read data
 
    //Memory
    //------
    reg [15:0] mem [0:255];
    always @(posedge clk_i) begin
-      if (we_i) mem[waddr_i] <= wdata_i;
-      if (re_i)      rdata_o <= mem[raddr_i];
+      if (ram_we_i) mem[ram_waddr_i] <= ram_wdata_i;
+      if (ram_re_i)      ram_rdata_o <= mem[ram_raddr_i];
    end
 
 endmodule // N1_dpram_256w

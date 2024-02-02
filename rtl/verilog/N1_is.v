@@ -57,27 +57,27 @@ module N1_is
     input  wire                             sync_rst_i,                                           //synchronous reset
 
     //Soft reset
-    input  wire                             is_rst_i,                                             //IS stack reset request
+    input  wire                             us2is_clr_i,                                          //IS stack reset request
 
     //Interface to upper stack
-    input  wire [15:0]                      us_push_data_i,                                       //US push data
-    input  wire                             us_push_i,                                            //US push request
-    input  wire                             us_pull_i,                                            //US pull request
-    output reg  [15:0]                      us_pull_data_o,                                       //US pull data
-    output reg                              us_push_bsy_o,                                        //US push busy indicator
-    output reg                              us_pull_bsy_o,                                        //US pull busy indicator
-    output reg                              us_empty_o,                                           //US empty indicator
-    output reg                              us_full_o,                                            //US overflow indicator
+    input  wire [15:0]                      us2is_push_data_i,                                    //US push data
+    input  wire                             us2is_push_i,                                         //US push request
+    input  wire                             us2is_pull_i,                                         //US pull request
+    output reg  [15:0]                      is2us_pull_data_o,                                    //US pull data
+    output reg                              is2us_push_bsy_o,                                     //US push busy indicator
+    output reg                              is2us_pull_bsy_o,                                     //US pull busy indicator
+    output reg                              is2us_empty_o,                                        //US empty indicator
+    output reg                              is2us_full_o,                                         //US overflow indicator
 
     //Interface to lower stack
-    input  wire [15:0]                      ls_pull_data_del_i,                                   //LS delayed pull data (available one cycle after the pull request)
-    input  wire                             ls_push_bsy_i,                                        //LS push busy indicator
-    input  wire                             ls_pull_bsy_i,                                        //LS pull busy indicator
-    input  wire                             ls_empty_i,                                           //LS empty indicator
-    input  wire                             ls_full_i,                                            //LS overflow indicator
-    output reg  [15:0]                      ls_push_data_o,                                       //LS push data
-    output reg                              ls_push_o,                                            //LS push request
-    output reg                              ls_pull_o,                                            //LS pull request
+    input  wire [15:0]                      ls2is_pull_data_del_i,                                //LS delayed pull data (available one cycle after the pull request)
+    input  wire                             ls2is_push_bsy_i,                                     //LS push busy indicator
+    input  wire                             ls2is_pull_bsy_i,                                     //LS pull busy indicator
+    input  wire                             ls2is_empty_i,                                        //LS empty indicator
+    input  wire                             ls2is_full_i,                                         //LS overflow indicator
+    output reg  [15:0]                      is2ls_push_data_o,                                    //LS push data
+    output reg                              is2ls_push_o,                                         //LS push request
+    output reg                              is2ls_pull_o,                                         //LS pull request
 
     //Probe signals
     output wire [(16*IS_DEPTH)-1:0]         prb_is_cells_o,                                       //current IS cells
@@ -97,7 +97,7 @@ module N1_is
    wire                                     is_full;                                              //IS is full
 
    
-   //FSM
+   //US
    reg                                      state_reg;                                            //current state
    reg                                      state_next;                                           //next state
 
@@ -106,7 +106,7 @@ module N1_is
    assign  is_almost_empty  = ~is_tags_reg[1];                                                    //IS is almost empty if second element is empty
    assign  is_full          =  is_tags_reg[IS_DEPTH-1];                                           //IS is full  if last  element is full
       
-   //FSM
+   //US
    //---
    localparam STATE_NO_LS_PULL = 1'b0;                                                            //buffered IS operation
    localparam STATE_LS_PULL    = 1'b1;                                                            //pull data from LS is available
@@ -114,44 +114,44 @@ module N1_is
    always @*
      begin
 	//Defaults
-        us_pull_data_o  = 16'h0000;                                                               //US pull data
-        us_push_bsy_o   = 1'b0;                                                                   //US push busy indicator
-        us_pull_bsy_o   = 1'b0;                                                                   //US pull busy indicator
-        us_empty_o      = 1'b0;                                                                   //US stack empty indicator
-        us_full_o       = is_full & ls_full_i;                                                    //US stack full indicator
-        ls_push_data_o  = 16'h0000;                                                               //LS push data
-        ls_push_o       = 1'b0;                                                                   //LS push request
-        ls_pull_o       = 1'b0;                                                                   //LS pull request
-        is_cells_next   = {IS_DEPTH{16'h0000}};                                                   //LS next IS
-        is_tags_next    = {IS_DEPTH{1'b0}};                                                       //LS next IS
-        is_we           = 1'b0;                                                                   //IS write enable
-        state_next      = STATE_NO_LS_PULL;                                                       //next state
+        is2us_pull_data_o  = 16'h0000;                                                            //US pull data
+        is2us_push_bsy_o   = 1'b0;                                                                //US push busy indicator
+        is2us_pull_bsy_o   = 1'b0;                                                                //US pull busy indicator
+        is2us_empty_o      = 1'b0;                                                                //US stack empty indicator
+        is2us_full_o       = is_full & ls2is_full_i;                                              //US stack full indicator
+        is2ls_push_data_o  = 16'h0000;                                                            //LS push data
+        is2ls_push_o       = 1'b0;                                                                //LS push request
+        is2ls_pull_o       = 1'b0;                                                                //LS pull request
+        is_cells_next      = {IS_DEPTH{16'h0000}};                                                //LS next IS
+        is_tags_next       = {IS_DEPTH{1'b0}};                                                    //LS next IS
+        is_we              = 1'b0;                                                                //IS write enable
+        state_next         = STATE_NO_LS_PULL;                                                    //next state
 
         case (state_reg)
           STATE_NO_LS_PULL:
             begin
 	       //State defaults
-               us_pull_data_o  |= is_cells_reg[15:0];                                             //US pull data
-               ls_push_data_o  |= is_cells_reg[(16*IS_DEPTH)-1:(16*IS_DEPTH)-16];                 //LS push data
-  	       us_push_bsy_o   |= is_full & ls_push_bsy_i;	                                  //push busy indicator	      
-               us_pull_bsy_o   |= is_empty;                                                       //US pull busy indicator
+               is2us_pull_data_o  |= is_cells_reg[15:0];                                          //US pull data
+               is2ls_push_data_o  |= is_cells_reg[(16*IS_DEPTH)-1:(16*IS_DEPTH)-16];              //LS push data
+  	       is2us_push_bsy_o   |= is_full & ls2is_push_bsy_i;	                          //push busy indicator	      
+               is2us_pull_bsy_o   |= is_empty;                                                    //US pull busy indicator
 	       
 	       //Push request
-	       if (us_push_i)
+	       if (us2is_push_i)
 		 begin
 		    //Prepare shift
-		    is_cells_next[(16*IS_DEPTH)-1:0] |= {is_cells_reg[(16*IS_DEPTH)-17:0],us_push_data_i}; //next IS
-		    is_tags_next[IS_DEPTH-1:0]       |= {is_tags_reg[IS_DEPTH-2:0],1'b1};                  //next IS
+		    is_cells_next[(16*IS_DEPTH)-1:0] |= {is_cells_reg[(16*IS_DEPTH)-17:0],us2is_push_data_i}; //next IS
+		    is_tags_next[IS_DEPTH-1:0]       |= {is_tags_reg[IS_DEPTH-2:0],1'b1};                     //next IS
 		    //Execute push request
-                    if (~is_full | ~ls_push_bsy_i)
+                    if (~is_full | ~ls2is_push_bsy_i)
 		      begin		      
 			 is_we         |= 1'b1;                                                   //IS write enable
-                         ls_push_o     |= is_full;                                                //LS push request
+                         is2ls_push_o  |= is_full;                                                //LS push request
 		      end
 		 end // if (us_push_i)
 
 	       //Pull request
-	       if (us_pull_i)
+	       if (us2is_pull_i)
 		 begin
 		    //Prepare shift
 		    is_cells_next[(16*IS_DEPTH)-17:0] |= is_cells_reg[(16*IS_DEPTH)-1:16];        //next IS
@@ -160,36 +160,40 @@ module N1_is
 		    is_we              |= 1'b1;                                                   //IS write enable
 		 end // if (us_pull_i)
 	       
-	       //Soft reset
-	       if (is_rst_i)
-		 begin
-		    //Execute soft reset
-		    is_we              |= 1'b1;                                                   //IS write enable
-		 end
-
 	       //Request LS pull
 	       if ( is_empty |
-                   (is_almost_empty & us_pull_i & ~ls_pull_bsy_i))
+                   (is_almost_empty & us2is_pull_i & ~ls2is_pull_bsy_i))
 		 begin
-		    ls_pull_o     |= 1'b1;                                                        //LS pull request
-                    state_next     = ls_pull_bsy_i ? state_reg : STATE_LS_PULL;                   //next state
+		    is2ls_pull_o  |= 1'b1;                                                        //LS pull request
+                    state_next     = ls2is_pull_bsy_i ? STATE_NO_LS_PULL : STATE_LS_PULL;         //next state
 		 end
 	       
+	       //Clear request
+	       if (us2is_clr_i)
+		 begin
+		    is2ls_push_o       = 1'b0;                                                    //LS push request
+		    is2ls_pull_o       = 1'b0;                                                    //LS pull request
+		    //is_cells_next    = {IS_DEPTH{16'h0000}};                                    //LS next IS
+		    is_tags_next       = {IS_DEPTH{1'b0}};                                        //LS next IS
+		    is_we              = 1'b1;                                                    //IS write enable
+		    state_next         = STATE_NO_LS_PULL;                                        //next state
+		 end
+
 	    end // case: STATE_LS_IDLE,...
 	  
           STATE_LS_PULL:
             begin
 	       //State defaults
-               us_pull_data_o    |= ls_pull_data_del_i;                                           //US pull data
-               //ls_push_data_o  |= 16'hxxxx;                                                     //LS push data
-  	       //us_push_bsy_o   |= 1'b0;	                                                  //push busy indicator	      
-               //us_pull_bsy_o   |= 1'b0;                                                         //US pull busy indicator
+               is2us_pull_data_o    |= ls2is_pull_data_del_i;                                     //US pull data
+               //is2ls_push_data_o  |= 16'hxxxx;                                                  //LS push data
+  	       //is2us_push_bsy_o   |= 1'b0;	                                                  //push busy indicator	      
+               //is2us_pull_bsy_o   |= 1'b0;                                                      //US pull busy indicator
 
 	       //Push request
-	       if (us_push_i)
+	       if (us2is_push_i)
 		 begin
 		    //Prepare shift
-                    is_cells_next[31:0] = {ls_pull_data_del_i,us_push_data_i};                    //next IS
+                    is_cells_next[31:0] = {ls2is_pull_data_del_i,us2is_push_data_i};              //next IS
                     is_tags_next[1:0]   = 2'b11;                                                  //next IS
                   //if (IS_DEPTH > 2)
 		  //  begin
@@ -201,21 +205,21 @@ module N1_is
 		 end // if (us_push_i)
 	       
 	       //Pull request
-	       if (us_pull_i)
+	       if (us2is_pull_i)
 		 begin
 	            //Request LS pull
 		    begin
-		       ls_pull_o     |= 1'b1;                                                        //LS pull request
-                       state_next     = ls_pull_bsy_i ? state_reg : STATE_LS_PULL;                   //next state
+		       is2ls_pull_o  |= 1'b1;                                                     //LS pull request
+                       state_next     = ls2is_pull_bsy_i ? STATE_LS_PULL : STATE_NO_LS_PULL;      //next state
 		    end
 		 end
              
 	       //Capture LS pull data
-	       if (~us_push_i & ~us_pull_i & ~is_rst_i)
+	       if (~us2is_push_i & ~us2is_pull_i)
 		 begin
 		    
 		    //Prepare shift
-                    is_cells_next[15:0] = us_push_data_i;                                         //next IS
+                    is_cells_next[15:0] = us2is_push_data_i;                                      //next IS
                     is_tags_next[0]     = 1'b1;                                                   //next IS
                   //if (IS_DEPTH > 2)
 		  //  begin
@@ -226,6 +230,16 @@ module N1_is
  		    is_we         |= 1'b1;                                                        //IS write enable
 		 end // if (~us_push_i & ~us_pull_i & ~is_rst_i)
 
+	       //Clear request
+	       if (us2is_clr_i)
+		 begin
+		    is2ls_push_o       = 1'b0;                                                    //LS push request
+		    is2ls_pull_o       = 1'b0;                                                    //LS pull request
+		    //is_cells_next    = {IS_DEPTH{16'h0000}};                                    //LS next IS
+		    is_tags_next       = {IS_DEPTH{1'b0}};                                        //LS next IS
+		    is_we              = 1'b1;                                                    //IS write enable
+		    state_next         = STATE_NO_LS_PULL;                                        //next state
+		 end
 	    end // case: STATE_LS_PULL
 	endcase // case (state_reg)
      end // always @ *
@@ -238,8 +252,6 @@ module N1_is
        is_cells_reg <= {IS_DEPTH{16'h0000}};
      else if (sync_rst_i)                                                                         //synchronous reset
        is_cells_reg <= {IS_DEPTH{16'h0000}};
-     else if (is_rst_i)                                                                           //soft reset
-       is_cells_reg <= {IS_DEPTH{16'h0000}};
      else if (is_we)                                                                              //state transition
        is_cells_reg <= is_cells_next;
 
@@ -249,19 +261,15 @@ module N1_is
        is_tags_reg  <= {IS_DEPTH{1'b0}};
      else if (sync_rst_i)                                                                         //synchronous reset
        is_tags_reg  <= {IS_DEPTH{1'b0}};
-     else if (is_rst_i)                                                                           //soft reset
-       is_tags_reg  <= {IS_DEPTH{1'b0}};
      else if (is_we)                                                                              //state transition
        is_tags_reg  <= is_tags_next;
 
    //FSM
    always @(posedge async_rst_i or posedge clk_i)
      if (async_rst_i)                                                                             //asynchronous reset
-       state_reg <= STATE_LS_PULL;
+       state_reg <= STATE_NO_LS_PULL;
      else if (sync_rst_i)                                                                         //synchronous reset
-       state_reg <= STATE_LS_PULL;
-     else if (is_rst_i)                                                                           //soft reset
-       state_reg <= STATE_LS_PULL;
+       state_reg <= STATE_NO_LS_PULL;
      else                                                                                         //state transition
        state_reg <= state_next;
 
@@ -271,17 +279,15 @@ module N1_is
    assign prb_is_tags_o      = is_tags_reg;                                                       //current IS tags
    assign prb_is_state_o     = state_reg;                                                         //current state
 
-
     //Assertions
     //----------
 `ifdef FORMAL
     //Input checks
     //Inputs is_rst_i, us_push_i, and us_pull_i must be mutual exclusive
     N1_is_iasrt1:
-    assert (&{~is_rst_i, ~us_push_i, ~us_pull_i} |
-            &{ is_rst_i, ~us_push_i, ~us_pull_i} |
-            &{~is_rst_i,  us_push_i, ~us_pull_i} |
-            &{~is_rst_i, ~us_push_i,  us_pull_i});
+    assert (&{~us2is_push_i, ~us2is_pull_i} |
+            &{ us2is_push_i, ~us2is_pull_i} |
+            &{~us2is_push_i,  us2is_pull_i});
 
     //State consistency checks
     //------------------------
@@ -301,14 +307,14 @@ module N1_is
        //Unless a reset occured, tags can only be cleared through a pull request
        for (int i=IS_DEPTH-1; i>=0 ;i=i-1) begin
           N1_is_sasrt3:
-          assert(      ~async_rst_i  &
-		 $past(~async_rst_i  &
-		       ~is_rst_i)    &
-                 $fell(is_tags_reg[i]) ? $past(us_pull_i & ~us_pull_bsy_o) : 1'b1);
+          assert(      ~async_rst_i   &
+		 $past(~async_rst_i   &
+		       ~us2is_rst_i) &
+                 $fell(is_tags_reg[i]) ? $past(us2ls_pull_i & ~us2ls_pull_bsy_o) : 1'b1);
        end
 
        //LS pull data is pending one cycle after an unstalled LS pull request
-       assert((state_reg == STATE_LS_PULL) ? $past(ls_pull_o & ~ls_pull_bsy_i);
+       assert((state_reg == STATE_LS_PULL) ? $past(is2ls_pull_o & ~ls2is_pull_bsy_i);
        
        //Whenever LS pull data is pending, the IS must be empty
        assert((state_reg == STATE_LS_PULL) ? is_empty : 1'b1);

@@ -18,8 +18,9 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This module implements all levels of the parameter and the return stack. #
-//#    These levels are:                                                        #
+//#    This module instantiates all levels of the parameter and the return      #
+//#    stack.                                                                   #
+//#    stack.                                                                   #
 //#    - The upper stack, which provides direct access to the most cells and    #
 //#      which is capable of performing stack operations.                       #
 //#                                                                             #
@@ -54,18 +55,24 @@
 //#      - Initial release                                                      #
 //#   May 8, 2019                                                               #
 //#      - Added RTY_I support to PBUS                                          #
+//#   January 24, 2024                                                          #
+//#      - New implementation                                                   #
 //###############################################################################
 `default_nettype none
 
 module N1_prs
-  #(parameter   SP_WIDTH        =      12,                                          //width of the stack pointer
-    parameter   IPS_DEPTH       =       8,                                          //depth of the intermediate parameter stack
+  #(parameter   IPS_DEPTH       =       8,                                          //depth of the intermediate parameter stack
     parameter   IRS_DEPTH       =       8)                                          //depth of the intermediate return stack
 
    (//Clock and reset
     input wire                               clk_i,                                 //module clock
     input wire                               async_rst_i,                           //asynchronous reset
     input wire                               sync_rst_i,                            //synchronous reset
+
+   
+
+
+
 
     //Program bus (wishbone)
     output wire [15:0]                       pbus_dat_o,                            //write data bus
@@ -231,6 +238,36 @@ module N1_prs
 
 
 
+   //Intermediate parameter stack to lower stack 
+   wire [15:0]                               ips2ls_push_data,                    //push data
+   wire                                      ips2ls_push,                         //push request
+   wire                                      ips2ls_pull,                         //pull request
+   wire [15:0]                               ls2ips_pull_data_del,                //delayed pull data (available one cycle after the pull request)
+   wire                                      ls2ips_push_bsy,                     //push busy indicator
+   wire                                      ls2ips_pull_bsy,                     //pull busy indicator
+   wire                                      ls2ips_empty,                        //empty indicator
+   wire                                      ls2ips_full,                         //overflow indicator
+
+   //Intermediate return stack to lower stack 
+   wire [15:0]                               irs2ls_push_data,                    //push data
+   wire                                      irs2ls_push,                         //push request
+   wire                                      irs2ls_pull,                         //pull request
+   wire [15:0]                               ls2irs_pull_data_del,                //delayed pull data (available one cycle after the pull request)
+   wire                                      ls2irs_push_bsy,                     //push busy indicator
+   wire                                      ls2irs_pull_bsy,                     //pull busy indicator
+   wire                                      ls2irs_empty,                        //empty indicator
+   wire                                      ls2irs_full,                         //overflow indicator
+
+   //Lower stack to DPRAM
+   wire [8:0]                                ls2ram_raddr;                          //read address
+   wire [8:0]                                ls2ram_waddr;                          //write address
+   wire [15:0]                               ls2ram_wdata;                          //write data
+   wire                                      ls2ram_re;                             //read enable
+   wire                                      ls2ram_we;                             //write enable
+   wire [15:0]                               ram2ls_rdata;                          //read data
+    
+
+   
 
 
 
@@ -238,826 +275,139 @@ module N1_prs
 
 
    
-   //Upper stack
+
+
+   //Upper Stack
    //-----------
-   //RS0
-   assign rs0_next     = (fsm_rs_shift_up      ? irs_reg[15:0]       : 16'h0000) |  //RS1 -> RS0
-                         ({16{fsm_idle}} &
-                          ((ir2prs_us_tp_i[0]  ? ps0_reg             : 16'h0000) |  //PS0 -> RS0
-                           (ir2prs_irs_tp_i[0] ? irs_reg[15:0]       : 16'h0000) |  //RS1 -> RS0
-                           (ir2prs_pc2rs0_i    ? pagu2prs_prev_adr_i : 16'h0000))); //PC  -> RS0
-   assign rs0_tag_next = (fsm_rs_shift_up      & irs_tags_reg[0])               |   //RS1 -> RS0
-                         (fsm_idle             &
-                          ((ir2prs_us_tp_i[0]  & ps0_tag_reg)                   |   //PS0 -> RS0
-                           (ir2prs_irs_tp_i[0] & irs_tags_reg[0])               |   //RS1 -> RS0
-                            ir2prs_pc2rs0_i));                                      //PC  -> RS0
-   assign rs0_we       = fsm_rs_shift_down                                      |   //0   -> RS0
-                         fsm_rs_shift_up                                        |   //RS1 -> RS0
-                         (fsm_idle & ~fc2prs_hold_i &
-                          (ir2prs_rs_rst_i                                      |   //reset RS
-                           ir2prs_us_tp_i[0]                                    |   //PS0 -> RS0
-                           ir2prs_irs_tp_i[0]                                   |   //RS1 -> RS0
-                           ir2prs_pc2rs0_i));                                       //PC  -> RS0
 
-   //PS0
-   assign ps0_next     = (fsm_ps_shift_up      ? ps1_reg            : 16'h0000) |   //PS1 -> PS0
-                         ({16{fsm_idle}} &
-                          ((ir2prs_us_tp_i[1]  ? rs0_reg            : 16'h0000) |   //RS0 -> PS0
-                           (ir2prs_us_tp_i[2]  ? ps1_reg            : 16'h0000) |   //PS1 -> PS0
-                           (ir2prs_alu2ps0_i   ? alu2prs_ps0_next_i : 16'h0000) |   //ALU -> PS0
-                           (ir2prs_lit2ps0_i   ? ir2prs_lit_val_i   : 16'h0000) |   //LIT -> PS0
-                           (fc2prs_dat2ps0_i   ? pbus_dat_i         : 16'h0000) |   //DAT -> PS0
-                           (fc2prs_tc2ps0_i    ? excpt2prs_tc_i     : 16'h0000) |   //TC  -> PS0
-                           (fc2prs_isr2ps0_i   ? irq_req_i          : 16'h0000)));  //ISR -> PS0
-   assign ps0_tag_next = (fsm_ps_shift_up      & ps1_tag_reg)                   |   //PS1 -> PS0
-                         (fsm_idle             &
-                          ((ir2prs_us_tp_i[1]  & rs0_tag_reg)                   |   //RS0 -> PS0
-                           (ir2prs_us_tp_i[2]  & ps1_tag_reg)                   |   //PS1 -> PS0
-                            ir2prs_alu2ps0_i                                    |   //ALU -> PS0
-                            fc2prs_dat2ps0_i                                    |   //DAT -> PS0
-                            ir2prs_lit2ps0_i                                    |   //LIT -> PS0
-                            fc2prs_isr2ps0_i));                                     //ISR -> PS0
-   assign ps0_we       = fsm_ps_shift_down                                      |   //0   -> PS0
-                         fsm_ps_shift_up                                        |   //PS1 -> PS0
-                         (fsm_idle & ~fc2prs_hold_i &
-                          (ir2prs_ps_rst_i                                      |   //reset PS
-                           ir2prs_us_tp_i[1]                                    |   //RS0 -> PS0
-                           ir2prs_us_tp_i[2]                                    |   //PS1 -> PS0
-                           ir2prs_alu2ps0_i                                     |   //ALU -> PS0
-                           fc2prs_dat2ps0_i                                     |   //DAT -> PS0
-                           ir2prs_lit2ps0_i                                     |   //LIT -> PS0
-                           fc2prs_isr2ps0_i));                                      //ISR -> PS0
 
-   //PS1
-   assign ps1_next     = (fsm_ps_shift_down    ? ps0_reg            : 16'h0000) |   //PS0 -> PS1
-                         (fsm_ps_shift_up      ? ps2_reg            : 16'h0000) |   //PS2 -> PS1
-                         ({16{fsm_idle}} &
-                          ((ir2prs_us_tp_i[3]  ? ps0_reg            : 16'h0000) |   //PS0 -> PS1
-                           (ir2prs_us_tp_i[4]  ? ps2_reg            : 16'h0000) |   //PS2 -> PS1
-                           (ir2prs_alu2ps1_i   ? alu2prs_ps1_next_i : 16'h0000)));  //ALU -> PS1
-   assign ps1_tag_next = (fsm_ps_shift_down    & ps0_tag_reg)                   |   //PS0 -> PS1
-                         (fsm_ps_shift_up      & ps2_tag_reg)                   |   //PS2 -> PS1
-                         (fsm_idle             &
-                          ((ir2prs_us_tp_i[3]  & ps0_tag_reg)                   |   //PS0 -> PS1
-                           (ir2prs_us_tp_i[4]  & ps2_tag_reg)                   |   //PS2 -> PS1
-                            ir2prs_alu2ps1_i));                                     //ALU -> PS1
-   assign ps1_we       = fsm_ps_shift_down                                      |   //PS0 -> PS1
-                         fsm_ps_shift_up                                        |   //PS2 -> PS1
-                         (fsm_idle & ~fc2prs_hold_i &
-                          (ir2prs_ps_rst_i                                      |   //reset PS
-                           ir2prs_us_tp_i[3]                                    |   //PS0 -> PS1
-                           ir2prs_us_tp_i[4]                                    |   //PS2 -> PS1
-                           ir2prs_alu2ps1_i));                                      //ALU -> PS1
 
-   //PS2
-   assign ps2_next     = (fsm_ps_shift_down    ? ps1_reg            : 16'h0000) |   //PS1 -> PS2
-                         (fsm_ps_shift_up      ? ps3_reg            : 16'h0000) |   //PS3 -> PS2
-                         ({16{fsm_idle}} &
-                          ((ir2prs_us_tp_i[5]  ? ps1_reg            : 16'h0000) |   //PS1 -> PS2
-                           (ir2prs_us_tp_i[6]  ? ps3_reg            : 16'h0000)));  //PS3 -> PS2
-   assign ps2_tag_next = (fsm_ps_shift_down    & ps1_tag_reg)                   |   //PS1 -> PS2
-                         (fsm_ps_shift_up      & ps3_tag_reg)                   |   //PS3 -> PS2
-                         (fsm_idle             &
-                          ((ir2prs_us_tp_i[5]  & ps1_tag_reg)                   |   //PS1 -> PS2
-                           (ir2prs_us_tp_i[6]  & ps3_tag_reg)));                    //PS3 -> PS2
-   assign ps2_we       = fsm_ps_shift_down                                      |   //PS1 -> PS2
-                         fsm_ps_shift_up                                        |   //PS3 -> PS2
-                         (fsm_idle & ~fc2prs_hold_i &
-                          (ir2prs_ps_rst_i                                      |   //reset PS
-                           ir2prs_us_tp_i[5]                                    |   //PS1 -> PS2
-                           ir2prs_us_tp_i[6]));                                     //PS3 -> PS2
+   
 
-   //PS3
-   assign ps3_next     = (fsm_ps_shift_down    ? ps2_reg            : 16'h0000) |   //PS2 -> PS3
-                         (fsm_ps_shift_up      ? ips_reg[15:0]      : 16'h0000) |   //PS4 -> PS3
-                         ({16{fsm_idle}}       &
-                          ((ir2prs_us_tp_i[7]  ? ps2_reg            : 16'h0000) |   //PS2 -> PS3
-                           (ir2prs_ips_tp_i[0] ? ips_reg[15:0]      : 16'h0000)));  //PS4 -> PS3
-   assign ps3_tag_next = (fsm_ps_shift_down    & ps2_tag_reg)                   |   //PS2 -> PS3
-                         (fsm_ps_shift_up      & ips_tags_reg[0])               |   //PS4 -> PS3
-                         (fsm_idle             &
-                          ((ir2prs_us_tp_i[7]  & ps2_tag_reg)                   |   //PS2 -> PS3
-                           (ir2prs_ips_tp_i[0] & ips_tags_reg[0])));                //PS4 -> PS3
-   assign ps3_we       = fsm_ps_shift_down                                      |   //PS2 -> PS3
-                         fsm_ps_shift_up                                        |   //PS4 -> PS3
-                         (fsm_idle & ~fc2prs_hold_i &
-                          (ir2prs_ps_rst_i                                      |   //reset PS
-                           ir2prs_us_tp_i[7]                                    |   //PS2 -> PS3
-                           ir2prs_ips_tp_i[0]));                                    //PS4 -> PS3
 
-   //Flipflops
-   always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                               //asynchronous reset
-       begin
-          rs0_reg     <= 16'h0000;                                                  //RS0 (TOS)
-          ps0_reg     <= 16'h0000;                                                  //PS0 (TOS)
-          ps1_reg     <= 16'h0000;                                                  //PS1 (TOS+1)
-          ps2_reg     <= 16'h0000;                                                  //PS2 (TOS+2)
-          ps3_reg     <= 16'h0000;                                                  //PS3 (TOS+3)
-          rs0_tag_reg <= 1'b0;                                                      //RS0 tag
-          ps0_tag_reg <= 1'b1;                                                      //PS0 tag
-          ps1_tag_reg <= 1'b0;                                                      //PS1 tag
-          ps2_tag_reg <= 1'b0;                                                      //PS2 tag
-          ps3_tag_reg <= 1'b0;                                                      //PS3 tag
-       end
-     else if (sync_rst_i)                                                           //synchronous reset
-       begin
-          rs0_reg     <= 16'h0000;                                                  //RS0 (TOS)
-          ps0_reg     <= 16'h0000;                                                  //PS0 (TOS)
-          ps1_reg     <= 16'h0000;                                                  //PS1 (TOS+1)
-          ps2_reg     <= 16'h0000;                                                  //PS2 (TOS+2)
-          ps3_reg     <= 16'h0000;                                                  //PS3 (TOS+3)
-          rs0_tag_reg <= 1'b0;                                                      //RS0 tag
-          ps0_tag_reg <= 1'b1;                                                      //PS0 tag
-          ps1_tag_reg <= 1'b0;                                                      //PS1 tag
-          ps2_tag_reg <= 1'b0;                                                      //PS2 tag
-          ps3_tag_reg <= 1'b0;                                                      //PS3 tag
-       end
-     else
-       begin
-          if (rs0_we) rs0_reg     <= rs0_next;                                      //RS0 (TOS)
-          if (ps0_we) ps0_reg     <= ps0_next;                                      //PS0 (TOS)
-          if (ps1_we) ps1_reg     <= ps1_next;                                      //PS1 (TOS+1)
-          if (ps2_we) ps2_reg     <= ps2_next;                                      //PS2 (TOS+2)
-          if (ps3_we) ps3_reg     <= ps3_next;                                      //PS3 (TOS+3)
-          if (rs0_we) rs0_tag_reg <= rs0_tag_next;                                  //RS0 tag
-          if (ps0_we) ps0_tag_reg <= ps0_tag_next;                                  //PS0 tag
-          if (ps1_we) ps1_tag_reg <= ps1_tag_next;                                  //PS1 tag
-          if (ps2_we) ps2_tag_reg <= ps2_tag_next;                                  //PS2 tag
-          if (ps3_we) ps3_tag_reg <= ps3_tag_next;                                  //PS3 tag
-       end
 
-   //Intermediate parameter stack
-   //----------------------------
-   assign ips_next      = (fsm_ps_shift_down ?                                      //shift down
-                           {ips_reg[(16*IPS_DEPTH)-17:0], 16'h0000}             :   //PSn   -> PSn+1
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          (fsm_ps_shift_up ?                                        //shift up
-                           {16'h0000, ips_reg[(16*IPS_DEPTH)-1:16]}             :   //PSn+1 -> PSn
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          (fsm_dat2ps4 ?                                            //fetch read data
-                           {{IPS_DEPTH-1{16'h0000}}, sbus_dat_i}                :   //DAT -> PS4
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          (fsm_psp2ps4 ?                                            //fetch PSP
-                           {{IPS_DEPTH-1{16'h0000}},                                //DAT -> PS4
-                            {16-SP_WIDTH{1'b0}}, dsp2prs_psp_i}                 :   //
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          (fsm_ips_clr_bottom ?                                     //clear IPS bottom cell
-                           ips_reg                                              :   //
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          ({16*IPS_DEPTH{fsm_idle}} &                               //
-                           (ir2prs_ips_tp_i[1] ?                                    //shift down
-                            {ips_reg[(16*IPS_DEPTH)-17:0], 16'h0000}            :   //PSn   -> PSn+1
-                            {IPS_DEPTH{16'h0000}})                              |   //
-                           (ir2prs_ips_tp_i[0] ?                                    //shift up
-                            {16'h0000, ips_reg[(16*IPS_DEPTH)-1:16]}            :   //PSn+1 -> PSn
-                            {IPS_DEPTH{16'h0000}}));                                //
-   assign ips_tags_next = (fsm_ps_shift_down ?                                      //shift down
-                           {ips_tags_reg[IPS_DEPTH-2:0], 1'b0}                  :   //PSn   -> PSn+1
-                           {IPS_DEPTH{1'b0}})                                   |   //
-                          (fsm_ps_shift_up  ?                                       //shift up
-                           {1'b0, ips_tags_reg[IPS_DEPTH-1:1]}                  :   //PSn+1 -> PSn
-                           {IPS_DEPTH{1'b0}})                                   |   //
-                          (fsm_dat2ps4 ?                                            //fetch read data
-                           {{IPS_DEPTH-1{1'b0}}, 1'b1}                          :   //DAT -> PS4
-                           {IPS_DEPTH{1'b0}})                                   |   //
-                          (fsm_psp2ps4 ?                                            //get PSP
-                           {{IPS_DEPTH-1{1'b0}}, 1'b1}                          :   //DAT -> PS4
-                           {IPS_DEPTH{1'b0}})                                   |   //
-                          (fsm_ips_clr_bottom ?                                     //clear IPS bottom cell
-                           {{1'b0},ips_tags_reg[IPS_DEPTH-2:0]}                 :   //
-                           {IPS_DEPTH{1'b0}})                                   |   //
-                          ({IPS_DEPTH{fsm_idle}} &                                  //
-                           (ir2prs_ips_tp_i[1] ?                                    //shift down
-                            {ips_tags_reg[IPS_DEPTH-2:0], 1'b0}                 :   //PSn   -> PSn+1
-                            {IPS_DEPTH{1'b0}})                                  |   //
-                           (ir2prs_ips_tp_i[0] ?                                    //shift up
-                            {1'b0, ips_tags_reg[IPS_DEPTH-1:1]}                 :   //PSn+1 -> PSn
-                            {IPS_DEPTH{1'b0}}));                                    //
 
-   assign ips_we        = fsm_ps_shift_down                                     |   //shift down
-                          fsm_ps_shift_up                                       |   //shift up
-                          fsm_dat2ps4                                           |   //fetch read data
-                          fsm_psp2ps4                                           |   //get PSP
-                          fsm_ips_clr_bottom                                    |   //clear IPS bottom cell
-                          (fsm_idle &                                               //
-                           (ir2prs_ps_rst_i                                     |   //reset PS
-                            ir2prs_ips_tp_i[1]                                  |   //shift down
-                            ir2prs_ips_tp_i[0]));                                   //shift up
-
-   //Flipflops
-   always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                               //asynchronous reset
-       begin
-          ips_reg      <= {IPS_DEPTH{16'h0000}};                                    //cells
-          ips_tags_reg <= {IPS_DEPTH{1'b1}};                                        //tags
-       end
-     else if (sync_rst_i)                                                           //synchronous reset
-       begin
-          ips_reg      <= {IPS_DEPTH{16'h0000}};                                    //cells
-          ips_tags_reg <= {IPS_DEPTH{1'b1}};                                        //tags
-       end
-     else if (ips_we)
-       begin
-          ips_reg      <= ips_next;                                                 //cells
-          ips_tags_reg <= ips_tags_next;                                            //tags
-      end
-
-   //Shortcuts
-   assign ips_empty        = ~ips_tags_reg[0];                                      //PS4 contains no data
-   assign ips_almost_empty = ~ips_tags_reg[1];                                      //PS5 contains no data
-   assign ips_full         =  ips_tags_reg[IPS_DEPTH-1];                            //PSn contains data
-   assign ips_almost_full  =  ips_tags_reg[IPS_DEPTH-2];                            //PSn-1 contains data
-
-   //Intermediate return stack
-   //-------------------------
-   assign irs_next      = (fsm_rs_shift_down ?                                      //shift down
-                           {irs_reg[(16*IRS_DEPTH)-17:0], 16'h0000}             :   //RSn   -> RSn+1
-                           {IRS_DEPTH{16'h0000}})                               |   //
-                          (fsm_rs_shift_up  ?                                       //shift up
-                           {16'h0000, irs_reg[(16*IRS_DEPTH)-1:16]}             :   //RSn+1 -> RSn
-                           {IRS_DEPTH{16'h0000}})                               |   //
-                          (fsm_dat2rs1 ?                                            //fetch read data
-                           {{IRS_DEPTH-1{16'h0000}}, sbus_dat_i}                :   //DAT -> RS4
-                           {IRS_DEPTH{16'h0000}})                               |   //
-                          (fsm_rsp2rs1 ?                                            //get RSP
-                           {{IRS_DEPTH-1{16'h0000}},                                //DAT -> RS4
-                            {16-SP_WIDTH{1'b0}}, dsp2prs_rsp_i}                 :   //
-                           {IRS_DEPTH{16'h0000}})                               |   //
-                          (fsm_irs_clr_bottom ?                                     //clear IRS bottom cell
-                           ips_reg                                              :   //
-                           {IPS_DEPTH{16'h0000}})                               |   //
-                          ({16*IRS_DEPTH{fsm_idle}} &                               //
-                           (ir2prs_irs_tp_i[1] ?                                    //shift down
-                            {irs_reg[(16*IRS_DEPTH)-17:0], 16'h0000}            :   //RSn   -> RSn+1
-                            {IRS_DEPTH{16'h0000}})                              |   //
-                           (ir2prs_irs_tp_i[0] ?                                    //shift up
-                            {16'h0000, irs_reg[(16*IRS_DEPTH)-1:16]}            :   //RSn+1 -> RSn
-                            {IRS_DEPTH{16'h0000}}));                                //
-   assign irs_tags_next = (fsm_rs_shift_down ?                                      //shift down
-                           {irs_tags_reg[IRS_DEPTH-2:0], 1'b0}                  :   //RSn   -> RSn+1
-                           {IRS_DEPTH{1'b0}})                                   |   //
-                          (fsm_rs_shift_up  ?                                       //shift up
-                           {1'b0, irs_tags_reg[IRS_DEPTH-1:1]}                  :   //RSn+1 -> RSn
-                           {IRS_DEPTH{1'b0}})                                   |   //
-                          (fsm_dat2rs1 ?                                            //fetch read data
-                           {{IRS_DEPTH-1{1'b0}}, 1'b1}                          :   //DAT -> RS4
-                           {IRS_DEPTH{1'b0}})                                   |   //
-                          (fsm_rsp2rs1 ?                                            //get RSP
-                           {{IRS_DEPTH-1{1'b0}}, 1'b1}                          :   //DAT -> RS4
-                           {IRS_DEPTH{1'b0}})                                   |   //
-                          (fsm_irs_clr_bottom ?                                     //clear IPR bottom cell
-                           {{1'b0},irs_tags_reg[IRS_DEPTH-2:0]}                 :   //
-                           {IRS_DEPTH{1'b0}})                                   |   //
-                          ({IRS_DEPTH{fsm_idle}} &                                  //
-                           (ir2prs_irs_tp_i[1] ?                                    //shift down
-                            {irs_tags_reg[IRS_DEPTH-2:0], 1'b0}                 :   //RSn   -> RSn+1
-                            {IRS_DEPTH{1'b0}})                                  |   //
-                           (ir2prs_irs_tp_i[0] ?                                    //shift up
-                            {1'b0, irs_tags_reg[IRS_DEPTH-1:1]}                 :   //RSn+1 -> RSn
-                            {IRS_DEPTH{1'b0}}));                                    //
-   assign irs_we        = fsm_rs_shift_down                                     |   //shift down
-                          fsm_rs_shift_up                                       |   //shift up
-                          fsm_dat2rs1                                           |   //fetch read data
-                          fsm_rsp2rs1                                           |   //fetch read RSP
-                          fsm_irs_clr_bottom                                    |   //clear IRS bottom cell
-                          (fsm_idle &                                               //
-                           (ir2prs_rs_rst_i                                     |   //reset RS
-                            ir2prs_irs_tp_i[1]                                  |   //shift out
-                            ir2prs_irs_tp_i[0]));                                   //shift in
-
-   //Flipflops
-   always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                               //asynchronous reset
-       begin
-          irs_reg      <= {IRS_DEPTH{16'h0000}};                                    //cells
-          irs_tags_reg <= {IRS_DEPTH{1'b1}};                                        //tags
-       end
-     else if (sync_rst_i)                                                           //synchronous reset
-       begin
-          irs_reg      <= {IRS_DEPTH{16'h0000}};                                    //cells
-          irs_tags_reg <= {IRS_DEPTH{1'b1}};                                        //tags
-       end
-     else if (irs_we)
-       begin
-          irs_reg      <= irs_next;                                                 //cells
-          irs_tags_reg <= irs_tags_next;                                            //tags
-      end
-
-   //Shortcuts
-   assign irs_empty        = ~irs_tags_reg[0];                                      //PS1 contains no data
-   assign irs_almost_empty = ~irs_tags_reg[1];                                      //PS2 contains no data
-   assign irs_full         =  irs_tags_reg[IRS_DEPTH-1];                            //PSn contains data
-   assign irs_almost_full  =  irs_tags_reg[IRS_DEPTH-2];                            //PSn-1 contains data
-
-   //Lower parameter stack
-   //---------------------
-   assign lps_empty        = ~|dsp2prs_psp_i;                                       //PSP is zero
-
-   //Lower return stack
+   
+   //Intermediate Stack
    //------------------
-   assign lrs_empty        = ~|dsp2prs_rsp_i;                                       //RSP is zero
+   //Parameter stack
+   N1_is
+     #(IS_DEPTH(IRS_DEPTH))                                                                      //depth of the IS (must be >=2)
+   irs   
+     (//Clock and reset
+      .clk_i			(clk_i),                                                //module clock
+      .async_rst_i		(async_rst_i),                                          //asynchronous reset
+      .sync_rst_i		(sync_rst_i),                                           //synchronous reset
+      //Soft reset
+      .us2is_rst_i		(),                                         //IS stack reset request
+      //Interface to upper stack
+      .us2is_push_data_i	(),                                    //US push data
+      .us2is_push_i		(),                                         //US push request
+      .us2is_pull_i		(),                                         //US pull request
+      .is2us_pull_data_o	(),                                    //US pull data
+      .is2us_push_bsy_o		(),                                     //US push busy indicator
+      .is2us_pull_bsy_o		(),                                     //US pull busy indicator
+      .is2us_empty_o		(),                                        //US empty indicator
+      .is2us_full_o		(),                                         //US overflow indicator
+      //Interface to lower stack
+      .ls2is_pull_data_del_i	(ls2ips_pull_data_del),                                //LS delayed pull data (available one cycle after the pull request)
+      .ls2is_push_bsy_i		(ls2ips_push_bsy),                                     //LS push busy indicator
+      .ls2is_pull_bsy_i		(ls2ips_pull_bsy),                                     //LS pull busy indicator
+      .ls2is_empty_i		(ls2ips_empty),                                        //LS empty indicator
+      .ls2is_full_i		(ls2ips_full),                                         //LS overflow indicator
+      .is2ls_push_data_o	(ips2ls_push_data),                                    //LS push data
+      .is2ls_push_o		(ips2ls_push),                                         //LS push request
+      .is2ls_pull_o		(ips2ls_pull),                                         //LS pull request
+      //Probe signals
+      .prb_is_cells_o		(),                                       //current IS cells
+      .prb_is_tags_o		(),                                        //current IS tags
+      .prb_is_state_o)		();                                      //current state
 
-   //Finite state machine
-   //--------------------
-   //State encoding (current task)
-   localparam STATE_TASK_READY            = 3'b000;                                 //ready fo new task
-   localparam STATE_TASK_MANAGE_LS        = 3'b001;                                 //manage lower stack
-   localparam STATE_TASK_PS_FILL          = 3'b010;                                 //empty the US and the IS to set a new PS
-   localparam STATE_TASK_RS_FILL          = 3'b011;                                 //empty the US and the IS to set a new PS
-   localparam STATE_TASK_PS_EMPTY_GET_SP  = 3'b101;                                 //empty the US and the IS to set a new PS
-   localparam STATE_TASK_PS_EMPTY_SET_SP  = 3'b100;                                 //empty the US and the IS to set a new PS
-   localparam STATE_TASK_RS_EMPTY_GET_SP  = 3'b111;                                 //empty the US and the IS to set a new PS
-   localparam STATE_TASK_RS_EMPTY_SET_SP  = 3'b110;                                 //empty the US and the IS to set a new PS
-   //State encoding (stack bus)
-   localparam STATE_SBUS_IDLE             = 2'b00;                                  //sbus is idle
-   localparam STATE_SBUS_WRITE            = 2'b01;                                  //ongoing write access
-   localparam STATE_SBUS_READ_PS          = 2'b10;                                  //read data pending for the IPS
-   localparam STATE_SBUS_READ_RS          = 2'b11;                                  //read data pending for the IRS
+   //Return stack
+   N1_is
+     #(IS_DEPTH(IPS_DEPTH))                                                                      //depth of the IS (must be >=2)
+   irs   
+     (//Clock and reset
+      .clk_i			(clk_i),                                                //module clock
+      .async_rst_i		(async_rst_i),                                          //asynchronous reset
+      .sync_rst_i		(sync_rst_i),                                           //synchronous reset
+      //Soft reset
+      .us2is_rst_i		(),                                         //IS stack reset request
+      //Interface to upper stack
+      .us2is_push_data_i	(),                                    //US push data
+      .us2is_push_i		(),                                         //US push request
+      .us2is_pull_i		(),                                         //US pull request
+      .is2us_pull_data_o	(),                                    //US pull data
+      .is2us_push_bsy_o		(),                                     //US push busy indicator
+      .is2us_pull_bsy_o		(),                                     //US pull busy indicator
+      .is2us_empty_o		(),                                        //US empty indicator
+      .is2us_full_o		(),                                         //US overflow indicator
+      //Interface to lower stack
+      .ls2is_pull_data_del_i	(ls2irs_pull_data_del),                                //LS delayed pull data (available one cycle after the pull request)
+      .ls2is_push_bsy_i		(ls2irs_push_bsy),                                     //LS push busy indicator
+      .ls2is_pull_bsy_i		(ls2irs_pull_bsy),                                     //LS pull busy indicator
+      .ls2is_empty_i		(ls2irs_empty),                                        //LS empty indicator
+      .ls2is_full_i		(ls2irs_full),                                         //LS overflow indicator
+      .is2ls_push_data_o	(irs2ls_push_data),                                    //LS push data
+      .is2ls_push_o		(irs2ls_push),                                         //LS push request
+      .is2ls_pull_o		(irs2ls_pull),                                         //LS pull request
+      //Probe signals
+      .prb_is_cells_o		(),                                       //current IS cells
+      .prb_is_tags_o		(),                                        //current IS tags
+      .prb_is_state_o)		();                                      //current state
+   
+   //Lower Stack
+   //-----------
+   //LS controller
+   N1_ls_1xdpram
+     #(.AWIDTH(8)) //RAM address width
+   ls
+     (//Clock and reset
+      .clk_i			(clk_i),                                                //module clock
+      .async_rst_i		(async_rst_i),                                          //asynchronous reset
+      .sync_rst_i		(sync_rst_i),                                           //synchronous reset
+      //Soft reset
+      .us2ls_ps_rst_i		(),                                         //parameter stack reset request
+      .us2ls_rs_rst_i		(),                                         //return stack reset request
+      //Interface to the immediate stack
+      .ips2ls_push_data_i	(ips2ls_push_data),                                   //parameter stack push data
+      .irs2ls_push_data_i	(irs2ls_push_data),                                   //return stack push data
+      .ips2ls_push_i		(ips2ls_push),                                        //parameter stack push request
+      .irs2ls_push_i		(irs2ls_push),                                        //return stack push request
+      .ips2ls_pull_i		(ips2ls_pull),                                        //parameter stack pull request
+      .irs2ls_pull_i		(irs2ls_pull),                                        //return stack pull request
+      .ls2ips_pull_data_del_o	(ls2ips_pull_data_del),                               //parameter stack delayed pull data (available one cycle after the pull request)
+      .ls2irs_pull_data_del_o	(ls2irs_pull_data_del),                               //return stack delayed pull data (available one cycle after the pull request)
+      .ls2ips_push_bsy_o	(ls2ips_push_bsy),                                    //parameter stack push busy indicator
+      .ls2irs_push_bsy_o	(ls2irs_push_bsy),                                    //return stack push busy indicator
+      .ls2ips_pull_bsy_o	(ls2ips_pull_bsy),                                    //parameter stack pull busy indicator
+      .ls2irs_pull_bsy_o	(ls2irs_pull_bsy),                                    //return stack pull busy indicator
+      .ls2ips_empty_o		(ls2ips_empty),                                       //parameter stack empty indicator
+      .ls2irs_empty_o		(ls2irs_empty),                                       //return stack empty indicator
+      .ls2ips_full_o		(ls2ips_full),                                        //parameter stack full indicator
+      .ls2irs_full_o		(ls2irs_full),                                        //return stack full indicator
+      //RAM interface
+      .ram2ls_rdata_i		(ls2ram_raddr),                                       //read data
+      .ls2ram_raddr_o		(ls2ram_raddr),                                       //read address
+      .ls2ram_waddr_o		(ls2ram_waddr),                                       //write address
+      .ls2ram_wdata_o		(ls2ram_wdata),                                       //write data
+      .ls2ram_re_o		(ls2ram_re),                                          //read enable
+      .ls2ram_we_o		(ls2ram_we),                                          //write enable
+      //Probe signals
+      .prb_ps_addr_o		(),                                        //parameter stack address probe
+      .prb_rs_addr_o		());                                       //return stack address probe
 
-   //Stack bus
-   assign sbus_cyc_o         = sbus_stb_o | |(state_sbus_reg ^ STATE_SBUS_IDLE);    //bus cycle indicator
-   assign sbus_dat_o            = prs2sagu_stack_sel_o ?                            //1:RS, 0:PS
-                                  irs_reg[(16*IRS_DEPTH)-1:16*(IRS_DEPTH-1)] :      //unload RS
-                                  ips_reg[(16*IPS_DEPTH)-1:16*(IPS_DEPTH-1)];       //unload PS
-   assign fsm_dat2ps4        = ~|(state_sbus_reg ^ STATE_SBUS_READ_PS) |            //in STATE_SBUS_READ_PS
-                               sbus_ack_i;                                          //bus request acknowledged
-   assign fsm_dat2rs1        = ~|(state_sbus_reg ^ STATE_SBUS_READ_RS) |            //in STATE_SBUS_READ_RS
-                               sbus_ack_i;                                          //bus request acknowledged
-
-   //SAGU control
-   //assign prs2sagu_psp_rst_o = fsm_idle & ~fc2prs_hold_i & ir2prs_ps_rst_i;       //reset PSP
-   //assign prs2sagu_rsp_rst_o = fsm_idle & ~fc2prs_hold_i & ir2prs_rs_rst_i;       //reset RSP
-   assign prs2sagu_psp_rst_o = fsm_idle & ir2prs_ps_rst_i;                          //reset PSP
-   assign prs2sagu_rsp_rst_o = fsm_idle & ir2prs_rs_rst_i;                          //reset RSP
-
-   //State transitions
-   always @*
-     begin
-        //Default outputs
-        fsm_idle                = 1'b0;                                             //FSM is not idle
-        fsm_ps_shift_up         = 1'b0;                                             //shift PS upwards   (IPS -> UPS)
-        fsm_ps_shift_down       = 1'b0;                                             //shift PS downwards (UPS -> IPS)
-        fsm_rs_shift_up         = 1'b0;                                             //shift RS upwards   (IRS -> URS)
-        fsm_rs_shift_down       = 1'b0;                                             //shift RS downwards (IRS -> URS)
-        fsm_psp2ps4             = 1'b0;                                             //capture PSP
-        fsm_ips_clr_bottom      = 1'b0;                                             //clear IPS bottom cell
-        fsm_rsp2rs1             = 1'b0;                                             //capture RSP
-        fsm_irs_clr_bottom      = 1'b0;                                             //clear IRS bottom cell
-        sbus_stb_o              = 1'b0;                                             //access request
-        sbus_we_o               = 1'b0;                                             //write enable
-        prs2fc_hold_o           = 1'b1;                                             //stacks not ready
-        prs2sagu_hold_o         = 1'b1;                                             //maintain stack pointers
-        prs2sagu_stack_sel_o    = 1'b0;                                             //1:RS, 0:PS
-        prs2sagu_push_o         = 1'b0;                                             //increment stack pointer
-        prs2sagu_pull_o         = 1'b0;                                             //decrement stack pointer
-        prs2sagu_load_o         = 1'b0;                                             //load stack pointer
-        state_task_next         = state_task_reg;                                   //keep processing current task
-        state_sbus_next         = state_sbus_reg;                                   //keep stack bus state
-
-        //Exceptions
-        prs2excpt_psuf_o = (rs0_tag_reg & ~ps0_tag_reg & &ir2prs_us_tp_i[1:0])|     //invalid PS0 <-> RS0 swap
-                           (              ~ps0_tag_reg &  ir2prs_us_tp_i[2]  )|     //invalid shift to PS0
-                           (ps0_tag_reg & ~ps1_tag_reg & &ir2prs_us_tp_i[3:2])|     //invalid PS1 <-> PS0 swap
-                           (ps1_tag_reg & ~ps2_tag_reg & &ir2prs_us_tp_i[5:4])|     //invalid PS2 <-> PS1 swap
-                           (ps2_tag_reg & ~ps3_tag_reg & &ir2prs_us_tp_i[7:6]);     //invalid PS3 <-> PS2 swap
-        prs2excpt_rsuf_o = (ps0_tag_reg & ~rs0_tag_reg & &ir2prs_us_tp_i[1:0])|     //invalid RS0 <-> PS0 swap;
-                           (              ~rs0_tag_reg &  ir2prs_irs_tp_i[0]  );    //invalid shift to RS0
-
-
-        //Wait for ongoing SBUS accesses
-        if (~|state_sbus_reg | sbus_ack_i)                                          //bus is idle or current access is ended
-          begin
-             state_sbus_next = STATE_SBUS_IDLE;                                     //idle by default
-
-             case (state_task_reg)
-
-               //Perform stack operations and initiate early loading and unloading
-               STATE_TASK_READY:
-                 begin
-                    //Idle indicator
-                    fsm_idle                  = 1'b1;                               //FSM is idle
-                    prs2fc_hold_o             = 1'b0;                               //ready to accept new task
-
-                    //Defaults
-                    state_task_next           = STATE_TASK_READY;                   //for logic optimization
-
-                    //Detect early load or unload conditions
-                    if ((~lrs_empty &
-                         irs_almost_empty & ir2prs_irs_tp_i[0]) |                   //IRS early load condition
-                        (irs_almost_full  & ir2prs_irs_tp_i[1]) |                   //IRS early unload condition
-                        (~lps_empty &
-                         ips_almost_empty & ir2prs_ips_tp_i[0]) |                   //IPS early load condition
-                        (ips_almost_full  & ir2prs_ips_tp_i[1]))                    //IPS early unload condition
-                      begin
-                         state_task_next = state_task_next |                        //handle lower stack transfers
-                                           STATE_TASK_MANAGE_LS;                    //
-
-                         //Initiate early load accesses
-                         if ((~lrs_empty &
-                              irs_almost_empty & ir2prs_irs_tp_i[0]) |              //IRS early load condition
-                             (~lps_empty &
-                              ips_almost_empty & ir2prs_ips_tp_i[0]))               //IPS early load condition
-                           begin
-                              sbus_stb_o      = 1'b1;                               //request sbus access
-                              prs2sagu_hold_o =  sbus_stall_i;                      //update stack pointers
-                              prs2sagu_pull_o = ~sbus_stall_i;                      //decrement stack pointer
-                              if (~lrs_empty &
-                                  irs_almost_empty & ir2prs_irs_tp_i[0])            //IRS early load condition
-                                begin
-                                   prs2sagu_stack_sel_o = 1'b1;                     //select RS immediately
-                                   if (~sbus_stall_i)
-                                     state_sbus_next    = STATE_SBUS_READ_RS;       //SBUS -> IRS
-                                end
-                              else
-                                begin
-                                   if (~sbus_stall_i)
-                                     state_sbus_next    = STATE_SBUS_READ_PS;       //SBUS -> IPS
-                                end
-                           end // if ((irs_almost_empty & ir2prs_irs_tp_i[0]) |...\
-
-                      end // if ((irs_almost_empty & ir2prs_irs_tp_i[0]) |...
-
-                    //Get PSP
-                    if (ir2prs_psp_get_i)
-                      begin
-                         state_task_next = state_task_next |                        //trigger PSP read sequence
-                                           STATE_TASK_PS_EMPTY_GET_SP;              //
-                      end
-
-                    //Set PSP
-                    if (ir2prs_psp_set_i)
-                      begin
-                         state_task_next = state_task_next |                        //trigger PSP write sequence
-                                           STATE_TASK_PS_EMPTY_SET_SP;              //
-                      end
-
-                    //Get RSP
-                    if (ir2prs_rsp_get_i)
-                      begin
-                         state_task_next = state_task_next |                        //trigger PSP read sequence
-                                           STATE_TASK_PS_EMPTY_GET_SP;              //
-                      end
-
-                    //Set RSP
-                    if (ir2prs_rsp_set_i)
-                      begin
-                         state_task_next = state_task_next |                        //trigger PSP write sequence
-                                           STATE_TASK_PS_EMPTY_SET_SP;              //
-                      end
-                 end // case: STATE_TASK_READY
-
-               //Transfer a cell from US to IS
-               STATE_TASK_MANAGE_LS:
-                 begin
-
-                    //Manage lower return stack
-                    if ((~|(state_sbus_reg ^ STATE_SBUS_READ_RS) &                  //IRS load condition
-                         ~lrs_empty & irs_empty)                  |                 //
-                        irs_full)                                                   //IRS unload condition
-                      begin
-                         sbus_stb_o                   = 1'b1;                       //request sbus access
-                         prs2sagu_hold_o              =  sbus_stall_i;              //update stack pointers
-                         prs2sagu_stack_sel_o         = 1'b1;                       //select RS immediately
-
-                         //Write access
-                         if (irs_full)                                              //IRS unload condition
-                           begin
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_irs_clr_bottom = 1'b1;                       //clear IRS bottom cell
-                                   state_sbus_next = STATE_SBUS_WRITE;              //IRS -> SBUS
-                                   if ((~|(state_sbus_reg ^ STATE_SBUS_READ_PS) &   //IRS load condition
-                                        ~lps_empty & ips_empty)                  |  //
-                                       ips_full)                                    //IRS unload condition
-                                     state_task_next  = STATE_TASK_MANAGE_LS;       //manage LPS
-                                   else
-                                     state_task_next  = STATE_TASK_READY;           //ready for next task
-                                end // if (~sbus_stall_i)
-                           end // if (irs_full)
-
-                         //Read access
-                         else
-                           begin
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_pull_o    = 1'b1;                       //decrement stack pointer
-                                   state_sbus_next    = STATE_SBUS_READ_RS;         //SBUS -> IRS
-                                end // else: !if(irs_full)
-                           end // else: !if(irs_full)
-                      end // if ((~|(state_sbus_reg ^ STATE_SBUS_READ_RS) &...
-
-                    //Manage lower parameter stack
-                    else
-                    if ((~|(state_sbus_reg ^ STATE_SBUS_READ_PS) &                  //IRS load condition
-                         ~lps_empty & ips_empty)                  |                 //
-                        ips_full)                                                   //IRS unload condition
-                      begin
-
-                         sbus_stb_o                   = 1'b1;                       //request sbus access
-                         prs2sagu_hold_o              =  sbus_stall_i;              //update stack pointers
-
-                         //Write access
-                         if (irs_full)                                              //IRS unload condition
-                           begin
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_ips_clr_bottom = 1'b1;                       //clear IPS bottom cell
-                                   state_sbus_next    = STATE_SBUS_WRITE;           //IRS -> SBUS
-                                   state_task_next    = STATE_TASK_READY;           //ready for next task
-                                end // if (~sbus_stall_i)
-                           end // if (irs_full)
-
-                         //Read access
-                         else
-                           begin
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_pull_o    = 1'b1;                       //decrement stack pointer
-                                   state_sbus_next    = STATE_SBUS_READ_PS;         //SBUS -> IPS
-                                end // else: !if(irs_full)
-                           end // else: !if(irs_full)
-                      end // if ((~|(state_sbus_reg ^ STATE_SBUS_READ_PS) &...
-
-                    //No load or unload required
-                    else
-                      begin
-                         state_task_next              = STATE_TASK_READY;           //ready for the next instruction
-                      end
-                 end // case: STATE_TASK_MANAGE_LS
-
-               //Empty UPS and IPS to get PSP
-               STATE_TASK_PS_EMPTY_GET_SP:
-                 begin
-                    //Shift content to LPS
-                    if (|{ips_tags_reg[IPS_DEPTH-1:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                      begin
-                         //Unload IPS
-                         if (ips_full)
-                           begin
-                              sbus_stb_o              = 1'b1;                       //access request
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o    = 1'b0;                       //update stack pointers
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_ps_shift_down  = 1'b1;                       //shift PS downwards (UPS -> IPS)
-                                   state_sbus_next    = STATE_SBUS_WRITE;           //IPS -> SBUS
-                                end
-                           end
-                         //Align IPS
-                         else
-                           begin
-                              fsm_ps_shift_down       = 1'b1;                       //shift PS downwards (UPS -> IPS)
-                           end
-                      end // if (|{ips_tags_reg[IPS_DEPTH-1:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                    //Copy PSP to PS4
-                    else
-                      begin
-                         fsm_psp2ps4                  = 1'b1;                       //capture PSP
-                         state_task_next              = STATE_TASK_PS_FILL;         //refill IPS
-                      end // else: !if(|{ips_tags_reg[IPS_DEPTH-1:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                 end // case: STATE_TASK_PS_EMPTY_GET_SP
-
-               //Empty UPS and IPS to set PSP
-               STATE_TASK_PS_EMPTY_SET_SP:
-                 begin
-                    //Shift content to LPS
-                    if (|{ips_tags_reg[IPS_DEPTH-2:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                      begin
-                         //Unload IPS
-                         if (ips_full)
-                           begin
-                              sbus_stb_o              = 1'b1;                       //access request
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o    = 1'b0;                       //update stack pointers
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_ps_shift_down  = 1'b1;                       //shift PS downwards (UPS -> IPS)
-                                   state_sbus_next    = STATE_SBUS_WRITE;           //IPS -> SBUS
-                                end
-                           end
-                         //Align IPS
-                         else
-                           begin
-                              fsm_ps_shift_down       = 1'b1;                       //shift PS downwards (UPS -> IPS)
-                           end
-                      end // if (|{ips_tags_reg[IPS_DEPTH-1:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                    //Set PSP
-                    else
-                      begin
-                         if (ips_full)
-                           begin
-                              fsm_ips_clr_bottom        = 1'b1;                     //clear IPS bottom cell
-                              prs2sagu_load_o           = 1'b1;                     //load stack pointer
-                           end
-                         else
-                           begin
-                              //PS underflow
-                              prs2excpt_psuf_o = 1'b1;                              //trigger exception
-                           end
-                         state_task_next               = STATE_TASK_PS_FILL;        //refill IPS
-                      end // else: !if(|{ips_tags_reg[IPS_DEPTH-2:0],ps3_tag_reg,ps2_tag_reg,ps1_tag_reg,ps0_tag_reg})
-                 end // case: STATE_TASK_PS_EMPTY_SET_SP
-
-               //Empty URS and IRS to get RSP
-               STATE_TASK_RS_EMPTY_GET_SP:
-                 begin
-                    //Shift content to LRS
-                    prs2sagu_stack_sel_o              = 1'b0;                       //1:RS, 0:PS
-                    if (|{irs_tags_reg[IRS_DEPTH-1:0],rs0_reg})
-                      begin
-                         //Unload IRS
-                         if (irs_full)
-                           begin
-                              sbus_stb_o              = 1'b1;                       //access request
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o    = 1'b0;                       //update stack pointers
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_rs_shift_down  = 1'b1;                       //shift RS downwards (URS -> IRS)
-                                   state_sbus_next    = STATE_SBUS_WRITE;           //IRS -> SBUS
-                                end
-                           end
-                         //Align IRS
-                         else
-                           begin
-                              fsm_rs_shift_down       = 1'b1;                       //shift RS downwards (URS -> IRS)
-                           end
-                      end // if (|{irs_tags_reg[IRS_DEPTH-1:0],rs0_tag_reg})
-                    //Copy RSP to RS4
-                    else
-                      begin
-                         fsm_rsp2rs1                  = 1'b1;                       //capture RSP
-                         state_task_next              = STATE_TASK_RS_FILL;         //refill IRS
-                      end // else: !if(|{irs_tags_reg[IRS_DEPTH-1:0],rs0_tag_reg})
-                 end // case: STATE_TASK_RS_EMPTY_GET_SP
-
-               //Empty URS and IRS to set RSP
-               STATE_TASK_RS_EMPTY_SET_SP:
-                 begin
-                    //Shift content to LRS
-                    prs2sagu_stack_sel_o              = 1'b0;                        //1:RS, 0:PS
-                    if (|{irs_tags_reg[IRS_DEPTH-2:0],rs0_reg})
-                      begin
-                         //Unload IRS
-                         if (irs_full)
-                           begin
-                              sbus_stb_o              = 1'b1;                       //access request
-                              sbus_we_o               = 1'b1;                       //write enable
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o    = 1'b0;                       //update stack pointers
-                                   prs2sagu_push_o    = 1'b1;                       //increment stack pointer
-                                   fsm_rs_shift_down  = 1'b1;                       //shift RS downwards (URS -> IRS)
-                                   state_sbus_next    = STATE_SBUS_WRITE;           //IRS -> SBUS
-                                end
-                           end
-                         //Align IRS
-                         else
-                           begin
-                              fsm_rs_shift_down       = 1'b1;                       //shift RS downwards (URS -> IRS)
-                           end
-                      end // if (|{irs_tags_reg[IRS_DEPTH-1:0],rs0_tag_reg})
-                    //Set RSP
-                    else
-                      begin
-                         if (irs_full)
-                           begin
-                              fsm_irs_clr_bottom        = 1'b1;                     //clear IRS bottom cell
-                              prs2sagu_load_o           = 1'b1;                     //load stack pointer
-                           end
-                         else
-                           begin
-                              //RS underflow
-                              prs2excpt_rsuf_o = 1'b1;                              //trigger exception
-                           end
-                         state_task_next                = STATE_TASK_RS_FILL;       //refill IRS
-                      end // else: !if(|{irs_tags_reg[IRS_DEPTH-2:0],rs0_tag_reg})
-                 end // case: STATE_TASK_RS_EMPTY_SET_SP
-
-               //Refill PS
-               STATE_TASK_PS_FILL:
-                 begin
-                    //Done
-                    if (ps0_tag_reg)
-                      begin
-                         state_task_next                = STATE_TASK_READY;         //ready for next task
-                      end
-                    //Shift PS upward
-                    else
-                      begin
-                         //Load IPS
-                         if (lps_empty)
-                           begin
-                              sbus_stb_o                = 1'b1;                     //access request
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o      = 1'b0;                     //update stack pointers
-                                   prs2sagu_pull_o      = 1'b1;                     //increment stack pointer
-                                   fsm_ps_shift_up      = 1'b1;                     //shift RS downwards (URS -> IRS)
-                                   state_sbus_next      = STATE_SBUS_READ_PS;       //SBUS -> IPS
-                                end
-                           end
-                         //Align UPS
-                         else
-                           begin
-                              fsm_ps_shift_up           = 1'b1;                     //shift PS downwards (IPS -> UPS)
-                           end // else: !if(lps_empty)
-                      end // else: !if(ps0_tag_reg)
-                 end // case: STATE_TASK_PS_FILL
-
-               //Refill RS
-               STATE_TASK_RS_FILL:
-                 begin
-                    //Done
-                    if (rs0_tag_reg)
-                      begin
-                         state_task_next                = STATE_TASK_READY;         //ready for next task
-                      end
-                    //Shift RS upward
-                    else
-                      begin
-                         //Load IRS
-                         if (lrs_empty)
-                           begin
-                              sbus_stb_o                = 1'b1;                     //access request
-                              if (~sbus_stall_i)
-                                begin
-                                   prs2sagu_hold_o      = 1'b0;                     //update stack pointers
-                                   prs2sagu_pull_o      = 1'b1;                     //increment stack pointer
-                                   fsm_rs_shift_up      = 1'b1;                     //shift RS downwards (URS -> IRS)
-                                   state_sbus_next      = STATE_SBUS_READ_RS;       //SBUS -> IRS
-                                end
-                           end
-                         //Align URS
-                         else
-                           begin
-                              fsm_rs_shift_up           = 1'b1;                     //shift RS downwards (IRS -> URS)
-                           end // else: !if(lrs_empty)
-                      end // else: !if(rs0_tag_reg)
-                 end // case: STATE_TASK_RS_FILL
-
-             endcase // case (state_task_reg)
-
-          end // if (~|state_sbus_reg |sbus_ack_i)
-     end // always @ *
-
-   //Flip flops
-   always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                               //asynchronous reset
-       begin
-          state_task_reg <= STATE_TASK_READY;                                       //ready fo new task
-          state_sbus_reg <= STATE_SBUS_IDLE;                                        //sbus is idle
-       end
-     else if (sync_rst_i)                                                           //synchronous reset
-       begin
-          state_task_reg <= STATE_TASK_READY;                                       //ready fo new task
-          state_sbus_reg <= STATE_SBUS_IDLE;                                        //sbus is idle
-       end
-     else                                                                           //state transition
-       begin
-          state_task_reg <= state_task_next;                                        //state transition
-          state_sbus_reg <= state_sbus_next;                                        //state transition
-       end
-
-
-   //Stack data outputs
-   //------------------
-   assign pbus_dat_o              = ps0_reg;                                        //write data bus
-   assign prs2alu_ps0_o           = ps0_reg;                                        //current PS0 (TOS)
-   assign prs2alu_ps1_o           = ps1_reg;                                        //current PS1 (TOS+1)
-   assign prs2fc_ps0_false_o      = ~|ps0_reg;                                      //PS0 is zero
-   assign prs2pagu_ps0_o          = ps0_reg;                                        //PS0
-   assign prs2pagu_rs0_o          = rs0_reg;                                        //RS0
-   assign prs2sagu_psp_load_val_o =
-                           ips_reg[(16*(IPS_DEPTH-1))+SP_WIDTH-1:16*(IPS_DEPTH-1)]; //parameter stack load value
-   assign prs2sagu_rsp_load_val_o =
-                           irs_reg[(16*(IRS_DEPTH-1))+SP_WIDTH-1:16*(IRS_DEPTH-1)]; //return stack load value
-
-   //Probe signals
-   //-------------
-   assign prb_state_task_o        = state_task_reg;                                 //current FSM task
-   assign prb_state_sbus_o        = state_sbus_reg;                                 //current stack bus state
-   assign prb_rs0_o               = rs0_reg;                                        //current RS0
-   assign prb_ps0_o               = ps0_reg;                                        //current PS0
-   assign prb_ps1_o               = ps1_reg;                                        //current PS1
-   assign prb_ps2_o               = ps2_reg;                                        //current PS2
-   assign prb_ps3_o               = ps3_reg;                                        //current PS3
-   assign prb_rs0_tag_o           = rs0_tag_reg;                                    //current RS0 tag
-   assign prb_ps0_tag_o           = ps0_tag_reg;                                    //current PS0 tag
-   assign prb_ps1_tag_o           = ps1_tag_reg;                                    //current PS1 tag
-   assign prb_ps2_tag_o           = ps2_tag_reg;                                    //current PS2 tag
-   assign prb_ps3_tag_o           = ps3_tag_reg;                                    //current PS3 tag
-   assign prb_ips_o               = ips_reg;                                        //current IPS
-   assign prb_ips_tags_o          = ips_tags_reg;                                   //current IPS
-   assign prb_irs_o               = irs_reg;                                        //current IRS
-   assign prb_irs_tags_o          = irs_tags_reg;                                   //current IRS
+   //Dual ported RAM
+   N1_dpram_256w
+   ram
+     (//Clock and reset
+      .clk_i			(clk_i),                                                //module clock
+      //RAM interface		
+      ram_raddr_i		(ls2ram_raddr),                                          //read address
+      ram_waddr_i		(ls2ram_waddr),                                          //write address
+      ram_wdata_i		(ls2ram_wdata),                                          //write data
+      ram_re_i			(ls2ram_re),                                             //read enable
+      ram_we_i			(ls2ram_we),                                             //write enable
+      ram_rdata_o		(ls2ram_raddr));                                         //read data
 
 endmodule // N1_prs
