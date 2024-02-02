@@ -379,6 +379,9 @@ some of the reserved stack transition patterns.
   %\end{center}
 \end{figure}
 
+\subsubsection{Accellerated Stack Operations}
+\label{extensions:rot:ops}
+
 The \gls{rotext} improves the execution time and code density of the three commmon
 stack operations \texttt{TUCK}, \texttt{ROT}, and \texttt{-ROT}
 (see \tabref{extensions:rot:mapping}). 
@@ -515,3 +518,158 @@ enabled.
 N1 processors with \gls{rotext} are backward compatible to the ones without.
 All stack operations can still be executed as listed in \tabref{opcodes:stack:mapping},
 even if the \gls{rotext} is enabled.
+
+\subsubsection{Stack Underflow Detection}
+\label{opcodes:stack:uf}
+
+The \gls{rotext} introduces three new stack underflow detection rules.
+These rules are listed in \tabref{opcodes:stack:ufrules}.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|}
+    \rowcolor{white}
+    \caption{Rules of Stack Underflow Detection}
+    \label{opcodes:stack:ufrules} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Rule}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Transitions}} & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{3}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %TUCK rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``\texttt{TUCK}''\\
+      Rule}} &
+    \multicolumn{1}{m{11.5em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \begin{scope}[shift={(0,0)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          \draw [line width=1ex, <-] (4,1) -- (5,1);                           
+          \draw [thick, fill=gray!3]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, <-] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{28em}|}{
+    \makecell[l]{
+    \begin{minipage}[t]{\linewidth}%  
+      If the downward \gls{rotext} path is used and the target cell is shifted further downward,
+      then the \gls{ps} must hold at least \textbf{two} values prior to the stack operation.
+    \end{minipage}%
+    } \\ \hline
+
+    %TUCK rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``\texttt{ROT}''\\
+      Rule}} &
+    \multicolumn{1}{m{11.5em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \path []  (3,8)   -- (3,9.7);
+        
+        \begin{scope}[shift={(0,0)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          \draw [line width=1ex, ->] (4,1) -- (5,1);                           
+          \draw [thick, fill=gray]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, ->] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+
+        \begin{scope}[shift={(0,2)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          %\draw [line width=1ex, <-] (4,1) -- (5,1);                           
+          \draw [line width=1ex, -|] (4,1) -- (4.4,1);
+          \draw [line width=1ex, |-] (4.6,1) -- (5,1);
+          \draw [thick, fill=gray]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, ->] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+
+        \begin{scope}[shift={(0,4)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          \draw [line width=1ex, <-] (4,1) -- (5,1);                           
+          \draw [thick, fill=gray]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, ->] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+
+        \begin{scope}[shift={(0,6)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          \draw [line width=1ex, ->] (4,1) -- (5,1);                           
+          \draw [thick, fill=gray]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, <-] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+        
+        \begin{scope}[shift={(0,8)}]
+          \draw [thick, fill=gray!3]  (3,0.5) -- (4,0.5) -- (4,1.5) -- (3,1.5);
+          %\draw [line width=1ex, <-] (4,1) -- (5,1);                           
+          \draw [line width=1ex, -|] (4,1) -- (4.4,1);
+          \draw [line width=1ex, |-] (4.6,1) -- (5,1);
+          \draw [thick, fill=gray]  (5,0.5) rectangle (7,1.5);               
+          %\draw [line width=1ex, <->] (7,1) -- (8,1);                         
+          \draw [thick, fill=gray]  (8,0.5) rectangle (10,1.5);              
+          %\draw [line width=1ex, --] (10,1) -- (11,1);                        
+          \draw [thick, fill=gray]  (11,0.5) rectangle (13,1.5);             
+          \node[text=gray!3] at (12,0.95)          {\Large{\textbf{TOS}}};                  
+          %\draw [line width=1ex, --] (13,1)  -- (14.5,1);                       
+          \draw [rounded corners, line width=1ex, <-] (6,0.5) -- (6,0) -- (12,0) -- (12,0.5);
+        \end{scope}
+
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{28em}|}{
+    \makecell[l]{
+    \begin{minipage}[t]{\linewidth}%  
+      For all other stack operations, which use any of the \gls{rotext} paths and for which the
+      ``\texttt{TUCK}'' rule does not apply,
+      the \gls{ps} must hold at least \textbf{three} values prior to the stack operation.
+    \end{minipage}%
+    } \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup

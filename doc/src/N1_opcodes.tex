@@ -1036,11 +1036,348 @@ Two options are selectable:
 \begin{itemize}
   \item No data transfer
   \item Data shift throughout the entire \gls{is}. The direction is determined by the data movement of the lowest
-        cell of the \gls{us}.
+        cell of the \gls{us} (see  \figref{opcodes:stack:istrans}).
 \end{itemize}
+
+\begin{figure}[!h]
+  %\begin{center}
+  \makebox[\textwidth][c]{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        %UST=00
+         \begin{scope}[shift={(0,0)}]  
+           %Stack instruction
+           \draw [thick, fill=gray!3]  (1,3.5) rectangle (17,4.5);
+           \draw [thick]               (1,3.5) rectangle  (2,4.5);
+           \draw [thick]               (2,3.5) rectangle  (7,4.5); 
+           \draw [thick, fill=white]   (7,3.5) rectangle  (8,4.5); 
+           \draw [thick, fill=white]   (8,3.5) rectangle (10,4.5); 
+           \draw [thick]               (10,3.5) rectangle (14,4.5); 
+           %\draw [thick, fill=white]  (12,3.5) rectangle (14,4.5); 
+           \draw [thick, fill=white]  (14,3.5) rectangle (16,4.5); 
+           \draw [thick, fill=white]  (16,3.5) rectangle (17,4.5); 
+           
+           \node [above] at  (1.5,4.5) {15};
+           \node [above] at  (2.5,4.5) {14};
+           \node [above] at  (3.5,4.5) {13};
+           \node [above] at  (4.5,4.5) {12};
+           \node [above] at  (5.5,4.5) {11};
+           \node [above] at  (6.5,4.5) {10};
+           \node [above] at  (7.5,4.5) {9};
+           \node [above] at  (8.5,4.5) {8};
+           \node [above] at  (9.5,4.5) {7};
+           \node [above] at (10.5,4.5) {6};
+           \node [above] at (11.5,4.5) {5};
+           \node [above] at (12.5,4.5) {4};
+           \node [above] at (13.5,4.5) {3};
+           \node [above] at (14.5,4.5) {2};
+           \node [above] at (15.5,4.5) {1};
+           \node [above] at (16.5,4.5) {0};
+           
+           \node         at (1.5,4)     {\huge{\texttt{;}}};
+           \node         at (2.5,4)     {\huge{\texttt{0}}};
+           \node         at (3.5,4)     {\huge{\texttt{0}}};
+           \node         at (4.5,4)     {\huge{\texttt{0}}};
+           \node         at (5.5,4)     {\huge{\texttt{0}}};   
+           \node         at (6.5,4)     {\huge{\texttt{1}}};   
+           
+           \node         at (7.5,4)     {\huge{\texttt{1}}};   
+           \node         at (8.5,4)     {\huge{\texttt{0}}};   
+           \node         at (9.5,4)     {\huge{\texttt{0}}};   
+           \node         at (14.5,4)    {\huge{\texttt{0}}};   
+           \node         at (15.5,4)    {\huge{\texttt{0}}};   
+           \node         at (16.5,4)    {\huge{\texttt{1}}};   
+           
+           %Bit field association
+           \draw [ultra thick, dashed, ->]  (7.5,3.5)  -- (7.5,3)    -- (2.5,3)    -- (2.5,2);
+           \draw [ultra thick, dashed, ->]  (9,3.5)    -- (9,2.8)    -- (5.5,2.8)  -- (5.5,2);
+           \draw [ultra thick, dashed, ->]  (15,3.5)   -- (15,2);
+           \draw [ultra thick, dashed, ->]  (16.5,3.5) -- (16.5,2.4) -- (18,2.4) -- (18,2);
+           
+           %Lower parameter stack
+           \draw [thick, fill=gray!3]  (1,1) -- (2,1) -- (2,2) -- (1,2);
+           \draw [line width=1ex, ->]  (2,1.5) --  (3,1.5);
+           
+           %Upper parameter stack
+           \draw [thick, fill=gray!3]  (3,1) rectangle  (5,2);
+           %\draw [line width=1ex, <->] (5,1.5) --  (6,1.5);
+           \draw [line width=1ex, -|]     (5,1.5)  -- (5.4,1.5);
+           \draw [line width=1ex, |-]     (5.6,1.5)   -- (6,1.5);
+           
+           \draw [thick, fill=gray!3]  (6,1) rectangle  (8,2);
+           \draw [thick, fill=gray!3]  (9,1) rectangle  (11,2);
+           \draw [thick, fill=gray!3]  (12,1) rectangle  (14,2);
+           \node at (13,1.45)          {\Large{\textbf{TOS}}};        
+                  
+           %Stack boundary
+           %\draw [line width=1ex, <->] (14,1.5)    --  (15.5,1.5);
+           \draw [line width=1ex, -|]     (14,1.5) -- (14.9,1.5);
+           \draw [line width=1ex, |-]   (15.1,1.5) -- (15.5,1.5);
+           \draw [dotted]              (14.75,2.2) --  (14.75,0.8);
+           
+           %Upper return stack
+           \draw [thick, fill=gray!24] (15.5,1) rectangle  (17.5,2);
+           \node at (16.5,1.45)        {\Large{\textbf{TOS}}};
+           \draw [line width=1ex, <-]  (17.5,1.5) --  (18.5,1.5);
+           
+           %Lower return stack
+           \draw [thick, fill=gray!24] (19.5,1) -- (18.5,1) -- (18.5,2) -- (19.5,2);
+         \end{scope}
+
+         %UST=01
+         \begin{scope}[shift={(20,0)}]
+           %Stack instruction
+           \draw [thick, fill=gray!3]  (1,3.5) rectangle (17,4.5);
+           \draw [thick]               (1,3.5) rectangle  (2,4.5);
+           \draw [thick]               (2,3.5) rectangle  (7,4.5); 
+           \draw [thick, fill=white]   (7,3.5) rectangle  (8,4.5); 
+           \draw [thick, fill=white]   (8,3.5) rectangle (10,4.5); 
+           \draw [thick]               (10,3.5) rectangle (14,4.5); 
+           %\draw [thick, fill=white]  (12,3.5) rectangle (14,4.5); 
+           \draw [thick, fill=white]  (14,3.5) rectangle (16,4.5); 
+           \draw [thick, fill=white]  (16,3.5) rectangle (17,4.5); 
+           
+           \node [above] at  (1.5,4.5) {15};
+           \node [above] at  (2.5,4.5) {14};
+           \node [above] at  (3.5,4.5) {13};
+           \node [above] at  (4.5,4.5) {12};
+           \node [above] at  (5.5,4.5) {11};
+           \node [above] at  (6.5,4.5) {10};
+           \node [above] at  (7.5,4.5) {9};
+           \node [above] at  (8.5,4.5) {8};
+           \node [above] at  (9.5,4.5) {7};
+           \node [above] at (10.5,4.5) {6};
+           \node [above] at (11.5,4.5) {5};
+           \node [above] at (12.5,4.5) {4};
+           \node [above] at (13.5,4.5) {3};
+           \node [above] at (14.5,4.5) {2};
+           \node [above] at (15.5,4.5) {1};
+           \node [above] at (16.5,4.5) {0};
+           
+           \node         at (1.5,4)     {\huge{\texttt{;}}};
+           \node         at (2.5,4)     {\huge{\texttt{0}}};
+           \node         at (3.5,4)     {\huge{\texttt{0}}};
+           \node         at (4.5,4)     {\huge{\texttt{0}}};
+           \node         at (5.5,4)     {\huge{\texttt{0}}};   
+           \node         at (6.5,4)     {\huge{\texttt{1}}};   
+           
+           \node         at (7.5,4)     {\huge{\texttt{1}}};   
+           \node         at (8.5,4)     {\huge{\texttt{0}}};   
+           \node         at (9.5,4)     {\huge{\texttt{1}}};   
+           \node         at (14.5,4)    {\huge{\texttt{0}}};   
+           \node         at (15.5,4)    {\huge{\texttt{1}}};   
+           \node         at (16.5,4)    {\huge{\texttt{1}}};   
+           
+           %Bit field association
+           \draw [ultra thick, dashed, ->]  (7.5,3.5)  -- (7.5,3)    -- (2.5,3)    -- (2.5,2);
+           \draw [ultra thick, dashed, ->]  (9,3.5)    -- (9,2.8)    -- (5.5,2.8)  -- (5.5,2);
+           \draw [ultra thick, dashed, ->]  (15,3.5)   -- (15,2);
+           \draw [ultra thick, dashed, ->]  (16.5,3.5) -- (16.5,2.4) -- (18,2.4) -- (18,2);
+           
+           %Lower parameter stack
+           \draw [thick, fill=gray!3]  (1,1) -- (2,1) -- (2,2) -- (1,2);
+           \draw [line width=1ex, ->]  (2,1.5) --  (3,1.5);
+           
+           %Upper parameter stack
+           \draw [thick, fill=gray!3]  (3,1) rectangle  (5,2);
+           \draw [line width=1ex, ->] (5,1.5) --  (6,1.5);
+           %\draw [line width=1ex, -|]     (5,1.5)  -- (5.4,1.5);
+           %\draw [line width=1ex, |-]     (5.6,1.5)   -- (6,1.5);
+           
+           \draw [thick, fill=gray!3]  (6,1) rectangle  (8,2);
+           \draw [thick, fill=gray!3]  (9,1) rectangle  (11,2);
+           \draw [thick, fill=gray!3]  (12,1) rectangle  (14,2);
+           \node at (13,1.45)          {\Large{\textbf{TOS}}};        
+                  
+           %Stack boundary
+           \draw [line width=1ex, ->] (14,1.5)    --  (15.5,1.5);
+           %\draw [line width=1ex, -|]     (14,1.5) -- (14.9,1.5);
+           %\draw [line width=1ex, |-]   (15.1,1.5) -- (15.5,1.5);
+           \draw [dotted]              (14.75,2.2) --  (14.75,0.8);
+           
+           %Upper return stack
+           \draw [thick, fill=gray!24] (15.5,1) rectangle  (17.5,2);
+           \node at (16.5,1.45)        {\Large{\textbf{TOS}}};
+           \draw [line width=1ex, ->]  (17.5,1.5) --  (18.5,1.5);
+           
+           %Lower return stack
+           \draw [thick, fill=gray!24] (19.5,1) -- (18.5,1) -- (18.5,2) -- (19.5,2);
+         \end{scope}
+
+         %UST=10
+         \begin{scope}[shift={(0,-6)}]
+           %Stack instruction
+           \draw [thick, fill=gray!3]  (1,3.5) rectangle (17,4.5);
+           \draw [thick]               (1,3.5) rectangle  (2,4.5);
+           \draw [thick]               (2,3.5) rectangle  (7,4.5); 
+           \draw [thick, fill=white]   (7,3.5) rectangle  (8,4.5); 
+           \draw [thick, fill=white]   (8,3.5) rectangle (10,4.5); 
+           \draw [thick]               (10,3.5) rectangle (14,4.5); 
+           %\draw [thick, fill=white]  (12,3.5) rectangle (14,4.5); 
+           \draw [thick, fill=white]  (14,3.5) rectangle (16,4.5); 
+           \draw [thick, fill=white]  (16,3.5) rectangle (17,4.5); 
+           
+           \node [above] at  (1.5,4.5) {15};
+           \node [above] at  (2.5,4.5) {14};
+           \node [above] at  (3.5,4.5) {13};
+           \node [above] at  (4.5,4.5) {12};
+           \node [above] at  (5.5,4.5) {11};
+           \node [above] at  (6.5,4.5) {10};
+           \node [above] at  (7.5,4.5) {9};
+           \node [above] at  (8.5,4.5) {8};
+           \node [above] at  (9.5,4.5) {7};
+           \node [above] at (10.5,4.5) {6};
+           \node [above] at (11.5,4.5) {5};
+           \node [above] at (12.5,4.5) {4};
+           \node [above] at (13.5,4.5) {3};
+           \node [above] at (14.5,4.5) {2};
+           \node [above] at (15.5,4.5) {1};
+           \node [above] at (16.5,4.5) {0};
+           
+           \node         at (1.5,4)     {\huge{\texttt{;}}};
+           \node         at (2.5,4)     {\huge{\texttt{0}}};
+           \node         at (3.5,4)     {\huge{\texttt{0}}};
+           \node         at (4.5,4)     {\huge{\texttt{0}}};
+           \node         at (5.5,4)     {\huge{\texttt{0}}};   
+           \node         at (6.5,4)     {\huge{\texttt{1}}};   
+           
+           \node         at (7.5,4)     {\huge{\texttt{1}}};   
+           \node         at (8.5,4)     {\huge{\texttt{1}}};   
+           \node         at (9.5,4)     {\huge{\texttt{0}}};   
+           \node         at (14.5,4)    {\huge{\texttt{1}}};   
+           \node         at (15.5,4)    {\huge{\texttt{0}}};   
+           \node         at (16.5,4)    {\huge{\texttt{1}}};   
+           
+           %Bit field association
+           \draw [ultra thick, dashed, ->]  (7.5,3.5)  -- (7.5,3)    -- (2.5,3)    -- (2.5,2);
+           \draw [ultra thick, dashed, ->]  (9,3.5)    -- (9,2.8)    -- (5.5,2.8)  -- (5.5,2);
+           \draw [ultra thick, dashed, ->]  (15,3.5)   -- (15,2);
+           \draw [ultra thick, dashed, ->]  (16.5,3.5) -- (16.5,2.4) -- (18,2.4) -- (18,2);
+           
+           %Lower parameter stack
+           \draw [thick, fill=gray!3]  (1,1) -- (2,1) -- (2,2) -- (1,2);
+           \draw [line width=1ex, <-]  (2,1.5) --  (3,1.5);
+           
+           %Upper parameter stack
+           \draw [thick, fill=gray!3]  (3,1) rectangle  (5,2);
+           \draw [line width=1ex, <-] (5,1.5) --  (6,1.5);
+           %\draw [line width=1ex, -|]     (5,1.5)  -- (5.4,1.5);
+           %\draw [line width=1ex, |-]     (5.6,1.5)   -- (6,1.5);
+           
+           \draw [thick, fill=gray!3]  (6,1) rectangle  (8,2);
+           \draw [thick, fill=gray!3]  (9,1) rectangle  (11,2);
+           \draw [thick, fill=gray!3]  (12,1) rectangle  (14,2);
+           \node at (13,1.45)          {\Large{\textbf{TOS}}};        
+                  
+           %Stack boundary
+           \draw [line width=1ex, <-] (14,1.5)    --  (15.5,1.5);
+           %\draw [line width=1ex, -|]     (14,1.5) -- (14.9,1.5);
+           %\draw [line width=1ex, |-]   (15.1,1.5) -- (15.5,1.5);
+           \draw [dotted]              (14.75,2.2) --  (14.75,0.8);
+           
+           %Upper return stack
+           \draw [thick, fill=gray!24] (15.5,1) rectangle  (17.5,2);
+           \node at (16.5,1.45)        {\Large{\textbf{TOS}}};
+           \draw [line width=1ex, <-]  (17.5,1.5) --  (18.5,1.5);
+           
+           %Lower return stack
+           \draw [thick, fill=gray!24] (19.5,1) -- (18.5,1) -- (18.5,2) -- (19.5,2);
+         \end{scope}
+
+         %UST=11
+         \begin{scope}[shift={(20,-6)}]
+           %Stack instruction
+           \draw [thick, fill=gray!3]  (1,3.5) rectangle (17,4.5);
+           \draw [thick]               (1,3.5) rectangle  (2,4.5);
+           \draw [thick]               (2,3.5) rectangle  (7,4.5); 
+           \draw [thick, fill=white]   (7,3.5) rectangle  (8,4.5); 
+           \draw [thick, fill=white]   (8,3.5) rectangle (10,4.5); 
+           \draw [thick]               (10,3.5) rectangle (14,4.5); 
+           %\draw [thick, fill=white]  (12,3.5) rectangle (14,4.5); 
+           \draw [thick, fill=white]  (14,3.5) rectangle (16,4.5); 
+           \draw [thick, fill=white]  (16,3.5) rectangle (17,4.5); 
+           
+           \node [above] at  (1.5,4.5) {15};
+           \node [above] at  (2.5,4.5) {14};
+           \node [above] at  (3.5,4.5) {13};
+           \node [above] at  (4.5,4.5) {12};
+           \node [above] at  (5.5,4.5) {11};
+           \node [above] at  (6.5,4.5) {10};
+           \node [above] at  (7.5,4.5) {9};
+           \node [above] at  (8.5,4.5) {8};
+           \node [above] at  (9.5,4.5) {7};
+           \node [above] at (10.5,4.5) {6};
+           \node [above] at (11.5,4.5) {5};
+           \node [above] at (12.5,4.5) {4};
+           \node [above] at (13.5,4.5) {3};
+           \node [above] at (14.5,4.5) {2};
+           \node [above] at (15.5,4.5) {1};
+           \node [above] at (16.5,4.5) {0};
+           
+           \node         at (1.5,4)     {\huge{\texttt{;}}};
+           \node         at (2.5,4)     {\huge{\texttt{0}}};
+           \node         at (3.5,4)     {\huge{\texttt{0}}};
+           \node         at (4.5,4)     {\huge{\texttt{0}}};
+           \node         at (5.5,4)     {\huge{\texttt{0}}};   
+           \node         at (6.5,4)     {\huge{\texttt{1}}};   
+           
+           \node         at (7.5,4)     {\huge{\texttt{1}}};   
+           \node         at (8.5,4)     {\huge{\texttt{1}}};   
+           \node         at (9.5,4)     {\huge{\texttt{1}}};   
+           \node         at (14.5,4)    {\huge{\texttt{1}}};   
+           \node         at (15.5,4)    {\huge{\texttt{1}}};   
+           \node         at (16.5,4)    {\huge{\texttt{1}}};   
+           
+           %Bit field association
+           \draw [ultra thick, dashed, ->]  (7.5,3.5)  -- (7.5,3)    -- (2.5,3)    -- (2.5,2);
+           \draw [ultra thick, dashed, ->]  (9,3.5)    -- (9,2.8)    -- (5.5,2.8)  -- (5.5,2);
+           \draw [ultra thick, dashed, ->]  (15,3.5)   -- (15,2);
+           \draw [ultra thick, dashed, ->]  (16.5,3.5) -- (16.5,2.4) -- (18,2.4) -- (18,2);
+           
+           %Lower parameter stack
+           \draw [thick, fill=gray!3]  (1,1) -- (2,1) -- (2,2) -- (1,2);
+           \draw [line width=1ex, <-]  (2,1.5) --  (3,1.5);
+           
+           %Upper parameter stack
+           \draw [thick, fill=gray!3]  (3,1) rectangle  (5,2);
+           \draw [line width=1ex, <->] (5,1.5) --  (6,1.5);
+           %\draw [line width=1ex, -|]     (5,1.5)  -- (5.4,1.5);
+           %\draw [line width=1ex, |-]     (5.6,1.5)   -- (6,1.5);
+           
+           \draw [thick, fill=gray!3]  (6,1) rectangle  (8,2);
+           \draw [thick, fill=gray!3]  (9,1) rectangle  (11,2);
+           \draw [thick, fill=gray!3]  (12,1) rectangle  (14,2);
+           \node at (13,1.45)          {\Large{\textbf{TOS}}};        
+                  
+           %Stack boundary
+           \draw [line width=1ex, <->] (14,1.5)    --  (15.5,1.5);
+           %\draw [line width=1ex, -|]     (14,1.5) -- (14.9,1.5);
+           %\draw [line width=1ex, |-]   (15.1,1.5) -- (15.5,1.5);
+           \draw [dotted]              (14.75,2.2) --  (14.75,0.8);
+           
+           %Upper return stack
+           \draw [thick, fill=gray!24] (15.5,1) rectangle  (17.5,2);
+           \node at (16.5,1.45)        {\Large{\textbf{TOS}}};
+           \draw [line width=1ex, ->]  (17.5,1.5) --  (18.5,1.5);
+           
+           %Lower return stack
+           \draw [thick, fill=gray!24] (19.5,1) -- (18.5,1) -- (18.5,2) -- (19.5,2);
+         \end{scope}
+
+      \end{tikzpicture}
+    }
+  }
+  \caption{Transitions to and from the intermediate stack}
+  \label{opcodes:stack:istrans}
+  %\end{center}
+\end{figure}
 \end{samepage}
 
-\tabref{opcodes:stack:mapping} shows how \gls{stack} operations in \gls{forth} are mapped N1 instructions. 
+
+
+\subsubsection{Common Stack Operations}
+\label{opcodes:stack:ops}
+\tabref{opcodes:stack:mapping} shows how common \gls{stack} operations in \gls{forth} are mapped N1 instructions. 
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -2541,6 +2878,193 @@ Two options are selectable:
 \end{center}  
 \endgroup
 
+\subsubsection{Stack Underflow Detection}
+\label{opcodes:stack:uf}
+
+The required number of arguments for a stack instruction is determined by the transition pattern
+(\gls{ust} and \gls{ist} fields).
+The rules listed in \tabref{opcodes:stack:ufrules} are applied.
+
+
+subsubsection{Common Stack Operations}
+\label{opcodes:stack:ops}
+\tabref{opcodes:stack:mapping} shows how common \gls{stack} operations in \gls{forth} are mapped N1 instructions. 
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|}
+    \rowcolor{white}
+    \caption{Rules of Stack Underflow Detection}
+    \label{opcodes:stack:ufrules} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Rule}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Transitions}} & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{3}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %DROP rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``\texttt{DROP}''\\
+      Rule}} &
+    \multicolumn{1}{m{7em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \path []  (0,-0.2)   -- (0,2.7);       
+        
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);
+        \draw [line width=1ex, ->]  (1,2)   -- (2,2);                        
+        \draw [thick, fill=gray]    (2,1.5) rectangle (4,2.5);              
+        \draw [thick, fill=gray!3]  (6,1.5) -- (5,1.5) -- (5,2.5) -- (6,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);        
+        \draw [thick, fill=gray]    (2,0) rectangle (4,1);                   
+        \draw [line width=1ex, <-]  (4,0.5) -- (5,0.5);                      
+        \draw [thick, fill=gray!3]  (6,0) -- (5,0) -- (5,1) -- (6,1);
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{32em}|}{
+    \makecell[l]{
+    \begin{minipage}[t]{\linewidth}%  
+      A cell that will be dropped (overwritten, without passing on it's content)
+      from either direction must hold content, otherwise a stack underflow exception
+      will be triggered.
+    \end{minipage}%
+   } \\ \hline
+
+    %DUP rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``\texttt{DUP}''\\
+      Rule}} &
+    \multicolumn{1}{m{7em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \path []  (0,-0.2)   -- (0,2.7);       
+        
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);
+        \draw [line width=1ex, <-]  (1,2)   -- (2,2);                        
+        \draw [thick, fill=gray]    (2,1.5) rectangle (4,2.5);              
+        \draw [thick, fill=gray!3]  (6,1.5) -- (5,1.5) -- (5,2.5) -- (6,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);        
+        \draw [thick, fill=gray]    (2,0) rectangle (4,1);                   
+        \draw [line width=1ex, ->]  (4,0.5) -- (5,0.5);                      
+        \draw [thick, fill=gray!3]  (6,0) -- (5,0) -- (5,1) -- (6,1);
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{32em}|}{
+    \makecell[l]{ 
+    \begin{minipage}[t]{\linewidth}%  
+      A cell that will be duplicated in either direction must hold content,
+      otherwise a stack underflow exception will be triggered.
+    \end{minipage}%
+    } \\ \hline
+
+    %SWAP rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``\texttt{SWAP}''\\
+      Rule}} &
+    \multicolumn{1}{m{7em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \path []  (2.25,1.3)   -- (2.25,2.7);       
+        
+        \draw [thick, fill=gray]     (2.25,1.5) rectangle (4.25,2.5); 
+        \draw [line width=1ex, <->]  (4.25,2)   -- (5.25,2);          
+        \draw [thick, fill=gray]     (5.25,1.5) rectangle (7.25,2.5); 
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{32em}|}{
+    \makecell[l]{ 
+    \begin{minipage}[t]{\linewidth}%  
+      Two neighboring cells that will be swapped must both hold content,
+      otherwise a stack underflow exception will be triggered.
+    \end{minipage}%
+    } \\ \hline
+
+    %Shift rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``Shift''\\
+      Rule}} &
+    \multicolumn{1}{m{7em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+        \path []  (0,-0.2)   -- (0,2.7);       
+        
+        \draw [thick, fill=gray!3]  (0,1.5) -- (1,1.5) -- (1,2.5) -- (0,2.5);
+        \draw [line width=1ex, ->]  (1,2)   -- (2,2);                        
+        \draw [thick, fill=gray!3]  (2,1.5) rectangle (4,2.5);              
+        \draw [line width=1ex, ->]  (4,2) -- (5,2);                      
+        \draw [thick, fill=gray!3]  (6,1.5) -- (5,1.5) -- (5,2.5) -- (6,2.5);
+
+        \draw [thick, fill=gray!3]  (0,0) -- (1,0) -- (1,1) -- (0,1);        
+        \draw [line width=1ex, <-]  (1,0.5)   -- (2,0.5);                        
+        \draw [thick, fill=gray!3]  (2,0) rectangle (4,1);                   
+        \draw [line width=1ex, <-]  (4,0.5) -- (5,0.5);                      
+        \draw [thick, fill=gray!3]  (6,0) -- (5,0) -- (5,1) -- (6,1);
+      \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{32em}|}{
+    \makecell[l]{ 
+    \begin{minipage}[t]{\linewidth}%  
+      Cells that will be shifted in either direction, will not be checked for content
+    \end{minipage}%
+    } \\ \hline
+
+    %Cross rule
+    \multicolumn{1}{|m{3em}|}{
+    \makecell[c]{ 
+      ``Cross''\\
+      Rule}} &
+    \multicolumn{1}{m{7em}|}{
+    \scalebox{0.4} {
+      \begin{tikzpicture}
+
+       \path []                      (2,-0.2) --  (2,4.2);             
+       \draw [dotted]                (4.75,0) --  (4.75,4);
+
+        \draw [thick, fill=gray!3]   (2,3) rectangle (4,4); 
+        \draw [line width=1ex, ->]   (4,3.5)   -- (5.5,3.5);          
+        \draw [thick, fill=gray]     (5.5,3) rectangle (7.5,4); 
+
+        \draw [thick, fill=gray]     (2,1.5) rectangle (4,2.5); 
+        \draw [line width=1ex, <-]   (4,2)   -- (5.5,2);          
+        \draw [thick, fill=gray!3]   (5.5,1.5) rectangle (7.5,2.5); 
+
+        \draw [thick, fill=gray]     (2,0) rectangle (4,1); 
+        \draw [line width=1ex, <->]  (4,0.5)   -- (5.5,0.5);          
+        \draw [thick, fill=gray]     (5.5,0) rectangle (7.5,1); 
+
+     \end{tikzpicture}
+    }} &
+    %\multicolumn{1}{m{32em}|}{
+    \makecell[l]{ 
+    \begin{minipage}[t]{\linewidth}%  
+      Any cell that is shifted, swapped or duplicated across the \gls{ps}/\gls{rs} boundary
+      must hold content, otherwise a stack underflow exception will be triggered.
+    \end{minipage}%
+    } \\ \hline
+
+  \end{longtable}
+\end{center}  
+\endgroup
+
 %Memory Access Instructions
 \subsection{Memory Access Instructions}
 \label{opcodes:memacc}
@@ -2583,23 +3107,23 @@ These \glspl{freg} are read and written through special \glspl{opcode}.
     \hline
     \endlastfoot
 
-    %Carry register (CRY)
-    \texttt{0x00}                               &
-    \hyperref[opcodes:freg:cry]{CRY}            &
-    \hyperref[opcodes:freg:cry]{Carry Register} \\ \hline
+    %%Carry register (CRY)
+    %\texttt{0x00}                               &
+    %\hyperref[opcodes:freg:cry]{CRY}            &
+    %\hyperref[opcodes:freg:cry]{Carry Register} \\ \hline
 
     %Parameter Stack Depth Register (PSD)
-    \texttt{0x01}                                               &
+    \texttt{0x00}                                               &
     \hyperref[opcodes:freg:psd]{PSD}                            &
     \hyperref[opcodes:freg:psd]{Parameter Stack Depth Register} \\ \hline
 
     %Return Stack Depth Register (PSD)
-    \texttt{0x02}                                            &
+    \texttt{0x01}                                            &
     \hyperref[opcodes:freg:psd]{RSD}                         &
     \hyperref[opcodes:freg:psd]{Return Stack Depth Register} \\ \hline
     
     %Exception and Interrupt Mask Register (EIM)
-    \texttt{0x03}                                                      &
+    \texttt{0x02}                                                      &
     \hyperref[opcodes:freg:eim]{EIM}                                   &
     \hyperref[opcodes:freg:eim]{Exception and Interrupt Mask Register} \\ \hline
 
@@ -2607,108 +3131,108 @@ These \glspl{freg} are read and written through special \glspl{opcode}.
 \end{center}  
 \endgroup
 
-%Carry register (CRY)
-\subsubsection{Carry Register (CRY)}
-\label{opcodes:freg:cry}
-
-\begin{figure}[H]
-  %\begin{center}
-  \makebox[\textwidth][c]{
-    %\scalebox{0.5125} {
-    \scalebox{0.515} {
-      \begin{tikzpicture}
-
-        %Offset
-        \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x00}}
-        };        
-        %Index
-        \node [above] at  (1,2) {15};
-        \node [above] at  (3,2) {14};
-        \node [above] at  (5,2) {13};
-        \node [above] at  (7,2) {12};
-        \node [above] at  (9,2) {11};
-        \node [above] at (11,2) {10};
-        \node [above] at (13,2) {9};
-        \node [above] at (15,2) {8};
-        \node [above] at (17,2) {7};
-        \node [above] at (19,2) {6};
-        \node [above] at (21,2) {5};
-        \node [above] at (23,2) {4};
-        \node [above] at (25,2) {3};
-        \node [above] at (27,2) {2};
-        \node [above] at (29,2) {1};
-        \node [above] at (31,2) {0};
-        %Read
-        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        %\draw [thick, fill=white]  (0,1) rectangle (32,2);
-        \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
-        \node at (15,1.5) {\huge{\texttt{CRY}}};
-        %Write
-        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        \draw [thick, fill=white]  (0,0) rectangle (32,1);
-        %\draw [thick, fill=gray!3]  (0,0) rectangle  (32,2); %15..0
-        %\node at (15,0.5) {\huge{\texttt{CRY}}};
-      \end{tikzpicture}
-    }
-  }
-  %\caption{Carry Register}
-  %\label{opcodes:freg:cry:fig}
-  %\end{center}
-\end{figure}
-
-The Carry Register captures the carry or borrow flag of the last addition or suntraction.
-It alwyayread one of the three values:
-\begin{itemize}
-  \item \texttt{1} (carry from the last addition
-  \item \texttt{0} (no carry or borrow)
-  \item \texttt{-1} (borrow from the last subtraction)
-\end{itemize}
-
-\begingroup
-\setlength{\LTleft}{-20cm plus -1fill}
-\setlength{\LTright}{\LTleft}
-\begin{center}
-  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
-    \rowcolor{white}
-    \caption{Carry  Register Bit Description}
-    \label{opcodes:freg:cry:tab} \\
-    %Header
-    \hline                                     
-    \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
-     \hline
-    \endhead                               
-    %Footers
-    \hline
-    \rowcolor{white}
-    \multicolumn{4}{r}{\tiny{...continued}} \\
-    \endfoot
-    \hline
-    \endlastfoot
-
-    %CRY
-    \texttt{CRY} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Return Stack Depth}}
-          \begin{description}[style=nextline]
-          \item[Read:]
-            Carry or borrow from last addition or subtraction.\\[1pt]
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-
-  \end{longtable}
-\end{center}  
-\endgroup
-
-~\\
+%%Carry register (CRY)
+%\subsubsection{Carry Register (CRY)}
+%\label{opcodes:freg:cry}
+%
+%\begin{figure}[H]
+%  %\begin{center}
+%  \makebox[\textwidth][c]{
+%    %\scalebox{0.5125} {
+%    \scalebox{0.515} {
+%      \begin{tikzpicture}
+%
+%        %Offset
+%        \node [align=left, anchor=west] at (-2,3) {
+%          \huge{Offset: \texttt{0x00}}
+%        };        
+%        %Index
+%        \node [above] at  (1,2) {15};
+%        \node [above] at  (3,2) {14};
+%        \node [above] at  (5,2) {13};
+%        \node [above] at  (7,2) {12};
+%        \node [above] at  (9,2) {11};
+%        \node [above] at (11,2) {10};
+%        \node [above] at (13,2) {9};
+%        \node [above] at (15,2) {8};
+%        \node [above] at (17,2) {7};
+%        \node [above] at (19,2) {6};
+%        \node [above] at (21,2) {5};
+%        \node [above] at (23,2) {4};
+%        \node [above] at (25,2) {3};
+%        \node [above] at (27,2) {2};
+%        \node [above] at (29,2) {1};
+%        \node [above] at (31,2) {0};
+%        %Read
+%        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+%        %\draw [thick, fill=white]  (0,1) rectangle (32,2);
+%        \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
+%        \node at (15,1.5) {\huge{\texttt{CRY}}};
+%        %Write
+%        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+%        \draw [thick, fill=white]  (0,0) rectangle (32,1);
+%        %\draw [thick, fill=gray!3]  (0,0) rectangle  (32,2); %15..0
+%        %\node at (15,0.5) {\huge{\texttt{CRY}}};
+%      \end{tikzpicture}
+%    }
+%  }
+%  %\caption{Carry Register}
+%  %\label{opcodes:freg:cry:fig}
+%  %\end{center}
+%\end{figure}
+%
+%The Carry Register captures the carry or borrow flag of the last addition or suntraction.
+%It alwyayread one of the three values:
+%\begin{itemize}
+%  \item \texttt{1} (carry from the last addition
+%  \item \texttt{0} (no carry or borrow)
+%  \item \texttt{-1} (borrow from the last subtraction)
+%\end{itemize}
+%
+%\begingroup
+%\setlength{\LTleft}{-20cm plus -1fill}
+%\setlength{\LTright}{\LTleft}
+%\begin{center}
+%  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+%  \begin{longtable}{|c|c|c|c|}
+%    \rowcolor{white}
+%    \caption{Carry  Register Bit Description}
+%    \label{opcodes:freg:cry:tab} \\
+%    %Header
+%    \hline                                     
+%    \rowcolor{gray!25}
+%    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+%     \hline
+%    \endhead                               
+%    %Footers
+%    \hline
+%    \rowcolor{white}
+%    \multicolumn{4}{r}{\tiny{...continued}} \\
+%    \endfoot
+%    \hline
+%    \endlastfoot
+%
+%    %CRY
+%    \texttt{CRY} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Return Stack Depth}}
+%          \begin{description}[style=nextline]
+%          \item[Read:]
+%            Carry or borrow from last addition or subtraction.\\[1pt]
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%
+%  \end{longtable}
+%\end{center}  
+%\endgroup
+%
+%~\\
 
 %Parameter Stack Depth Reggister (PSD)
 \subsubsection{Parameter Stack Depth Register (PSD)}
@@ -2723,7 +3247,7 @@ It alwyayread one of the three values:
 
         %Offset
         \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x01}}
+          \huge{Offset: \texttt{0x00}}
         };        
         %Index
         \node [above] at  (1,2) {15};
@@ -2836,7 +3360,7 @@ Writing \texttt{0x0000} to this register will clear the \gls{ps}.
 
         %Offset
         \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x02}}
+          \huge{Offset: \texttt{0x01}}
         };        
         %Index
         \node [above] at  (1,2) {15};
@@ -2949,7 +3473,7 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
 
         %Offset
         \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x03}}
+          \huge{Offset: \texttt{0x02}}
         };        
         %Index
         \node [above] at  (1,2) {15};
