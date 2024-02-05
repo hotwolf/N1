@@ -469,11 +469,13 @@ module N1_us
 
    //State checks
    //------------
-   //PSD must not underflow
-   assert($past(~|psd_reg) ? ~|psd_reg | ~|{psd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1;
+   always @(posedge clk_i) begin
+      //PSD must not underflow
+      assert($past(~|psd_reg) ? ~|psd_reg | ~|{psd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1);
 
-   //RSD must not underflow
-   assert($past(~|rsd_reg) ? ~|rsd_reg | ~|{rsd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1;
+      //RSD must not underflow
+      assert($past(~|rsd_reg) ? ~|rsd_reg | ~|{rsd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1);   
+   end
 
 `endif
 
