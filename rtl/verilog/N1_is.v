@@ -286,9 +286,9 @@ module N1_is
    //------------
    //Inputs is_rst_i, us_push_i, and us_pull_i must be mutual exclusive
    N1_is_iasrt1:
-   assert (&{~us2is_push_i, ~us2is_pull_i} |
-           &{ us2is_push_i, ~us2is_pull_i} |
-           &{~us2is_push_i,  us2is_pull_i});
+   assert(&{~us2is_push_i, ~us2is_pull_i} |
+          &{ us2is_push_i, ~us2is_pull_i} |
+          &{~us2is_push_i,  us2is_pull_i});
 
    //State consistency checks
    //------------------------
@@ -309,9 +309,9 @@ module N1_is
       for (int i=IS_DEPTH-1; i>=0 ;i=i-1) begin
          N1_is_sasrt3:
          assert(      ~async_rst_i   &
-                 $past(~async_rst_i   &
-                       ~us2is_rst_i) &
-                $fell(is_tags_reg[i]) ? $past(us2ls_pull_i & ~us2ls_pull_bsy_o) : 1'b1);
+                $past(~async_rst_i   &
+                      ~us2is_rst_i)  &
+               $fell(is_tags_reg[i]) ? $past(us2ls_pull_i & ~us2ls_pull_bsy_o) : 1'b1);
       end
 
       //LS pull data is pending one cycle after an unstalled LS pull request

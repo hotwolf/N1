@@ -177,14 +177,14 @@ module N1_ls_1xdpram
    //Input checks
    //------------
    //Inputs ps_push_i and ps_pull_i must be mutual exclusive
-   assert (&{~ps_push_i, ~ips2ls_pull_i} |
-           &{ ps_push_i, ~ips2ls_pull_i} |
-           &{~ps_push_i,  ips2ls_pull_i});
+   assert(&{~ps_push_i, ~ips2ls_pull_i} |
+          &{ ps_push_i, ~ips2ls_pull_i} |
+          &{~ps_push_i,  ips2ls_pull_i});
 
    //Inputs rs_rst_i, rs_push_i, and rs_pull_i must be mutual exclusive
-   assert (&{~rs_push_i, ~irs2ls_pull_i} |
-           &{ rs_push_i, ~irs2ls_pull_i} |
-           &{~rs_push_i,  irs2ls_pull_i});
+   assert(&{~rs_push_i, ~irs2ls_pull_i} |
+          &{ rs_push_i, ~irs2ls_pull_i} |
+          &{~rs_push_i,  irs2ls_pull_i});
 
 `endif //  `ifdef FORMAL
 
