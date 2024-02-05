@@ -467,6 +467,14 @@ module N1_us
    //The IRS must be enpty whenever PSD <= 1
    assert(irs2us_empty_i ^  irs_loaded);
 
+   //State checks
+   //------------
+   //PSD must not underflow
+   assert($past(~|psd_reg) ? ~|psd_reg | ~|{psd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1;
+
+   //RSD must not underflow
+   assert($past(~|rsd_reg) ? ~|rsd_reg | ~|{rsd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1;
+
 `endif
 
 endmodule // N1_us
