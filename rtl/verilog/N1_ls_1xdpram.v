@@ -29,59 +29,59 @@
 `default_nettype none
 
 module N1_ls_1xdpram
-  #(parameter AWIDTH =  8)                                                                        //RAM address width
+  #(parameter LS_AWIDTH =  8)                                                                    //RAM address width
    (//Clock and reset
-    input  wire                             clk_i,                                                //module clock
-    input  wire                             async_rst_i,                                          //asynchronous reset
-    input  wire                             sync_rst_i,                                           //synchronous reset
+    input  wire                            clk_i,                                                //module clock
+    input  wire                            async_rst_i,                                          //asynchronous reset
+    input  wire                            sync_rst_i,                                           //synchronous reset
 
     //Soft reset
-    input  wire                             us2ls_ps_clr_i,                                       //clear PS
-    input  wire                             us2ls_rs_clr_i,                                       //clear RS
+    input  wire                            us2ls_ps_clr_i,                                       //clear PS
+    input  wire                            us2ls_rs_clr_i,                                       //clear RS
 
     //Interface to the immediate stack
-    input  wire [15:0]                      ips2ls_push_data_i,                                   //parameter stack push data
-    input  wire [15:0]                      irs2ls_push_data_i,                                   //return stack push data
-    input  wire                             ips2ls_push_i,                                        //parameter stack push request
-    input  wire                             irs2ls_push_i,                                        //return stack push request
-    input  wire                             ips2ls_pull_i,                                        //parameter stack pull request
-    input  wire                             irs2ls_pull_i,                                        //return stack pull request
-    output wire [15:0]                      ls2ips_pull_data_del_o,                               //parameter stack delayed pull data (available one cycle after the pull request)
-    output wire [15:0]                      ls2irs_pull_data_del_o,                               //return stack delayed pull data (available one cycle after the pull request)
-    output wire                             ls2ips_push_bsy_o,                                    //parameter stack push busy indicator
-    output wire                             ls2irs_push_bsy_o,                                    //return stack push busy indicator
-    output wire                             ls2ips_pull_bsy_o,                                    //parameter stack pull busy indicator
-    output wire                             ls2irs_pull_bsy_o,                                    //return stack pull busy indicator
-    output wire                             ls2ips_empty_o,                                       //parameter stack empty indicator
-    output wire                             ls2irs_empty_o,                                       //return stack empty indicator
-    output wire                             ls2ips_full_o,                                        //parameter stack full indicator
-    output wire                             ls2irs_full_o,                                        //return stack full indicator
+    input  wire [15:0]                     ips2ls_push_data_i,                                   //parameter stack push data
+    input  wire [15:0]                     irs2ls_push_data_i,                                   //return stack push data
+    input  wire                            ips2ls_push_i,                                        //parameter stack push request
+    input  wire                            irs2ls_push_i,                                        //return stack push request
+    input  wire                            ips2ls_pull_i,                                        //parameter stack pull request
+    input  wire                            irs2ls_pull_i,                                        //return stack pull request
+    output wire [15:0]                     ls2ips_pull_data_del_o,                               //parameter stack delayed pull data (available one cycle after the pull request)
+    output wire [15:0]                     ls2irs_pull_data_del_o,                               //return stack delayed pull data (available one cycle after the pull request)
+    output wire                            ls2ips_push_bsy_o,                                    //parameter stack push busy indicator
+    output wire                            ls2irs_push_bsy_o,                                    //return stack push busy indicator
+    output wire                            ls2ips_pull_bsy_o,                                    //parameter stack pull busy indicator
+    output wire                            ls2irs_pull_bsy_o,                                    //return stack pull busy indicator
+    output wire                            ls2ips_empty_o,                                       //parameter stack empty indicator
+    output wire                            ls2irs_empty_o,                                       //return stack empty indicator
+    output wire                            ls2ips_full_o,                                        //parameter stack full indicator
+    output wire                            ls2irs_full_o,                                        //return stack full indicator
 
     //RAM interface
-    input  wire [15:0]                      ram2ls_rdata_i,                                       //read data
-    output wire [AWIDTH-1:0]                ls2ram_raddr_o,                                       //read address
-    output wire [AWIDTH-1:0]                ls2ram_waddr_o,                                       //write address
-    output wire [15:0]                      ls2ram_wdata_o,                                       //write data
-    output wire                             ls2ram_re_o,                                          //read enable
-    output wire                             ls2ram_we_o,                                          //write enable
+    input  wire [15:0]                     ram2ls_rdata_i,                                       //read data
+    output wire [LS_AWIDTH-1:0]            ls2ram_raddr_o,                                       //read address
+    output wire [LS_AWIDTH-1:0]            ls2ram_waddr_o,                                       //write address
+    output wire [15:0]                     ls2ram_wdata_o,                                       //write data
+    output wire                            ls2ram_re_o,                                          //read enable
+    output wire                            ls2ram_we_o,                                          //write enable
 
     //Probe signals
-    output wire [AWIDTH-1:0]                prb_ps_addr_o,                                        //parameter stack address probe
-    output wire [AWIDTH-1:0]                prb_rs_addr_o);                                       //return stack address probe
+    output wire [LS_AWIDTH-1:0]            prb_lps_addr_o,                                       //parameter stack address probe
+    output wire [LS_AWIDTH-1:0]            prb_lrs_addr_o);                                      //return stack address probe
 
    //Internal signals
    //----------------
    //Parameter stack
-   wire [AWIDTH-1:0]                       ps_addr;                                              //parameter stack addess
-   wire [AWIDTH-1:0]                       ps_inc_addr;                                          //incremented parameter stack addess
-   wire [AWIDTH-1:0]                       ps_dec_addr;                                          //decremented parameter stack addess
+   wire [LS_AWIDTH-1:0]                    ps_addr;                                              //parameter stack addess
+   wire [LS_AWIDTH-1:0]                    ps_inc_addr;                                          //incremented parameter stack addess
+   wire [LS_AWIDTH-1:0]                    ps_dec_addr;                                          //decremented parameter stack addess
    wire                                    ps_full;                                              //parameter stack full indicator
    wire                                    ps_empty;                                             //parameter stack empty dicator
 
    //Return stack
-   wire [AWIDTH-1:0]                       rs_addr;                                              //return stack addess
-   wire [AWIDTH-1:0]                       rs_inc_addr;                                          //incremented return stack addess
-   wire [AWIDTH-1:0]                       rs_dec_addr;                                          //decremented return stack addess
+   wire [LS_AWIDTH-1:0]                    rs_addr;                                              //return stack addess
+   wire [LS_AWIDTH-1:0]                    rs_inc_addr;                                          //incremented return stack addess
+   wire [LS_AWIDTH-1:0]                    rs_dec_addr;                                          //decremented return stack addess
    wire                                    rs_full;                                              //return stack full indicator
    wire                                    rs_empty;                                             //return stack empty dicator
 
@@ -168,8 +168,8 @@ module N1_ls_1xdpram
 
    //Probe signals
    //-------------
-   assign  prb_ps_addr_o          = ps_addr;                                                     //parameter stack address probe
-   assign  prb_rs_addr_o          = rs_addr;                                                     //return stack address probe
+   assign  prb_lps_addr_o         = ps_addr;                                                     //parameter stack address probe
+   assign  prb_lrs_addr_o         = rs_addr;                                                     //return stack address probe
 
    //Assertions
    //----------

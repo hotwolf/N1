@@ -35,12 +35,13 @@
 //# Version History:                                                            #
 //#   September 25, 2019                                                        #
 //#      - Initial release                                                      #
+//#   February 5, 2024                                                          #
+//#      - New implementation                                                   #
 //###############################################################################
 `default_nettype none
 
 module N1_us
-  #(parameter EXT_ROT           = 0,
-    parameter STACK_DEPTH_WIDTH = 9)                                                //ROT extension
+  #(parameter STACK_DEPTH_WIDTH = 9)                                                //width of stack depth registers
    (//Clock and reset
     input wire                               clk_i,                                 //module clock
     input wire                               async_rst_i,                           //asynchronous reset
@@ -50,6 +51,10 @@ module N1_us
     output wire [15:0]                       us_ps0_o,                              //PS0
     output wire [15:0]                       us_ps1_o,                              //PS1
     output wire [15:0]                       us_rs0_o,                              //RS0
+
+    //Stack clear requests
+    output wire                              us_ps_clr_o,                           //PS soft reset
+    output wire                              us_rs_clr_o,                           //RS soft reset
 
     //IR interface
     input  wire [15:0]                       ir2us_ir_ps0_next_i,                   //IR output (literal value)
@@ -83,21 +88,21 @@ module N1_us
     output wire                              us2ir_bsy_o,                           //PS and RS stalled
 
     //ALU interface
-    input wire [15:0]                        alu2prs_ps0_next_i,                    //ALU result (lower word)
-    input wire [15:0]                        alu2prs_ps1_next_i,                    //ALU result (upper word)
+    input wire [15:0]                        alu2us_ps0_next_i,                     //ALU result (lower word)
+    input wire [15:0]                        alu2us_ps1_next_i,                     //ALU result (upper word)
 
     //AGU interface
-    input wire [15:0]                        agu2prs_rs0_next_i,                    //PC
+    input wire [15:0]                        agu2us_rs0_next_i,                     //PC
 
     //EXCPT interface
-    output wire                              prs2excpt_psof_o,                      //parameter stack overflow
-    output wire                              prs2excpt_psuf_o,                      //parameter stack underflow
-    output wire                              prs2excpt_rsof_o,                      //return stack overflow
-    output wire                              prs2excpt_rsuf_o,                      //return stack underflow
-    input  wire [15:0]                       excpt2prs_ps0_next_i,                  //throw code
+    output wire                              us2excpt_psof_o,                       //parameter stack overflow
+    output wire                              us2excpt_psuf_o,                       //parameter stack underflow
+    output wire                              us2excpt_rsof_o,                       //return stack overflow
+    output wire                              us2excpt_rsuf_o,                       //return stack underflow
+    input  wire [15:0]                       excpt2us_ps0_next_i,                   //throw code
 
     //Bus interface
-    input  wire [15:0]                       bi2prs_ps0_next_i,                     //read data
+    input  wire [15:0]                       bi2us_ps0_next_i,                      //read data
 
     //IPS interface
     input  wire [15:0]                       ips2us_pull_data_i,                    //IPS pull data
@@ -130,7 +135,6 @@ module N1_us
 
    //Registers
    //---------
-
    //PS depth
    reg  [STACK_DEPTH_WIDTH-1:0]              psd_reg;                               //current PS depth
    wire [STACK_DEPTH_WIDTH-1:0]              psd_next;                              //next PS depth
@@ -248,7 +252,7 @@ module N1_us
 
    //RS underflow
    assign  rs_uf      = (ir2us_rs0_required_i & ~rs0_loaded)      |
-                         rs0_uf;                                                   //RS0 underflow
+                         rs0_uf;                                                    //RS0 underflow
 
    //RS overflow
    assign  rs_of      =    ir2us_rs0_2_irs_i & irs2us_full_i;                       //push onto full RS
@@ -262,182 +266,184 @@ module N1_us
                           rs_uf;                                                    //RS underflow
 
    //Clear PS
-   assign ps_clr      =   ir2us_ps0_2_psd_i & ps0_eq_0;                            //write zero to PSD
+   assign ps_clr      =   ir2us_ps0_2_psd_i & ps0_eq_0;                             //write zero to PSD
+   assign us_ps_clr_o =   ps_clr;                                                   //PS soft reset
 
    //Clear RS
-   assign rs_clr      =   ir2us_ps0_2_rsd_i & ps0_eq_0;                            //write zero to RSD
+   assign rs_clr      =   ir2us_ps0_2_rsd_i & ps0_eq_0;                             //write zero to RSD
+   assign us_rs_clr_o =   rs_clr;                                                   //RS soft reset
 
    //PSD
-   assign psd_next  =  psd_reg + {{STACK_DEPTH_WIDTH-1{ir2us_ips_2_ps3_i}},1'b1};  //next PS depth
-   assign psd_we    =  ~stall                                            &         //PS depth write enable
+   assign psd_next  =  psd_reg + {{STACK_DEPTH_WIDTH-1{ir2us_ips_2_ps3_i}},1'b1};   //next PS depth
+   assign psd_we    =  ~stall                                            &          //PS depth write enable
                        (    ir2us_ips_2_ps3_i                            |
                             ir2us_ps3_2_ips_i);
-   assign psd_16b   = {{16-STACK_DEPTH_WIDTH{1'b0}},psd_reg};                      //16 bit wide PS depth
+   assign psd_16b   = {{16-STACK_DEPTH_WIDTH{1'b0}},psd_reg};                       //16 bit wide PS depth
 
    //RSD
-   assign rsd_next  =  rsd_reg + {{STACK_DEPTH_WIDTH-1{ir2us_irs_2_rs0_i}},1'b1};  //next RS depth
-   assign rsd_we    =  ~stall                                            &         //RS depth write enable
+   assign rsd_next  =  rsd_reg + {{STACK_DEPTH_WIDTH-1{ir2us_irs_2_rs0_i}},1'b1};   //next RS depth
+   assign rsd_we    =  ~stall                                            &          //RS depth write enable
                        (    ir2us_irs_2_rs0_i                            |
                             ir2us_rs0_2_irs_i );
-   assign rsd_16b   = {{16-STACK_DEPTH_WIDTH{1'b0}},rsd_reg};                      //16 bit wide RS depth
+   assign rsd_16b   = {{16-STACK_DEPTH_WIDTH{1'b0}},rsd_reg};                       //16 bit wide RS depth
 
    //RS
-   assign ps0_next  = ({16{   ir2us_ir_2_ps0_i}} & ir2us_ir_ps0_next_i)  |         //IR output     -> PS0
-                      ({16{  ir2us_psd_2_ps0_i}} & psd_16b)              |         //PS depth      -> PS0
-                      ({16{  ir2us_rsd_2_ps0_i}} & rsd_16b)              |         //RS depth      -> PS0
-                      ({16{ir2us_excpt_2_ps0_i}} & excpt2prs_ps0_next_i) |         //EXCPT output  -> PS0
-                      ({16{  ir2us_biu_2_ps0_i}} & bi2prs_ps0_next_i)    |         //BI output     -> PS0
-                      ({16{  ir2us_alu_2_ps0_i}} & alu2prs_ps0_next_i)   |         //ALU output    -> PS0
-                      ({16{  ir2us_ps1_2_ps0_i}} & ps1_reg)              |         //PS1           -> PS0
-                      ({16{  ir2us_ps2_2_ps0_i}} & ps2_reg)              |         //PS2           -> PS0 (ROT extension)
-                      ({16{  ir2us_rs0_2_ps0_i}} & rs0_reg);                       //RS0           -> PS0
+   assign ps0_next  = ({16{   ir2us_ir_2_ps0_i}} & ir2us_ir_ps0_next_i)  |          //IR output     -> PS0
+                      ({16{  ir2us_psd_2_ps0_i}} & psd_16b)              |          //PS depth      -> PS0
+                      ({16{  ir2us_rsd_2_ps0_i}} & rsd_16b)              |          //RS depth      -> PS0
+                      ({16{ir2us_excpt_2_ps0_i}} & excpt2us_ps0_next_i)  |          //EXCPT output  -> PS0
+                      ({16{  ir2us_biu_2_ps0_i}} & bi2us_ps0_next_i)     |          //BI output     -> PS0
+                      ({16{  ir2us_alu_2_ps0_i}} & alu2us_ps0_next_i)    |          //ALU output    -> PS0
+                      ({16{  ir2us_ps1_2_ps0_i}} & ps1_reg)              |          //PS1           -> PS0
+                      ({16{  ir2us_ps2_2_ps0_i}} & ps2_reg)              |          //PS2           -> PS0 (ROT extension)
+                      ({16{  ir2us_rs0_2_ps0_i}} & rs0_reg);                        //RS0           -> PS0
    assign ps0_we    = ~stall                                             &
-                      (       ir2us_ir_2_ps0_i                           |         //IR output     -> PS0
-                             ir2us_psd_2_ps0_i                           |         //PS depth      -> PS0
-                             ir2us_rsd_2_ps0_i                           |         //RS depth      -> PS0
-                           ir2us_excpt_2_ps0_i                           |         //EXCPT output  -> PS0
-                             ir2us_biu_2_ps0_i                           |         //BI output     -> PS0
-                             ir2us_alu_2_ps0_i                           |         //ALU output    -> PS0
-                             ir2us_ps1_2_ps0_i                           |         //PS1           -> PS0
-                             ir2us_ps2_2_ps0_i                           |         //PS2           -> PS0 (ROT extension)
-                             ir2us_rs0_2_ps0_i);                                   //RS0           -> PS0
+                      (       ir2us_ir_2_ps0_i                           |          //IR output     -> PS0
+                             ir2us_psd_2_ps0_i                           |          //PS depth      -> PS0
+                             ir2us_rsd_2_ps0_i                           |          //RS depth      -> PS0
+                           ir2us_excpt_2_ps0_i                           |          //EXCPT output  -> PS0
+                             ir2us_biu_2_ps0_i                           |          //BI output     -> PS0
+                             ir2us_alu_2_ps0_i                           |          //ALU output    -> PS0
+                             ir2us_ps1_2_ps0_i                           |          //PS1           -> PS0
+                             ir2us_ps2_2_ps0_i                           |          //PS2           -> PS0 (ROT extension)
+                             ir2us_rs0_2_ps0_i);                                    //RS0           -> PS0
 
-   assign ps1_next  = ({16{  ir2us_alu_2_ps1_i}} & alu2prs_ps1_next_i)   |         //ALU output    -> PS1
-                      ({16{  ir2us_ps2_2_ps1_i}} & ps2_reg)              |         //PS2           -> PS1
-                      ({16{  ir2us_ps0_2_ps1_i}} & ps0_reg);                       //PS0           -> PS1
+   assign ps1_next  = ({16{  ir2us_alu_2_ps1_i}} & alu2us_ps1_next_i)    |          //ALU output    -> PS1
+                      ({16{  ir2us_ps2_2_ps1_i}} & ps2_reg)              |          //PS2           -> PS1
+                      ({16{  ir2us_ps0_2_ps1_i}} & ps0_reg);                        //PS0           -> PS1
    assign ps1_we    = ~stall                                             &
-                      (      ir2us_alu_2_ps1_i                           |         //ALU output    -> PS1
-                             ir2us_ps2_2_ps1_i                           |         //PS2           -> PS1
-                             ir2us_ps0_2_ps1_i);                                   //PS0           -> PS1
+                      (      ir2us_alu_2_ps1_i                           |          //ALU output    -> PS1
+                             ir2us_ps2_2_ps1_i                           |          //PS2           -> PS1
+                             ir2us_ps0_2_ps1_i);                                    //PS0           -> PS1
 
-   assign ps2_next  = ({16{  ir2us_ps3_2_ps2_i}} & ps3_reg)              |         //PS3           -> PS2
-                      ({16{  ir2us_ps1_2_ps2_i}} & ps1_reg)              |         //PS1           -> PS2
-                      ({16{  ir2us_ps0_2_ps2_i}} & ps0_reg);                       //PS0           -> PS2 (ROT extension)
+   assign ps2_next  = ({16{  ir2us_ps3_2_ps2_i}} & ps3_reg)              |          //PS3           -> PS2
+                      ({16{  ir2us_ps1_2_ps2_i}} & ps1_reg)              |          //PS1           -> PS2
+                      ({16{  ir2us_ps0_2_ps2_i}} & ps0_reg);                        //PS0           -> PS2 (ROT extension)
    assign ps2_we    = ~stall                                             &
-                      (      ir2us_ps3_2_ps2_i                           |         //PS3           -> PS2
-                             ir2us_ps1_2_ps2_i                           |         //PS1           -> PS2
-                             ir2us_ps0_2_ps2_i);                                   //PS0           -> PS2 (ROT extension)
+                      (      ir2us_ps3_2_ps2_i                           |          //PS3           -> PS2
+                             ir2us_ps1_2_ps2_i                           |          //PS1           -> PS2
+                             ir2us_ps0_2_ps2_i);                                    //PS0           -> PS2 (ROT extension)
 
-   assign ps3_next  = ({16{  ir2us_ips_2_ps3_i}} & ips2us_pull_data_i)   |         //IPS           -> PS3
-                      ({16{  ir2us_ps2_2_ps3_i}} & ps2_reg);                       //PS2           -> PS3
+   assign ps3_next  = ({16{  ir2us_ips_2_ps3_i}} & ips2us_pull_data_i)   |          //IPS           -> PS3
+                      ({16{  ir2us_ps2_2_ps3_i}} & ps2_reg);                        //PS2           -> PS3
    assign ps3_we    = ~stall                                             &
-                      (      ir2us_ips_2_ps3_i                           |         //IPS           -> PS3
-                             ir2us_ps2_2_ps3_i);                                   //PS2           -> PS3
+                      (      ir2us_ips_2_ps3_i                           |          //IPS           -> PS3
+                             ir2us_ps2_2_ps3_i);                                    //PS2           -> PS3
 
    //RS
-   assign rs0_next  = ({16{  ir2us_agu_2_rs0_i}} &  agu2prs_rs0_next_i)  |         //AGU output    -> RS0
-                      ({16{  ir2us_ps0_2_rs0_i}} &  ps0_reg)             |         //PS0           -> RS0
-                      ({16{  ir2us_irs_2_rs0_i}} &  rs0_reg);                      //IRS           -> RS0
+   assign rs0_next  = ({16{  ir2us_agu_2_rs0_i}} &  agu2us_rs0_next_i)   |          //AGU output    -> RS0
+                      ({16{  ir2us_ps0_2_rs0_i}} &  ps0_reg)             |          //PS0           -> RS0
+                      ({16{  ir2us_irs_2_rs0_i}} &  rs0_reg);                       //IRS           -> RS0
    assign rs0_we    = ~stall                                             &
-                      (      ir2us_agu_2_rs0_i                           |         //AGU output    -> RS0
-                             ir2us_ps0_2_rs0_i                           |         //PS0           -> RS0
-                             ir2us_irs_2_rs0_i);                                   //IRS           -> RS0
+                      (      ir2us_agu_2_rs0_i                           |          //AGU output    -> RS0
+                             ir2us_ps0_2_rs0_i                           |          //PS0           -> RS0
+                             ir2us_irs_2_rs0_i);                                    //IRS           -> RS0
 
    //Flip flops
    //-----------
 
    //RS depth
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        rsd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        rsd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (rs_clr)                                                                  //soft reset
+     else if (rs_clr)                                                               //soft reset
        rsd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (rsd_we)                                                                  //state transition
+     else if (rsd_we)                                                               //state transition
        rsd_reg <= rsd_next;
 
    //PS depth
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        psd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        psd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (ps_clr)                                                                  //soft reset
+     else if (ps_clr)                                                               //soft reset
        psd_reg <= {STACK_DEPTH_WIDTH{1'b0}};
-     else if (psd_we)                                                                  //state transition
+     else if (psd_we)                                                               //state transition
        psd_reg <= psd_next;
 
    //P0
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        ps0_reg <= 16'h0000;
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        ps0_reg <= 16'h0000;
-     else if (ps0_we)                                                                  //state transition
+     else if (ps0_we)                                                               //state transition
        ps0_reg <= ps0_next;
 
    //P1
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        ps1_reg <= 16'h0000;
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        ps1_reg <= 16'h0000;
-     else if (ps1_we)                                                                  //state transition
+     else if (ps1_we)                                                               //state transition
        ps1_reg <= ps1_next;
 
    //P2
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        ps2_reg <= 16'h0000;
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        ps2_reg <= 16'h0000;
-     else if (ps2_we)                                                                  //state transition
+     else if (ps2_we)                                                               //state transition
        ps2_reg <= ps2_next;
 
    //P3
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        ps3_reg <= 16'h0000;
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        ps3_reg <= 16'h0000;
-     else if (ps3_we)                                                                  //state transition
+     else if (ps3_we)                                                               //state transition
        ps3_reg <= ps3_next;
 
    //RS0
    always @(posedge async_rst_i or posedge clk_i)
-     if (async_rst_i)                                                                  //asynchronous reset
+     if (async_rst_i)                                                               //asynchronous reset
        rs0_reg <= 16'h0000;
-     else if (sync_rst_i)                                                              //synchronous reset
+     else if (sync_rst_i)                                                           //synchronous reset
        rs0_reg <= 16'h0000;
-     else if (rs0_we)                                                                  //state transition
+     else if (rs0_we)                                                               //state transition
        rs0_reg <= rs0_next;
 
    //Probe signals
    //-------------
    //Stack outputs
-   assign  us_ps0_o            = ps0_reg;                                              //PS0
-   assign  us_ps1_o            = ps1_reg;                                              //PS1
-   assign  us_rs0_o            = rs0_reg;                                              //RS0
+   assign  us_ps0_o            = ps0_reg;                                           //PS0
+   assign  us_ps1_o            = ps1_reg;                                           //PS1
+   assign  us_rs0_o            = rs0_reg;                                           //RS0
 
    //IR interface
-   assign  us2ir_bsy_o         = stall;                                                //PS and RS stalled
+   assign  us2ir_bsy_o         = stall;                                             //PS and RS stalled
 
    //EXCPT interface
-   assign  prs2excpt_psof_o    = rs_uf;                                                //parameter stack overflow
-   assign  prs2excpt_psuf_o    = ps_uf;                                                //parameter stack underflow
-   assign  prs2excpt_rsof_o    = rs_of;                                                //return stack overflow
-   assign  prs2excpt_rsuf_o    = rs_uf;                                                //return stack underflow
+   assign  us2excpt_psof_o    = rs_uf;                                              //parameter stack overflow
+   assign  us2excpt_psuf_o    = ps_uf;                                              //parameter stack underflow
+   assign  us2excpt_rsof_o    = rs_of;                                              //return stack overflow
+   assign  us2excpt_rsuf_o    = rs_uf;                                              //return stack underflow
 
    //IPS interface
-   assign  us2irs_push_data_o  = ps3_reg;                                              //IRS push data
-   assign  us2irs_push_o       = ir2us_ps3_2_ips_i & ps3_loaded;                       //IRS push request
-   assign  us2irs_pull_o       = ir2us_ips_2_ps3_i;                                    //IRS pull request
+   assign  us2irs_push_data_o  = ps3_reg;                                           //IRS push data
+   assign  us2irs_push_o       = ir2us_ps3_2_ips_i & ps3_loaded;                    //IRS push request
+   assign  us2irs_pull_o       = ir2us_ips_2_ps3_i;                                 //IRS pull request
 
    //IRS interface
-   assign  us2irs_push_data_o  = rs0_reg;                                              //IRS push data
-   assign  us2irs_push_o       = ir2us_rs0_2_irs_i & rs0_loaded;                       //IRS push request
-   assign  us2irs_pull_o       =  ir2us_irs_2_rs0_i;                                   //IRS pull request
+   assign  us2irs_push_data_o  = rs0_reg;                                           //IRS push data
+   assign  us2irs_push_o       = ir2us_rs0_2_irs_i & rs0_loaded;                    //IRS push request
+   assign  us2irs_pull_o       =  ir2us_irs_2_rs0_i;                                //IRS pull request
 
    //Probe signals
    //-------------
-   assign  prb_us_rsd_o        = rsd_reg;                                               //RS depth
-   assign  prb_us_psd_o        = psd_reg;                                               //PS depth
-   assign  prb_us_r0_o         = rs0_reg;                                               //URS R0
-   assign  prb_us_p0_o         = ps0_reg;                                               //UPS P0
-   assign  prb_us_p1_o         = ps1_reg;                                               //UPS P1
-   assign  prb_us_p2_o         = ps2_reg;                                               //UPS P2
-   assign  prb_us_p3_o         = ps3_reg;                                               //UPS P3
+   assign  prb_us_rsd_o        = rsd_reg;                                           //RS depth
+   assign  prb_us_psd_o        = psd_reg;                                           //PS depth
+   assign  prb_us_r0_o         = rs0_reg;                                           //URS R0
+   assign  prb_us_p0_o         = ps0_reg;                                           //UPS P0
+   assign  prb_us_p1_o         = ps1_reg;                                           //UPS P1
+   assign  prb_us_p2_o         = ps2_reg;                                           //UPS P2
+   assign  prb_us_p3_o         = ps3_reg;                                           //UPS P3
 
    //Assertions
    //----------
@@ -474,7 +480,7 @@ module N1_us
       assert($past(~|psd_reg) ? ~|psd_reg | ~|{psd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1);
 
       //RSD must not underflow
-      assert($past(~|rsd_reg) ? ~|rsd_reg | ~|{rsd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1);   
+      assert($past(~|rsd_reg) ? ~|rsd_reg | ~|{rsd_reg[STACK_DEPTH_WIDTH-1:1],1'b1} : 1'b1);
    end
 
 `endif

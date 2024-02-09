@@ -96,7 +96,6 @@ module N1_is
    wire                                     is_almost_empty;                                      //IS is almost empty
    wire                                     is_full;                                              //IS is full
 
-
    //US
    reg                                      state_reg;                                            //current state
    reg                                      state_next;                                           //next state
