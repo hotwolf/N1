@@ -24,21 +24,13 @@
 //# Version History:                                                            #
 //#   December 4, 2018                                                          #
 //#      - Initial release                                                      #
+//#   February 10, 2024                                                         #
+//#      - Repartitioned DSP blocks                                             #
 //###############################################################################
 `default_nettype none
 
 module N1_alu
-   (//DSP interface
-    output wire                   alu2dsp_add_sel_o,                   //1:sub, 0:add
-    output wire                   alu2dsp_mul_sel_o,                   //1:smul, 0:umul
-    output wire [15:0]            alu2dsp_add_opd0_o,                  //first operand for adder/subtractor
-    output wire [15:0]            alu2dsp_add_opd1_o,                  //second operand for adder/subtractor (zero if no operator selected)
-    output wire [15:0]            alu2dsp_mul_opd0_o,                  //first operand for multipliers
-    output wire [15:0]            alu2dsp_mul_opd1_o,                  //second operand dor multipliers (zero if no operator selected)
-    input  wire [31:0]            dsp2alu_add_res_i,                   //result from adder
-    input  wire [31:0]            dsp2alu_mul_res_i,                   //result from multiplier
-
-    //IR interface
+   (//IR interface
     input  wire [4:0]             ir2alu_opr_i,                        //ALU operator
     input  wire [4:0]             ir2alu_opd_i,                        //immediate operand
     input  wire                   ir2alu_opd_sel_i,                    //0: PS1, 1: immediate
@@ -54,8 +46,12 @@ module N1_alu
    //Intermediate operands
    wire [15:0]                    uimm;                                //unsigned immediate operand   (1..31)
    wire [15:0]                    simm;                                //signed immediate operand   (-16..-1,1..15)
-   wire [15:0]                    oimm;                                //shifted immediate oprtand  (-15..15)
+   wire [15:0]                    oimm;                                //shifted immediate operand  (-15..15)
    //Adder
+   wire                           add_opr;                             //operator: 1:op1 - op0, 0:op1 + op0
+   wire [15:0]                    add_opd0;                            //first operand
+   wire [15:0]                    add_opd1;                            //second operand
+   wire [31:0]                    add_res;                             //result
    wire [31:0]                    add_out;                             //adder output
    //Comparator
    wire                           cmp_eq;                              //equals comparator output
@@ -71,6 +67,19 @@ module N1_alu
    wire [15:0]                    max_res;                             //MAX/MIN value
    wire [31:0]                    max_out;                             //MAX/MIN ALU output
    //Multiplier
+   wire [15:0]                    umul_opd0;                           //first operand
+   wire [15:0]                    umul_opd1;                           //second operand
+   wire [31:0]                    umul_res;                            //result
+   wire [15:0]                    smul_opd0;                           //first operand
+   wire [15:0]                    smul_opd1;                           //second operand
+   wire [31:0]                    smul_res;                            //result
+ 
+
+
+
+
+
+
    wire [31:0]                    mul_out;                             //multiplier output
    //Bitwise logic
    wire [15:0]                    bl_op0;                              //first operand
@@ -104,7 +113,7 @@ module N1_alu
    wire [31:0]                    stat_out;                            //processor status output
    //ALU output
    wire [31:0]                    alu_out;                             //ALU output
-
+  
    //Immediate operands
    //------------------
    assign uimm        = { 11'h000,               ir2alu_opd_i};        //unsigned immediate operand (1..31)
@@ -113,35 +122,32 @@ module N1_alu
 
    //Hard IP adder
    //-------------
-   //Inputs
-   assign alu2dsp_add_sel_o  = |ir2alu_opr_i[3:1] |                    //0:op1 + op0, 1:op1 - op0
-                               (ir2alu_opr_i[0] & prs2alu_ps0_i[15]);  //absolute value
+   assign add_opr     = |ir2alu_opr_i[3:1] |                           //0:op1 + op0, 1:op1 - op0
+                        (ir2alu_opr_i[0] & prs2alu_ps0_i[15]);         //absolute value
 
-   assign alu2dsp_add_opd0_o =  ir2alu_opr_i[0] ? prs2alu_ps0_i :
-                                                  (ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i);
+   assign add_opd0    =  ir2alu_opr_i[0] ? prs2alu_ps0_i :
+                                          (ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i);
 
-   assign alu2dsp_add_opd1_o =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm : prs2alu_ps1_i) :
-                                                  prs2alu_ps0_i;
+   assign add_opd1    =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm : prs2alu_ps1_i) :
+                                            prs2alu_ps0_i;
+
+   N1_alu_add add
+      (//ALU interface
+       .add2alu_res_o            (add_res),                            //result
+       .alu2add_opr_i            (add_opr),                            //operator: 1:op1 - op0, 0:op1 + op0
+       .alu2add_opd0_i           (add_opd0),                           //first operand
+       .alu2add_opd1_i           (add_opd1));                          //second operand (zero if no operator selected)
 
    //Sum, difference, absolute value
    //-------------------------------
-   assign add_out         = ~|(ir2alu_opr_i[4:2] ^ 3'b000) ?
-                            dsp2alu_add_res_i : 32'h00000000;
-
-   //MAX and MIN values
-   //------------------
-   assign max_sel         = ir2alu_opr_i[1] ^
-                            (ir2alu_opr_i[1] ? cmp_slt : cmp_ult);
-   assign max_res         = max_sel ? prs2alu_ps0_i : prs2alu_ps1_i;
-   assign max_out         = {16'h0000,
-                             (~|(ir2alu_opr_i[4:2] ^ 3'b001) ? max_res : 16'h0000)};
+   assign add_out         = ~|ir2alu_opr_i[4:2] ? add_res : 32'h00000000;
 
    //Comparator
    //----------
-   assign cmp_eq          = ~|dsp2alu_add_res_i[15:0];                 //TRUE if op1 == op2
+   assign cmp_eq          = ~|add_res_i[15:0];                         //TRUE if op1 == op2
    assign cmp_neq         = ~cmp_eq;                                   //TRUE if op1 <> op2
-   assign cmp_ult         = dsp2alu_add_res_i[16];                     //TRUE if op1 <  op2
-   assign cmp_slt         = dsp2alu_add_res_i[15];                     //TRUE if op1 <  op2
+   assign cmp_ult         = add_res_i[16];                             //TRUE if op1 <  op2
+   assign cmp_slt         = add_res_i[15];                             //TRUE if op1 <  op2
    assign cmp_ugt         = ~|{cmp_ult, cmp_eq};                       //TRUE if op1 >  op2
    assign cmp_sgt         = ~|{cmp_slt, cmp_eq};                       //TRUE if op1 >  op2
 
@@ -155,14 +161,35 @@ module N1_alu
    //Result
    assign cmp_out         = {32{~|(ir2alu_opr_i[4:3]^2'b01) & cmp_res}};
 
+   //MAX and MIN values
+   //------------------
+   assign max_sel         = ir2alu_opr_i[1] ^
+                            (ir2alu_opr_i[1] ? cmp_slt : cmp_ult);
+   assign max_res         = max_sel ? prs2alu_ps0_i : prs2alu_ps1_i;
+   assign max_out         = {16'h0000,
+                             (~|(ir2alu_opr_i[4:2] ^ 3'b001) ? max_res : 16'h0000)};
+
    //Hard IP multiplier
    //------------------
-   //Inputs
-   assign alu2dsp_mul_sel_o  = ir2alu_opr_i[1];                   //0:unsigned, 1:signed
-   assign alu2dsp_mul_opd0_o = &(ir2alu_opr_i[4:2]^3'b100) ? prs2alu_ps0_i : 16'h0000;
-   assign alu2dsp_mul_opd1_o = ir2alu_opd_sel_i ? (ir2alu_opr_i[0] ?  simm : uimm) : prs2alu_ps1_i;
+   assign umul_opd0       = &(ir2alu_opr_i[4:2]^3'b100) ? prs2alu_ps0_i : 16'h0000;
+   assign smul_opd0       = umul_opd0;
+   assign umul_opd1       = ir2alu_opd_sel_i ? (ir2alu_opr_i[0] ?  simm : uimm) : prs2alu_ps1_i;
+   assign smul_opd1       = umul_opd1;
+
+   N1_alu_umul umul
+      (//ALU interface
+       .umul2alu_res_o           (umul_res),                           //result
+       .alu2umul_opd0_i          (umul_opd0),                          //first operand
+       .alu2umul_opd1_i          (umul_opd1));                         //second operand
+
+   N1_alu_smul smul
+      (//ALU interface
+       .smul2alu_res_o           (smul_res),               //result
+       .alu2smul_opd0_i          (smul_opd0),              //first operand
+       .alu2smul_opd1_i          (smul_opd1));             //second operand
+
    //Result
-   assign mul_out            = dsp2alu_mul_res_i;
+    assign mul_out        = ir2alu_opr_i[1] ? {smul_res[31:16],umul_res[15:0]} ? umul_res[31:0];
 
    //Bitwise logic
    //------------------

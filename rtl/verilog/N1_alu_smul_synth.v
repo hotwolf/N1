@@ -36,8 +36,8 @@ module N1_alu_smul
 
     //ALU interface
     output wire [31:0]                      smul2alu_res_o,               //result
-    input  wire [15:0]                      alu2smul_op0_i,               //first operand
-    input  wire [15:0]                      alu2smul_op1_i);              //second operand
+    input  wire [15:0]                      alu2smul_opd0_i,              //first operand
+    input  wire [15:0]                      alu2smul_opd1_i);             //second operand
 
     //Signed
     wire signed [31:0]                      res_signed;                   //result
@@ -46,8 +46,8 @@ module N1_alu_smul
 
     //Convert format
     assign  smul2alu_res_o = res_signed;                                  //result
-    assign  op0_signed     = alu2smul_op0_i;                              //first operand
-    assign  op1_signed     = alu2smul_op1_i;                              //second operand
+    assign  op0_signed     = alu2smul_opd0_i;                             //first operand
+    assign  op1_signed     = alu2smul_opd1_i;                             //second operand
 
    //Signed multiplier
    //-----------------

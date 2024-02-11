@@ -37,8 +37,8 @@ module N1_alu_smul
 
     //ALU interface
     output wire [31:0]                      smul2alu_res_o,               //result
-    input  wire [15:0]                      alu2smul_op0_i,               //first operand
-    input  wire [15:0]                      alu2smul_op1_i);              //second operand
+    input  wire [15:0]                      alu2smul_opd0_i,              //first operand
+    input  wire [15:0]                      alu2smul_opd1_i);             //second operand
 
 
    //SB_MAC32 cell for signed multiplications
@@ -70,8 +70,8 @@ module N1_alu_smul
      (.CLK                       (1'b0),                                  //no clock
       .CE                        (1'b0),                                  //no clock
       .C                         (16'h0000),                              //not in use
-      .A                         (alu2smul_op0_i),                        //op0
-      .B                         (alu2smul_op1_i),                        //op1
+      .A                         (alu2smul_opd0_i),                       //first operand
+      .B                         (alu2smul_opd1_i),                       //second operand
       .D                         (16'h0000),                              //not in use
       .AHOLD                     (1'b1),                                  //keep hold register stable
       .BHOLD                     (1'b1),                                  //keep hold register stable

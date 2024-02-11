@@ -36,13 +36,13 @@ module N1_alu_add
 
     //ALU interface
     output wire [31:0]                      add2alu_res_o,                //result
-    input  wire                             alu2add_pm_i,                 //operator: 1:op1 - op0, 0:op1 + op0
-    input  wire [15:0]                      alu2add_op0_i,                //first operand
-    input  wire [15:0]                      alu2add_op1_i);               //second operand (zero if no operator selected)
+    input  wire                             alu2add_opr_i,                //operator: 1:op1 - op0, 0:op1 + op0
+    input  wire [15:0]                      alu2add_opd0_i,               //first operand
+    input  wire [15:0]                      alu2add_opd1_i);              //second operand (zero if no operator selected)
 
     //Adder/Subtractor
     //----------------
-    assign add2alu_res_o = alu2add_pm_i ? {15'h0000,alu2add_op0_i} - {15'h0000,alu2add_op1_i} :
-                                          {15'h0000,alu2add_op0_i} + {15'h0000,alu2add_op1_i};
+    assign add2alu_res_o = alu2add_opr_i ? {15'h0000,alu2add_opd0_i} - {15'h0000,alu2add_opd1_i} :
+                                           {15'h0000,alu2add_opd0_i} + {15'h0000,alu2add_opd1_i};
 
 endmodule // N1_alu_add

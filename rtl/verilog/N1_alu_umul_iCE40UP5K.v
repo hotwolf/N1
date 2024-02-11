@@ -37,8 +37,8 @@ module N1_alu_umul
 
     //ALU interface
     output wire [31:0]                      umul2alu_res_o,               //result
-    input  wire [15:0]                      alu2umul_op0_i,               //first operand
-    input  wire [15:0]                      alu2umul_op1_i);              //second operand (zero if no operator selected)
+    input  wire [15:0]                      alu2umul_opd0_i,              //first operand
+    input  wire [15:0]                      alu2umul_opd1_i);             //second operand (zero if no operator selected)
 
    //SB_MAC32 cell for unsigned multiplications
    //-------------------------------------------
@@ -69,8 +69,8 @@ module N1_alu_umul
      (.CLK                       (1'b0),                                  //no clock
       .CE                        (1'b0),                                  //no clock
       .C                         (16'h0000),                              //not in use
-      .A                         (alu2umul_op0_i),                        //op0
-      .B                         (alu2umul_op1_i),                        //op1
+      .A                         (alu2umul_opd0_i),                       //first operand
+      .B                         (alu2umul_opd1_i),                       //second operand
       .D                         (16'h0000),                              //not in use
       .AHOLD                     (1'b1),                                  //keep hold register stable
       .BHOLD                     (1'b1),                                  //keep hold register stable
