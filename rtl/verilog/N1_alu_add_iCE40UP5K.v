@@ -37,9 +37,9 @@ module N1_alu_add
 
      //ALU interface
     output wire [31:0]                      add2alu_res_o,                //result
-    input  wire                             alu2add_pm_i,                 //operator: 1:op1 - op0, 0:op1 + op0
-    input  wire [15:0]                      alu2add_op0_i,                //first operand
-    input  wire [15:0]                      alu2add_op1_i);               //second operand (zero if no operator selected)
+    input  wire                             alu2add_opr_i,                //operator: 1:op1 - op0, 0:op1 + op0
+    input  wire [15:0]                      alu2add_opd0_i,               //first operand
+    input  wire [15:0]                      alu2add_opd1_i);              //second operand (zero if no operator selected)
 
    //SB_MAC16 cell configured as 32 bit Adder/Subtractor
    //---------------------------------------------------
@@ -65,12 +65,12 @@ module N1_alu_add
        .A_SIGNED                 (1'b0),                                  //C23        -> unsigned
        .B_SIGNED                 (1'b0))                                  //C24        -> unsigned
    SB_MAC16_add
-     (.CLK                       (clk_i),                                 //clock input
+     (.CLK                       (1'b0),                                  //clock input
       .CE                        (1'b1),                                  //clock enable
       .C                         (16'h0000),                              //first operand (upper word)
       .A                         (16'h0000),                              //second operand (upper word)
-      .B                         (alu2add_op1_i),                         //second operand
-      .D                         (alu2add_op0_i),                         //first operand
+      .B                         (alu2add_opd1_i),                        //second operand
+      .D                         (alu2add_opd0_i),                        //first operand
       .AHOLD                     (1'b1),                                  //keep hold register stable
       .BHOLD                     (1'b1),                                  //keep hold register stable
       .CHOLD                     (1'b1),                                  //keep hold register stable
@@ -81,8 +81,8 @@ module N1_alu_add
       .ORSTBOT                   (1'b1),                                  //use common reset
       .OLOADTOP                  (1'b0),                                  //no bypass
       .OLOADBOT                  (1'b0),                                  //no bypass
-      .ADDSUBTOP                 (alu2add_pm_i),                          //operator: 1:op1 - op0, 0:op1 + op0
-      .ADDSUBBOT                 (alu2add_pm_i),                          //operator: 1:op1 - op0, 0:op1 + op0
+      .ADDSUBTOP                 (alu2add_opr_i),                         //operator: 1:op1 - op0, 0:op1 + op0
+      .ADDSUBBOT                 (alu2add_opr_i),                         //operator: 1:op1 - op0, 0:op1 + op0
       .OHOLDTOP                  (1'b1),                                  //keep hold register stable
       .OHOLDBOT                  (1'b1),                                  //keep hold register stable
       .CI                        (1'b0),                                  //no carry

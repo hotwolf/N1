@@ -73,13 +73,6 @@ module N1_alu
    wire [15:0]                    smul_opd0;                           //first operand
    wire [15:0]                    smul_opd1;                           //second operand
    wire [31:0]                    smul_res;                            //result
- 
-
-
-
-
-
-
    wire [31:0]                    mul_out;                             //multiplier output
    //Bitwise logic
    wire [15:0]                    bl_op0;                              //first operand
@@ -144,10 +137,10 @@ module N1_alu
 
    //Comparator
    //----------
-   assign cmp_eq          = ~|add_res_i[15:0];                         //TRUE if op1 == op2
+   assign cmp_eq          = ~|add_res[15:0];                           //TRUE if op1 == op2
    assign cmp_neq         = ~cmp_eq;                                   //TRUE if op1 <> op2
-   assign cmp_ult         = add_res_i[16];                             //TRUE if op1 <  op2
-   assign cmp_slt         = add_res_i[15];                             //TRUE if op1 <  op2
+   assign cmp_ult         = add_res[16];                               //TRUE if op1 <  op2
+   assign cmp_slt         = add_res[15];                               //TRUE if op1 <  op2
    assign cmp_ugt         = ~|{cmp_ult, cmp_eq};                       //TRUE if op1 >  op2
    assign cmp_sgt         = ~|{cmp_slt, cmp_eq};                       //TRUE if op1 >  op2
 
@@ -189,7 +182,7 @@ module N1_alu
        .alu2smul_opd1_i          (smul_opd1));             //second operand
 
    //Result
-    assign mul_out        = ir2alu_opr_i[1] ? {smul_res[31:16],umul_res[15:0]} ? umul_res[31:0];
+    assign mul_out         = ir2alu_opr_i[1] ? {smul_res[31:16],umul_res[15:0]} : umul_res[31:0];
 
    //Bitwise logic
    //------------------
@@ -209,8 +202,8 @@ module N1_alu
    //Barrel shifter
    //--------------
    //Right shift
-   assign lsr_op0 = prs2alu_ps0_i;                                   //first operand
-   assign lsr_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i;         //second operand
+   assign lsr_op0 = prs2alu_ps1_i;                                   //first operand
+   assign lsr_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps0_i;         //second operand
    assign lsr_msb = ir2alu_opr_i[1] ? lsr_op0[15] : 1'b0;            //MSB of first operand
    assign lsr_sh0 = lsr_op1[0] ?                                     //shift 1 bit
                     {lsr_msb, lsr_op0[15:1]} :                       //
@@ -231,8 +224,8 @@ module N1_alu
                     {{16{lsr_msb}}, lsr_sh4} :                       //
                     32'h00000000;                                    //
    //Left shift
-   assign lsl_op0 = prs2alu_ps0_i;                                   //first operand
-   assign lsl_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps1_i;         //second operand
+   assign lsl_op0 = prs2alu_ps1_i;                                   //first operand
+   assign lsl_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps0_i;         //second operand
    assign lsl_sh0 = lsl_op1[0] ?                                     //shift 1 bit
                     {15'h0000, lsl_op0, 1'b0} :                      //
                     {16'h0000, lsl_op0};                             //

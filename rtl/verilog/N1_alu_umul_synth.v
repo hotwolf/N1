@@ -37,11 +37,11 @@ module N1_alu_umul
 
     //ALU interface
     output wire [31:0]                      umul2alu_res_o,               //result
-    input  wire [15:0]                      alu2umul_op0_i,               //first operand
-    input  wire [15:0]                      alu2umul_op1_i);              //second operand
+    input  wire [15:0]                      alu2umul_opd0_i,              //first operand
+    input  wire [15:0]                      alu2umul_opd1_i);             //second operand
 
    //Unsigned multiplier
    //-------------------
-   assign umul2alu_res_o = alu2umul_op0_i * alu2umul_op1_i;
+   assign umul2alu_res_o = alu2umul_opd0_i * alu2umul_opd1_i;
 
 endmodule // N1_alu_umul
