@@ -1,5 +1,5 @@
 //###############################################################################
-//# N1 - DSP Cell Partition for the Lattice iCE40UP5K FPGA                      #
+//# N1 - Signed Multiplier for ALU Operations                                   #
 //###############################################################################
 //#    Copyright 2018 - 2024 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
