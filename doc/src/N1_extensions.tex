@@ -1,7 +1,7 @@
 %###############################################################################
 %# N1 - Manual - Instruction Set Extensions                                    #
 %###############################################################################
-%#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
+%#    Copyright 2018 - 2024 Dirk Heisswolf                                     #
 %#    This file is part of the N1 project.                                     #
 %#                                                                             #
 %#    N1 is free software: you can redistribute it and/or modify               #
@@ -20,6 +20,8 @@
 %# Version History:                                                            #
 %#   October 11, 2019                                                          #
 %#      - Initial release                                                      #
+%#   February 13, 2023                                                         #
+%#      - Added interrupt, TRROW/CATCH, and KEY/EMIT extensions                #
 %###############################################################################
 
 \section{Instruction Set Extensions}
@@ -673,3 +675,108 @@ These rules are listed in \tabref{opcodes:stack:ufrules}.
   \end{longtable}
 \end{center}  
 \endgroup
+
+\subsection{CATCH Extension}
+\label{extensions:catch}
+
+The \gls{catchext} enhances the functionality of the Throw Code Register (see \secref{opcodes:freg:tcr}
+implement the \gls{forth} \mbox{\texttt{CATCH ( xt -- tc )}} instruction (see \tabref{extensions:tcr:tab}).
+This extension includes two hidden register to preseve the parameter and the return stack depth at
+the time the \texttt{CATCH} instruction was executed.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Extended Throw Code Register Bit Description}
+    \label{extensions:tcr:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+     \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %TC
+    \texttt{TC} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Throw Code}}
+          \begin{description}[style=nextline]
+          \item[Read if \texttt{TC} $=$ \texttt{\$0000}:]
+            Read the latest \gls{tc} and
+            Pull previously preserved parameter and return stack depth from the \gls{rs}
+            into the hidden registers.
+            Trigger an underflow exception, if the \gls{rs} does not hold enouch content.
+          \item[Read if \texttt{TC} $\ne$ \texttt{\$0000}:]
+            Only read the latest \gls{tc} \\
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+
+    %THROW
+    \texttt{THROW} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Throw Trigger}}
+          \begin{description}[style=nextline]
+          \item[Write if \texttt{TC} $=$ \texttt{\$0000}:]
+            Store value \texttt{\$0000}, 
+            push the content of the hidden registers onto the \gls{rs}, and
+            capture the current parameter and return stack depth in the hidden registers.
+          \item[Write if \texttt{TC} $\ne$ \texttt{\$0000}:]
+            Store the \gls{tc},
+            restore the parameter and return stack depth as captured in the hidden registers,
+            pull the return address from the \gls{rs} and resume execution at this program location.
+            If no return address is availabble, resume at address \texttt{\$0000}.
+            Triggers an exception with the written \gls{tc}.\\
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+
+  \end{longtable}
+\end{center}  
+\endgroup
+
+The \texttt{CATCH} instruction is to be implemented as follows: \\
+
+
+:NONAME
+
+0 LITERAL TCR! 
+EXECUTE;
+
+: CATCH
+
+LITERAL EXECUTE
+TCR@;
+
+
+
+
+\subsection{Interrupt Extension}
+\label{extensions:int}
+
+TBD
+
+\subsection{KEY/EMIT Extension}
+\label{extensions:ke}
+
+TBD
+
