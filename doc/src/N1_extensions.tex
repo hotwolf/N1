@@ -24,7 +24,7 @@
 %#      - Added interrupt, TRROW/CATCH, and KEY/EMIT extensions                #
 %###############################################################################
 
-\section{Instruction Set Extensions}
+\section{Extensions}
 \label{extensions}
 
 The instruction set of the N1 processor (see \secref{opcodes}) reserves a number
@@ -34,6 +34,7 @@ improvements.
 They can be selected individually for each system integrating the N1 processor
 (see \secref{integration}).    
 
+%ROT extension
 \subsection{ROT Extension}
 \label{extensions:rot}
 
@@ -676,13 +677,65 @@ These rules are listed in \tabref{opcodes:stack:ufrules}.
 \end{center}  
 \endgroup
 
-\subsection{CATCH Extension}
-\label{extensions:catch}
 
-The \gls{catchext} enhances the functionality of the Throw Code Register (see \secref{opcodes:freg:tcr}
-implement the \gls{forth} \mbox{\texttt{CATCH ( xt -- tc )}} instruction (see \tabref{extensions:tcr:tab}).
-This extension includes two hidden register to preseve the parameter and the return stack depth at
-the time the \texttt{CATCH} instruction was executed.
+%Interrupt extension
+\subsection{Interrupt Extension}
+\label{extensions:int}
+
+Interrupt support is optional on the N1 processor.
+If it is available, the Interupt Enable Register (IEN) (see \figref{extensions:int:ien:fig})
+is mapped into the \gls{freg} space, allowing interrupts to be temporarily disabled.
+
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
+
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x02}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (0,0) rectangle (32,2);  % 0
+        \node at (16,1)   {\Large{\texttt{IEN}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{Interrupt Enable Register}
+  \label{extensions:int:ien:fig}
+  \end{center}
+\end{figure}
+
+Interrupt  handling can be disabled through clearing the interrupt Enable Flag \texttt{IEN}.
+
+The \texttt{IEN} bit is automatically cleared when an interrupt service routine is started
+and must be set manually by writing a true value to the Interrupt Enable Register (see \tabref{extensions:int:ien:tab}).
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -691,12 +744,12 @@ the time the \texttt{CATCH} instruction was executed.
   \rowcolors{1}{gray!12}{white}                                         %set alternating row color
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
-    \caption{Extended Throw Code Register Bit Description}
-    \label{extensions:tcr:tab} \\
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{extensions:int:ien:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
     \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
      \hline
@@ -709,74 +762,537 @@ the time the \texttt{CATCH} instruction was executed.
     \hline
     \endlastfoot
 
-    %TC
-    \texttt{TC} &
+  
+    %IEN
+    \texttt{IEN} &
     15..0        &
     \multicolumn{1}{m{36em}|}{
       \makecell[l]{
         \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Throw Code}}
+          \centerline{\textbf{Interrupt Enable Flag}}
           \begin{description}[style=nextline]
-          \item[Read if \texttt{TC} $=$ \texttt{\$0000}:]
-            Read the latest \gls{tc} and
-            Pull previously preserved parameter and return stack depth from the \gls{rs}
-            into the hidden registers.
-            Trigger an underflow exception, if the \gls{rs} does not hold enouch content.
-          \item[Read if \texttt{TC} $\ne$ \texttt{\$0000}:]
-            Only read the latest \gls{tc} \\
+          \item[Read:]
+            \texttt{ true}: \tabto{4em} Interrupts are enabled \\
+            \texttt{false}: \tabto{4em} Interrupts are disabled
+          \item[Write:]
+            \texttt{ true}: \tabto{4em} Enable interrupts \\
+            \texttt{false}: \tabto{4em} Disable interrupts\\[1pt]
           \end{description}
         \end{minipage}%
     }}  \\ \hline
-
-    %THROW
-    \texttt{THROW} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Throw Trigger}}
-          \begin{description}[style=nextline]
-          \item[Write if \texttt{TC} $=$ \texttt{\$0000}:]
-            Store value \texttt{\$0000}, 
-            push the content of the hidden registers onto the \gls{rs}, and
-            capture the current parameter and return stack depth in the hidden registers.
-          \item[Write if \texttt{TC} $\ne$ \texttt{\$0000}:]
-            Store the \gls{tc},
-            restore the parameter and return stack depth as captured in the hidden registers,
-            pull the return address from the \gls{rs} and resume execution at this program location.
-            If no return address is availabble, resume at address \texttt{\$0000}.
-            Triggers an exception with the written \gls{tc}.\\
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-
+    
   \end{longtable}
 \end{center}  
 \endgroup
 
-The \texttt{CATCH} instruction is to be implemented as follows: \\
+%EKEY/EMIT extension
+\subsection{EKEY/EMIT Extension}
+\label{extensions:ekey}
+
+The EKEY/EMIT extension adds support for an I/O device to the N1 core.
+\gls{forth} words EKEY, EKEY?, EMIT, ands EMIT? dre direcly mapped to a set of \gls{freg}.
+
+%EKEY? register
+\subsubsection{EKEY? Register}
+\label{extensions:ekey:ekeyq}
+
+The EKEY? register (see \figref{extensions:ekey:ekeyq:fig}) indicates whether there is data to be received from the input device. 
+
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
+
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x04}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
+        \node at (16,1.5)   {\Large{\texttt{EKEY?}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{EKEY? Register}
+  \label{extensions:ekey:ekeyq:fig}
+  \end{center}
+\end{figure}
 
 
-:NONAME
+The \texttt{EKEY?} field in this read only register resembles the functionality of the \texttt{EKEY?} word
+(see \tabref{extensions:ekey:ekeyq:tab}.
 
-0 LITERAL TCR! 
-EXECUTE;
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{extensions:ekey:ekeyq:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+     \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
 
-: CATCH
+    %EKEY?
+    \texttt{EKEY?} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Input Data Available Query}}
+          \begin{description}[style=nextline]
+          \item[Read:]
+            \texttt{ true}: \tabto{4em} Input data is available \\
+            \texttt{false}: \tabto{4em} Input data is not available \\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
 
-LITERAL EXECUTE
-TCR@;
+%EMIT? register
+\subsubsection{EMIT? Register}
+\label{extensions:ekey:emitq}
+
+The EMIT? (see \figref{extensions:ekey:emitq:fig}) register indicates whether the I/O device is ready to transmit data. 
+
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
+
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x05}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
+        \node at (16,1.5)   {\Large{\texttt{EMIT?}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{EMIT? Register}
+  \label{extensions:ekey:emitq:fig}
+  \end{center}
+\end{figure}
+
+The \texttt{EMIT?} field in this read only register resembles the functionality of the \texttt{EMIT?} word
+(see \tabref{extensions:ekey:emitq:tab}.
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{extensions:ekey:ekeyq:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+     \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %EMIT?
+    \texttt{EMIT?} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Output Device Ready Query}}
+          \begin{description}[style=nextline]
+          \item[Read:]
+            \texttt{ true}: \tabto{4em} Output device is ready to transmit data \\
+            \texttt{false}: \tabto{4em} Output device is not ready to transmit data \\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
+
+%PEEK register
+\subsubsection{Peek Register}
+\label{extensions:ekey:peek}
+
+The PEEK register (see \figref{extensions:ekey:peek:fig}) allows the software to preview at the input buffer of the I/O device,
+without removing any data. 
+This functionality is needed to implement the \texttt{KEY?} word.
 
 
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
 
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x06}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
+        \node at (16,1.5)   {\Large{\texttt{PEEK}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{EMIT? Register}
+  \label{extensions:ekey:peek:fig}
+  \end{center}
+\end{figure}
 
-\subsection{Interrupt Extension}
-\label{extensions:int}
+The data in the \texttt{PEEK} field (see \tabref{extensions:ekey:emitq:tab} is only valid if
+\texttt{EKEY?} holds a true value.
 
-TBD
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{extensions:ekey:ekeyq:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+     \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
 
-\subsection{KEY/EMIT Extension}
-\label{extensions:ke}
+    %PEEK
+    \texttt{PEEK} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Input Data Preview}}
+          \begin{description}[style=nextline]
+          \item[Read:]
+            Next word of read data from the input device \\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
 
-TBD
+%EKEY/EMIT register
+\subsubsection{EKEY/EMIT Register}
+\label{extensions:ekey:ekey}
 
+The EKEY/EMIT register (see \figref{extensions:ekey:ekey:fig} is used to receive data from and to transmit daza to the I/O device.
+Accesses to this register are blocking.
+
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
+
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x07}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        \draw [thick, fill=gray!3] (0,0) rectangle (32,1);  % 1
+        \node at (16,0.5) {\Large{\texttt{EMIT}}};
+        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
+        \node at (16,1.5)   {\Large{\texttt{EKEY}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{EKEY/EMIT Register}
+  \label{extensions:ekey:ekey:fig}
+  \end{center}
+\end{figure}
+
+The \texttt{EKEY} field resembles the \texttt{EKEY} word and the \texttt{EMIT} field resembles the \texttt{EMIT} word
+(see \tabref{extensions:ekey:ekey:tab}), 
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|c|c|}
+    \rowcolor{white}
+    \caption{Exception and Interrupt Mask Register Bit Description}
+    \label{extensions:ekey:ekey:tab} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+     \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    %EKEY
+    \texttt{EKEY} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Input Data}}
+          \begin{description}[style=nextline]
+          \item[Read:]
+            Input data, removed from input device when read.\\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+    %EMIT
+    \texttt{EMIT} &
+    15..0        &
+    \multicolumn{1}{m{36em}|}{
+      \makecell[l]{
+        \begin{minipage}[t]{\linewidth}%  
+          \centerline{\textbf{Output Data}}
+          \begin{description}[style=nextline]
+          \item[Read:]
+            Output data\\[1pt]
+          \end{description}
+        \end{minipage}%
+    }}  \\ \hline
+    
+  \end{longtable}
+\end{center}  
+\endgroup
+
+%%CATCH extension
+%\subsection{CATCH Extension}
+%\label{extensions:catch}
+%
+%The \gls{catchext} enhances the functionality of the Throw Code Register (see \secref{opcodes:freg:tcr}
+%implement the \gls{forth} \mbox{\texttt{CATCH ( xt -- tc )}} instruction (see \tabref{extensions:catch:tcr:tab}).
+%This extension includes two hidden register to preseve the parameter and the return stack depth at
+%the time the \texttt{CATCH} instruction was executed.
+%
+%\begingroup
+%\setlength{\LTleft}{-20cm plus -1fill}
+%\setlength{\LTright}{\LTleft}
+%\begin{center}
+%  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+%  \begin{longtable}{|c|c|c|c|}
+%    \rowcolor{white}
+%    \caption{Extended Throw Code Register Bit Description}
+%    \label{extensions:catch:tcr:tab} \\
+%    %Header
+%    \hline                                     
+%    \rowcolor{gray!25}
+%    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+%     \hline
+%    \endhead                               
+%    %Footers
+%    \hline
+%    \rowcolor{white}
+%    \multicolumn{4}{r}{\tiny{...continued}} \\
+%    \endfoot
+%    \hline
+%    \endlastfoot
+%
+%    %TC
+%    \texttt{TC} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Throw Code}}
+%          \begin{description}[style=nextline]
+%          \item[Read if \texttt{TC} $=$ \texttt{\$0000}:]
+%            Read the latest \gls{tc} and
+%            Pull previously preserved parameter and return stack depth from the \gls{rs}
+%            into the hidden registers.
+%            Trigger an underflow exception, if the \gls{rs} does not hold enouch content.
+%          \item[Read if \texttt{TC} $\ne$ \texttt{\$0000}:]
+%            Only read the latest \gls{tc} \\
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%
+%    %THROW
+%    \texttt{THROW} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Throw Trigger}}
+%          \begin{description}[style=nextline]
+%          \item[Write if \texttt{TC} $=$ \texttt{\$0000}:]
+%            Store value \texttt{\$0000}, 
+%            push the content of the hidden registers onto the \gls{rs}, and
+%            capture the current parameter and return stack depth in the hidden registers.
+%          \item[Write if \texttt{TC} $\ne$ \texttt{\$0000}:]
+%            Store the \gls{tc},
+%            restore the parameter and return stack depth as captured in the hidden registers,
+%            pull the return address from the \gls{rs} and resume execution at this program location.
+%            If no return address is availabble, resume at address \texttt{\$0000}.
+%            Triggers an exception with the written \gls{tc}.\\
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%
+%  \end{longtable}
+%\end{center}  
+%\endgroup
+%
+%The \texttt{CATCH} instruction is to be implemented as follows: \\
+%                                           
+%\begin{lstlisting}[frame=single, ]  % Start your code-block
+%
+%  :NONAME ( xt -- )    / inner CATCH sequence
+%     0 LITERAL TCR!    / capture stack depths 
+%     EXECUTE ;         / execute the xt
+%  : CATCH ( xt -- tc )
+%     [ COMPILE, ]      / call inner CATCH sequence
+%     DROP TCR@ ;       / restore catch state
+%
+%\end{lstlisting}

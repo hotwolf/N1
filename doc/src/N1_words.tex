@@ -22,11 +22,17 @@
 %#      - Initial release                                                      #
 %###############################################################################
 
-\section{ANS Forth Words}
-\label{N1_words}
+\section{Forth Words}
+\label{words}
+
+The following sections show recomended implementations of \gls{forth} words. 
+
+
+\subsection{ANS Forth Words}
+\label{words:ans}
 
 The N1 processor aims at executing Forth code in an efficient way.
-\tabref{words:list} provides a list of standard ANS Forth\cite{dpans94} words 
+\tabref{words:ans:list} provides a list of standard ANS Forth\cite{dpans94} words 
 which can be directly mapped to N1 instructions. 
 
 \begingroup
@@ -37,7 +43,7 @@ which can be directly mapped to N1 instructions.
   \begin{longtable}{|c|c|l|c|}
     \rowcolor{white}
     \caption{ANS Forth words}
-    \label{words:list} \\
+    \label{words:ans:list} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -452,7 +458,7 @@ which can be directly mapped to N1 instructions.
           \gls{ps} without +n}}                                   &
       \multicolumn{1}{m{9ex}|}{
         \makecell[c]{                   
-          \texttt{0x00FF}}}                                       \\ \hline
+          \texttt{0x0100}}}                                       \\ \hline
                                               
     %DROP
       \texttt{DROP}                                               &
@@ -474,6 +480,56 @@ which can be directly mapped to N1 instructions.
         \makecell[c]{                   
           \texttt{0x0750}}}                                       \\ \hline
 
+    %EKEY
+      \texttt{EKEY}                                               &
+      ( -- x )                                                    &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Receive one input event u
+          \footnote{\label{words:nstd:list:ekeyext}Requires the \gls{ekeyext}}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0107}}}                                       \\ \hline
+
+    %EKEY?
+      \texttt{EKEY?}                                              &
+      ( -- flag )                                                 &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Return true if input event is                           \\   
+          available
+          \footref{words:nstd:list:ekeyext}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0104}}}                                       \\ \hline
+
+    %EMIT
+      \texttt{EMIT}                                               &
+      ( x --   )                                                  &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Send x to the output device
+          \footref{words:nstd:list:ekeyext}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0005}}}                                       \\ \hline
+
+    %EMIT?
+      \texttt{EMIT?}                                               &
+      ( -- flag )                                                  &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Return true if the output device is                     \\
+          ready for data
+          \footref{words:nstd:list:ekeyext}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0105}}}                                       \\ \hline
+      
     %EXECUTE                                        
       \texttt{EXECUTE}                                            &
       ( $i*$x xt -- $j*$x )                                       &
@@ -749,3 +805,130 @@ which can be directly mapped to N1 instructions.
 \end{center}  
 \endgroup
 
+\subsection{Non-Standard Forth Words}
+\label{words:nstd}
+
+To provide access to features wich are unique to the N1 processor,
+the word definitions listed in \tabref{words:nstd:list} are recommended. 
+
+\begingroup
+\setlength{\LTleft}{-20cm plus -1fill}
+\setlength{\LTright}{\LTleft}
+\begin{center}
+  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+  \begin{longtable}{|c|c|l|c|}
+    \rowcolor{white}
+    \caption{Non-standard Forth words}
+    \label{words:nstd:list} \\
+    %Header
+    \hline                                     
+    \rowcolor{gray!25}
+    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Word}}          &  
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Stack}}          &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}}    &
+    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Opcode}} \\
+    \hline
+    \endhead                               
+    %Footers
+    \hline
+    \rowcolor{white}
+    \multicolumn{4}{r}{\tiny{...continued}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+    
+   %CLRPS
+      \texttt{CLRPS}                                              &
+      ( i*x-- )                                                   &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Clears the \gls{ps}}}                                   &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1000}                                         \\ %push 0 to PS0
+          \texttt{0x0000}}}                                       \\ \hline
+
+   %CLRRS
+      \texttt{CLRRS}                                              &
+      ( i*x-- )                                                   &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Clears the \gls{rs}}}                                   &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1000}                                         \\ %push 0 to PS0
+          \texttt{0x0001}}}                                       \\ \hline
+
+
+    %IDIS
+      \texttt{IDIS}                                               &
+      ( -- )                                                      &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Disable interrupts
+         %\footref{words:nstd:list:intext}
+          \footnote{\label{words:nstd:list:intext}Requires the \gls{intext}}
+         }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1000}                                         \\
+          \texttt{0x0003}}}                                       \\ \hline
+
+           
+    %IEN
+      \texttt{IEN}                                                &
+      ( -- )                                                      &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Enable interrupts
+          \footref{words:nstd:list:intext}
+         %\footnote{\label{words:nstd:list:intext}Requires the \gls{intext}}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1FFF}                                         \\
+          \texttt{0x0003}}}                                       \\ \hline
+
+    %IEN?
+      \texttt{IEN?}                                               &
+      ( -- flag )                                                 &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Return true if interrupts are                           \\
+          enabled
+          \footref{words:nstd:list:intext}
+         %\footnote{\label{words:nstd:list:intext}Requires the \gls{intext}}
+        }}                                                        &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x1FFF}                                         \\
+          \texttt{0x0003}}}                                       \\ \hline
+
+   %PEAK 
+      \texttt{PEAK}                                                &
+      ( -- x )                                                     &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          Read from the input device, while                       \\
+          preserving the input event
+         %\footref{words:nstd:list:ekeyext}
+          \footnote{\label{words:nstd:list:ekeyext}Requires the \gls{ekeyext}}
+        }}       &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0106}}}                                       \\ \hline
+      
+    %RDEPTH
+      \texttt{RDEPTH}                                             &
+      ( -- +n )                                                   &
+      \multicolumn{1}{m{36ex}|}{
+        \makecell[l]{                   
+          +n is the number of cells on the                        \\
+          \gls{rs}}}                                              &
+      \multicolumn{1}{m{9ex}|}{
+        \makecell[c]{                   
+          \texttt{0x0101}}}                                       \\ \hline
+
+  \end{longtable}
+\end{center}  
+\endgroup

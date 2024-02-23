@@ -52,7 +52,9 @@
             pdfdisplaydoctitle=true]{hyperref}
 \usepackage[automake, numberedsection, nonumberlist]{glossaries}
 \usepackage{amssymb}
+\usepackage{listings}
 \usepackage[width=.9\textwidth]{caption}
+\usepackage{tabto}
 
 %Tables
 \makeatletter
@@ -110,6 +112,12 @@
 \newcommand{\tabref}[2][Table]{\hyperref[{#2}]{\mbox{#1~\ref*{#2}}}}
 \newcommand{\figref}[2][Figure]{\hyperref[{#2}]{\mbox{#1~\ref*{#2}}}}
 \renewcommand{\footref}[1]{\textsuperscript{\ref{#1}}}
+
+%Code listings
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+}
 
 %--------------------
 % Title

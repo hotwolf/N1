@@ -3119,20 +3119,35 @@ These \glspl{freg} are read and written through special \glspl{opcode}.
     \hyperref[opcodes:freg:psd]{RSD}                         &
     \hyperref[opcodes:freg:psd]{Return Stack Depth Register} \\ \hline
     
-    %Throw Code Register (TCR)
-    \texttt{0x03}                                    &
-    \hyperref[opcodes:freg:tcr]{TCR}                 &
-    \hyperref[opcodes:freg:tcr]{Throw Code Register} \\ \hline
+    %%Throw Code Register (TCR)
+    %\texttt{0x02}                                    &
+    %\hyperref[opcodes:freg:tcr]{TCR}                 &
+    %\hyperref[opcodes:freg:tcr]{Throw Code Register} \\ \hline
 
-    %Interrupt Mask Register (IMR)
+    %Interrupt Mask Register (IEN)
     \texttt{0x02}                                                        &
-    \hyperref[extensions:int]{IM}                                        &
-    \hyperref[extensions:int]{\textbf{Optional} Interrupt Mask Register} \\ \hline
+    \hyperref[extensions:int]{IEN}                                       &
+    \hyperref[extensions:int]{\textbf{Optional} Interrupt Enable Register} \\ \hline
 
-    %KEY/EMIT Register (KER)
-    \texttt{0x04}                                                 &
-    \hyperref[extensions:ke]{KER}                                 &
-    \hyperref[extensions:ke]{\textbf{Optional} KEY/EMIT Register} \\ \hline
+    %EKEY? Register (EKEY?)
+    \texttt{0x04}                                             &
+    \hyperref[extensions:ke]{EKEY?}                           &
+    \hyperref[extensions:ke]{\textbf{Optional} EKEY? Register} \\ \hline
+
+    %EMIT? Register (EMIT?)
+    \texttt{0x05}                                                  &
+    \hyperref[extensions:ke]{EMIT?}                                &
+    \hyperref[extensions:ke]{\textbf{Optional} EKEY/EMIT Register} \\ \hline
+
+    %PEEK Register (PEEK)
+    \texttt{0x06}                                             &
+    \hyperref[extensions:ke]{PEEK}                            &
+    \hyperref[extensions:ke]{\textbf{Optional} PEEK Register} \\ \hline
+
+    %EKEY/EMIT Register (EKEY)
+    \texttt{0x07}                                                  &
+    \hyperref[extensions:ke]{EKEY}                                 &
+    \hyperref[extensions:ke]{\textbf{Optional} EKEY/EMIT Register} \\ \hline
 
   \end{longtable}
 \end{center}  
@@ -3364,116 +3379,116 @@ Writing \texttt{0x0000} to this register will clear the \gls{rs}.
 
 ~\\
 
-%Throw Code Register (TCR)
-\subsubsection{Throw Code Register (TCR)}
-\label{opcodes:freg:tcr}
-
-\begin{figure}[H]
-  %\begin{center}
-  \makebox[\textwidth][c]{
-    %\scalebox{0.5125} {
-    \scalebox{0.515} {
-      \begin{tikzpicture}
-
-        %Offset
-        \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x02}}
-        };        
-        %Index
-        \node [above] at  (1,2) {15};
-        \node [above] at  (3,2) {14};
-        \node [above] at  (5,2) {13};
-        \node [above] at  (7,2) {12};
-        \node [above] at  (9,2) {11};
-        \node [above] at (11,2) {10};
-        \node [above] at (13,2) {9};
-        \node [above] at (15,2) {8};
-        \node [above] at (17,2) {7};
-        \node [above] at (19,2) {6};
-        \node [above] at (21,2) {5};
-        \node [above] at (23,2) {4};
-        \node [above] at (25,2) {3};
-        \node [above] at (27,2) {2};
-        \node [above] at (29,2) {1};
-        \node [above] at (31,2) {0};
-        %Read
-        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        %\draw [thick, fill=white]  (0,1) rectangle (32,2);
-        \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
-        \node at (15,1.5) {\huge{\texttt{TC}}};
-        %Write
-        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        %\draw [thick, fill=white]  (0,0) rectangle (32,1);
-        \draw [thick, fill=gray!3]  (0,0) rectangle  (32,1); %15..0
-        \node at (15,0.5) {\huge{\texttt{THROW}}};
-      \end{tikzpicture}
-    }
-  }
-  %\caption{Throw Code Register}
-  %\label{opcodes:freg:tcr:fig}
-  %\end{center}
-\end{figure}
-
-The throw code register captures the \gls{tc} of the last exception (see \tabref{reset:tc}).
-Writing to this register triggers an exception.
-The optional \gls{catchext} (see  \secref{extensions:catch}) add further functionality to this register.
-
-\begingroup
-\setlength{\LTleft}{-20cm plus -1fill}
-\setlength{\LTright}{\LTleft}
-\begin{center}
-  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
-    \rowcolor{white}
-    \caption{Throw Code Register Bit Description}
-    \label{opcodes:freg:tcr:tab} \\
-    %Header
-    \hline                                     
-    \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
-     \hline
-    \endhead                               
-    %Footers
-    \hline
-    \rowcolor{white}
-    \multicolumn{4}{r}{\tiny{...continued}} \\
-    \endfoot
-    \hline
-    \endlastfoot
-
-    %TC
-    \texttt{TC} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Throw Code}}
-          \begin{description}[style=nextline]
-          \item[Read:]
-            \gls{tc} of the last exception.\\[1pt]
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-
-    %THROW
-    \texttt{THROW} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Throw Trigger}}
-          \begin{description}[style=nextline]
-          \item[Write:]
-            Triggers an exception with the written \gls{tc}.\\
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-
-  \end{longtable}
-\end{center}  
-\endgroup
+%%Throw Code Register (TCR)
+%\subsubsection{Throw Code Register (TCR)}
+%\label{opcodes:freg:tcr}
+%
+%\begin{figure}[H]
+%  %\begin{center}
+%  \makebox[\textwidth][c]{
+%    %\scalebox{0.5125} {
+%    \scalebox{0.515} {
+%      \begin{tikzpicture}
+%
+%        %Offset
+%        \node [align=left, anchor=west] at (-2,3) {
+%          \huge{Offset: \texttt{0x02}}
+%        };        
+%        %Index
+%        \node [above] at  (1,2) {15};
+%        \node [above] at  (3,2) {14};
+%        \node [above] at  (5,2) {13};
+%        \node [above] at  (7,2) {12};
+%        \node [above] at  (9,2) {11};
+%        \node [above] at (11,2) {10};
+%        \node [above] at (13,2) {9};
+%        \node [above] at (15,2) {8};
+%        \node [above] at (17,2) {7};
+%        \node [above] at (19,2) {6};
+%        \node [above] at (21,2) {5};
+%        \node [above] at (23,2) {4};
+%        \node [above] at (25,2) {3};
+%        \node [above] at (27,2) {2};
+%        \node [above] at (29,2) {1};
+%        \node [above] at (31,2) {0};
+%        %Read
+%        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+%        %\draw [thick, fill=white]  (0,1) rectangle (32,2);
+%        \draw [thick, fill=gray!3]  (0,1) rectangle  (32,2); %15..0
+%        \node at (15,1.5) {\huge{\texttt{TC}}};
+%        %Write
+%        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+%        %\draw [thick, fill=white]  (0,0) rectangle (32,1);
+%        \draw [thick, fill=gray!3]  (0,0) rectangle  (32,1); %15..0
+%        \node at (15,0.5) {\huge{\texttt{THROW}}};
+%      \end{tikzpicture}
+%    }
+%  }
+%  %\caption{Throw Code Register}
+%  %\label{opcodes:freg:tcr:fig}
+%  %\end{center}
+%\end{figure}
+%
+%The throw code register captures the \gls{tc} of the last exception (see \tabref{reset:tc}).
+%Writing to this register triggers an exception.
+%The optional \gls{catchext} (see  \secref{extensions:catch}) add further functionality to this register.
+%
+%\begingroup
+%\setlength{\LTleft}{-20cm plus -1fill}
+%\setlength{\LTright}{\LTleft}
+%\begin{center}
+%  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+%  \begin{longtable}{|c|c|c|c|}
+%    \rowcolor{white}
+%    \caption{Throw Code Register Bit Description}
+%    \label{opcodes:freg:tcr:tab} \\
+%    %Header
+%    \hline                                     
+%    \rowcolor{gray!25}
+%    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}  &  
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+%     \hline
+%    \endhead                               
+%    %Footers
+%    \hline
+%    \rowcolor{white}
+%    \multicolumn{4}{r}{\tiny{...continued}} \\
+%    \endfoot
+%    \hline
+%    \endlastfoot
+%
+%    %TC
+%    \texttt{TC} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Throw Code}}
+%          \begin{description}[style=nextline]
+%          \item[Read:]
+%            \gls{tc} of the last exception.\\[1pt]
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%
+%    %THROW
+%    \texttt{THROW} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Throw Trigger}}
+%          \begin{description}[style=nextline]
+%          \item[Write:]
+%            Triggers an exception with the written \gls{tc}.\\
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%
+%  \end{longtable}
+%\end{center}  
+%\endgroup
 
 %%Interrupt Mask Register (IM)
 %\subsubsection{Interrupt Mask Register (IM)}
