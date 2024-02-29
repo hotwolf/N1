@@ -59,12 +59,15 @@ of the system. There are five error conditions, which can be detected by the N1 
 \item[Address out of range]
   This error condition indicates a memory access to a restricted address. This can either
   be caused by an instruction fetch or a data access
+\item[Undefined word]
+  This error condition is triggered whenever an undefined \gls{opcode} is executed or an
+  unimplemented \gls{freg} is accessed.
 \end{description}
 In any of these cases, the N1 processor will push a \gls{tc} (see \tabref{reset:tc}) onto
 the \gls{ps} and proceed with code execution at address \texttt{0x0000}.
 In case of a \gls{ps} overflow or a \gls{rs} overflow, both stacks will be cleared.
 Otherwise, the \gls{rs} and the lower content of the \gls{ps} remain untouched,
-allowing the to be caught by software. 
+allowing the \gls{excpt} to be caught by software. 
 %Further exceptions can be triggered by software through the \secref{opcodes:freg:tcr}.
 %In any of these cases, the N1 processor will proceed with code execution at address \texttt{0x0000}.
 %The \secref{opcodes:freg:tcr} will indicate the cause of the exception.
@@ -118,9 +121,9 @@ the ANS Forth standard~\cite{dpans94}.
     \texttt{0xFFFA} (-6)                &    
     Parameter stack underflow           \\* \hline
 
-    %%Invalid memory address
-    %\texttt{0xFFF7} (-9)                &    
-    %Invalid memory address              \\* \hline
+    %Invalid memory address
+    \texttt{0xFFF7} (-9)                &    
+    Invalid memory address              \\* \hline
 
     %Undefined word
     \texttt{0xFFF3} (-13)                &    
