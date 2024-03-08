@@ -824,7 +824,8 @@ sub precompile {
                     $arguments =~ s/^\s*//;
                     $arguments =~ s/\s*$//;
 
-                    #printf " ===> \"%s\" \"%s\" \"%s\"\n", $label, $opcode, $arguments;
+                    #printf STDERR " ===> \"%s\" \"%s\" \"%s\"\n", $label, $opcode, $arguments;
+                    #printf STDERR "\"%s\" ->%s\n", $line, length($line);
                     #check ifdef stack
                     if ($ifdef_stack->[$#$ifdef_stack]->[0]){
 
@@ -850,7 +851,7 @@ sub precompile {
 								undef,                #macros
 								undef];               #symbol tables
 
-			    #add label to precompiler defines (makes HSW12 behave a little more like AS12)
+			    #add label to precompiler defines (makes N1 behave a little more like AS12)
 			    if ($label =~ /\S/) {
 				$self->{macro_symbols}->{uc($macro)}->{uc($label)} = undef;
 			    }
@@ -869,7 +870,7 @@ sub precompile {
 						    undef,                #macros
 						    undef];               #symbol tables
 
-			    #add label to precompiler defines (makes HSW12 behave a little more like AS12)
+			    #add label to precompiler defines (makes N1 behave a little more like AS12)
 			    if ($label =~ /\S/) {
 				$self->{precomp_defs}->{uc($label)} = "";
 				#if ($label =~ /^SCI/i) {printf " ===> \"%s\" \"%s\" \"%s\"\n", $label, $opcode, $arguments;}
@@ -1730,8 +1731,8 @@ sub compile_run {
 			$macro_arg = $macro_entry->[5];
 			foreach $macro_argc (1..$self->{macro_argcs}->{$macro_name}) {
 			    $macro_arg_replace = $macro_args[$macro_argc-1];
-			    #$macro_arg =~ s/\\$macro_argc/$macro_arg_replace/g;
-			    $macro_arg =~ s/§$macro_argc/$macro_arg_replace/g;
+			    $macro_arg =~ s/\\$macro_argc/$macro_arg_replace/g;
+			    #$macro_arg =~ s/§$macro_argc/$macro_arg_replace/g;
 			    #printf "replace macro arg: %d \"%s\", \"%s\" => \"%s\"\n", $macro_argc, $macro_entry->[5], $macro_arg_replace, $macro_arg;
 			}
 
@@ -2792,6 +2793,15 @@ sub print_listing {
 								 shift @code_hex_strings,
 								 $cmt_last_line));
 	    } else {
+	        #printf STDERR "\"%s\" \"%s\" (%s)\n", $code_hex, $code_hex_strings[0], $code_comments->[0];
+	        #printf STDERR "\"%-80.25s\"->%d \n", $cmt_last_line, length($cmt_last_line);
+                #printf STDERR " 0        1         2         3         4         5         6         7         8         9\n";
+                #printf STDERR " 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890\n";		
+		#printf STDERR "%-6s %-6s %-23s \"%s\" (%ls)\n", ($code_pc_local_string,
+		#						 $code_pc_global_string,
+		#	  					 $code_hex_strings[0],
+		#						 $cmt_last_line,
+		#						 join("/", reverse @$code_macros));
 		$out_string .= sprintf("%-6s %-6s %-23s %-80s (%ls)\n", ($code_pc_local_string,
 									 $code_pc_global_string,
 									 shift @code_hex_strings,

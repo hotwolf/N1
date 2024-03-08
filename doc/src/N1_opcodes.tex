@@ -775,23 +775,32 @@ interpreted as either an unsigned ($uimm$), a sign extended ($simm$), or an offs
       $uimm$ $*$ x1                      &
       x1 $*$ x2                          \\ \hline
                                          
-    %Unsigned product                      
-      \texttt{10001}                     &
-      Unsigned product                   &
-      $simm$ $*$ x1                      &
-      x1 $*$ x2                          \\ \hline
-                                         
-    %Signed product                  
-      \texttt{10010}                     &
-      Signed product                     &
-      $uimm$ $*$ x1                      &
-      x1 $*$ x2                          \\ \hline
-                                         
     %Signed product                      
-      \texttt{10011}                     &
+      \texttt{10001}                     &
       Signed product                     &
       $simm$ $*$ x1                      &
       x1 $*$ x2                          \\ \hline
+                                         
+    %%Signed product                  
+    %  \texttt{10010}                     &
+    %  Signed product                     &
+    %  $uimm$ $*$ x1                      &
+    %  x1 $*$ x2                          \\ \hline
+    %                                     
+    %%Signed product                      
+    %  \texttt{10011}                     &
+    %  Signed product                     &
+    %  $simm$ $*$ x1                      &
+    %  x1 $*$ x2                          \\ \hline
+
+    %Reserved                            
+      \texttt{10010}                     &
+      \multicolumn{3}{c|}{Reserved}      \\ \hline
+
+    %Reserved                            
+      \texttt{10011}                     &
+      \multicolumn{3}{c|}{Reserved}      \\ \hline
+
     %---------------------------------
                                          
     %Bitwise logic operations          

@@ -269,8 +269,8 @@ LABEL`          DW      0
                 DW      0
 
 #MACRO          :       2
-HEADER_START    DW      ((§2&$FF)<<8)|(CODE_START-*)
-NAME            FCS     §1
+HEADER_START    DW      ((\2&$FF)<<8)|(CODE_START-*)
+NAME            FCS     \1
 CODE_START      EQU     *
 #EMAC
 
