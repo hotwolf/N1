@@ -213,7 +213,7 @@ CODE_START	EQU	*
 
 Result:
 <listing>
-08000 00F000                                         ORG     $8000, $F000
+008000 00F000                                         ORG     $8000, $F000
 008000 00F000 MACRO                                   :       "XOR", $00
 008000 00F000 0003                    HEADER_START    DW      ((§2&$FF)<<8)|(CODE_START-*)                            (:)
 008001 00F001 584F D2FF               NAME            FCS     §1                                                      (:)
