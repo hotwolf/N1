@@ -176,50 +176,57 @@ All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
 
 \end{description}
 
-\subsubsection{Stack Bus}
-\label{integration:if:sbus}
-This interface connects the N1 to the stack memory.
-It is expected that the \texttt{SP\_WIDTH} parameter (see \secref{integration:params}) matches the
-implemented memory size. Therefore no \texttt{ERR\_I} input is needed in this interface.
-All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
 
-\begin{description}[style=nextline]
+% \iffalse
+% obsolete:
+% 
+% \subsubsection{Stack Bus}
+% \label{integration:if:sbus}
+% This interface connects the N1 to the stack memory.
+% It is expected that the \texttt{SP\_WIDTH} parameter (see \secref{integration:params}) matches the
+% implemented memory size. Therefore no \texttt{ERR\_I} input is needed in this interface.
+% All signals comply to the \gls{wb} protocoll~\cite{wishbone}.
+% 
+% \begin{description}[style=nextline]
+% 
+% \item[\texttt{sbus\_cyc\_o}] Cycle indicator output. \\
+%   This output signal corresponds to signal \texttt{CYC\_O} of the Wishbone specification~\cite{wishbone}.
+% 
+% \item[\texttt{sbus\_stb\_o}] Strobe output. \\   
+%   This output signal corresponds to signal \texttt{STB\_O} of the Wishbone specification~\cite{wishbone}.
+% 
+% \item[\texttt{sbus\_we\_o}]  Write enable output. \\
+%   This output signal corresponds to signal \texttt{WE\_O} of the Wishbone specification~\cite{wishbone}.
+% 
+% \item[\texttt{sbus\_adr\_o}] Address bus. \\   
+%   These output signals correspond to bus \texttt{ADR\_O} of the Wishbone specification~\cite{wishbone}.
+% 
+% \item[\texttt{sbus\_dat\_o}] Write data bus. \\    
+%   These output signals correspond to bus \texttt{DAT\_O} of the Wishbone specification~\cite{wishbone}.
+% 
+% \item[\texttt{sbus\_tga\_ps\_o}] \Gls{ps} access indicator. \\   
+%   These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
+%   It indicates, that the current bus access is associated with the \gls{ps}.
+% 
+% \item[\texttt{sbus\_tga\_rs\_o}] \Gls{rs} access indicator. \\   
+%   These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
+%   It indicates, that the current bus access is associated with the \gls{rs}.
+%   
+% \item[\texttt{sbus\_ack\_i}] Acknowlede input. \\   
+%   This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
+%   If unused, this input must be tied to \texttt{1}.
+% 
+% \item[\texttt{sbus\_stall\_i}] Pipeline stall input. \\
+%   This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
+%   If unused, this input must be tied to \texttt{0}.
+% 
+% \item[\texttt{sbus\_dat\_i}] Read data bus. \\ 
+%   These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
+% 
+% \end{description}
+% 
+% \fi
 
-\item[\texttt{sbus\_cyc\_o}] Cycle indicator output. \\
-  This output signal corresponds to signal \texttt{CYC\_O} of the Wishbone specification~\cite{wishbone}.
-
-\item[\texttt{sbus\_stb\_o}] Strobe output. \\   
-  This output signal corresponds to signal \texttt{STB\_O} of the Wishbone specification~\cite{wishbone}.
-
-\item[\texttt{sbus\_we\_o}]  Write enable output. \\
-  This output signal corresponds to signal \texttt{WE\_O} of the Wishbone specification~\cite{wishbone}.
-
-\item[\texttt{sbus\_adr\_o}] Address bus. \\   
-  These output signals correspond to bus \texttt{ADR\_O} of the Wishbone specification~\cite{wishbone}.
-
-\item[\texttt{sbus\_dat\_o}] Write data bus. \\    
-  These output signals correspond to bus \texttt{DAT\_O} of the Wishbone specification~\cite{wishbone}.
-
-\item[\texttt{sbus\_tga\_ps\_o}] \Gls{ps} access indicator. \\   
-  These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates, that the current bus access is associated with the \gls{ps}.
-
-\item[\texttt{sbus\_tga\_rs\_o}] \Gls{rs} access indicator. \\   
-  These output signals correspond to bus \texttt{TGA\_O} of the Wishbone specification~\cite{wishbone}.
-  It indicates, that the current bus access is associated with the \gls{rs}.
-  
-\item[\texttt{sbus\_ack\_i}] Acknowlede input. \\   
-  This input signal corresponds to signal \texttt{ACK\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied to \texttt{1}.
-
-\item[\texttt{sbus\_stall\_i}] Pipeline stall input. \\
-  This input signal corresponds to signal \texttt{STALL\_I} of the Wishbone specification~\cite{wishbone}.
-  If unused, this input must be tied to \texttt{0}.
-
-\item[\texttt{sbus\_dat\_i}] Read data bus. \\ 
-  These input signals correspond to bus \texttt{DAT\_I} of the Wishbone specification~\cite{wishbone}.
-
-\end{description}
 
 \subsubsection{Interrupt Interface}
 \label{integration:if:irq}

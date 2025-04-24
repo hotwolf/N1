@@ -74,8 +74,8 @@ Names of signals which are only used within one design block are kept short and 
 
 A high signal level of a contol signal is interpreted a request by the receiving design block.
 The request is expected to be immediately accepted by the receiver and processed in the next clock cycle,
-unless the receiver provides a busy indicator (\dots\texttt{bsy}).
-In this case the request in only accepted if the busy indicator was deasserted in the previous cycle.
+unless the receiver provides a busy indicator (\dots\texttt{\_bsy}).
+In this case the request in only accepted if the busy indicator was deasserted in the cycle, in which the request is made.
 
 \subsubsection{Instruction Boundaries}
 \label{architecture:principles:ibounds}
@@ -91,6 +91,68 @@ The program bus must be available - TBD
 The parameter and the return stack must be available - TBD
   
 \end{itemize}
+
+\subsection{Common Internal Interfaces}
+\label{architecture:interfaces}
+
+The subblocks in the N1 design use common interfaces for common functionality. These interfaces follow the
+\hyperref[architecture:principles:naming]{naming conventions} and \hyperref[architecture:principles:handshakes]{handshaking concept} 
+described in \secref{architecture:principles}.
+
+\subsubsection{Stack Interface}
+\label{architecture:interfaces:stack}
+
+All stacks are controlled using the following interface:
+\begin{description}[style=nextline]
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_clear\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+  Request to clear the stack.
+  
+\item[\emph{\textless stack name\textgreater}\texttt{\_clear\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+  Busy indicator. \\
+  The stack will be cleared if \emph{\textless stack name\textgreater}\texttt{\_clear\_i} is asseeted while \\
+  \emph{\textless stack name\textgreater}\texttt{\_clear\_bsy\_o} is deasserted.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+  Request to push a data word onto the stack.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_data\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\rightarrow$ stack)}]
+  Data word to be pushed onto the stack.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+  Busy indicator. \\
+  \emph{\textless stack name\textgreater}\texttt{\_push\_data\_i} will be pushed onto the stack if
+  \emph{\textless stack name\textgreater}\texttt{\_push\_i} is asserted while
+  \emph{\textless stack name\textgreater}\texttt{\_push\_bsy\_o} and 
+  \emph{\textless stack name\textgreater}\texttt{\_push\_of\_o} are deasserted.
+  
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_of\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+  Overflow indicator. \\
+  \emph{\textless stack name\textgreater}\texttt{\_push\_of\_o} is asserted when the stack is full and a new push request would cause an overflow.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+  Request to pull a data word from the stack.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_data\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\leftarrow$ stack)}]
+  Data word to be pulled from the stack. If the stack is not empty \\
+  (\emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} deasserted)
+  and ready for a pull operation \\
+  (\emph{\textless stack name\textgreater}\texttt{\_pull\_bsy\_o} deasserted),
+  then \emph{\textless stack name\textgreater}\texttt{\_pull\_data\_o} always shows the data at the top of the stack.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+  Busy indicator. \\
+  The data at the top of the stack will be removed if
+  \emph{\textless stack name\textgreater}\texttt{\_pull\_i} is asserted while
+  \emph{\textless stack name\textgreater}\texttt{\_pull\_bsy\_o} and 
+  \emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} are deasserted.
+
+\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+  Underflow indicator. \\
+  \emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} is asserted when the stack is empty and a new pull request would cause an underflow.
+
+\end{description}
+
 
 \subsection{Instruction Execution Cycle}
 \label{architecture:excyc}
