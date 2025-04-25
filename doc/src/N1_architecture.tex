@@ -105,7 +105,7 @@ described in \secref{architecture:principles}.
 All stacks are controlled using the following interface:
 \begin{description}[style=nextline]
 
-\item[\emph{\textless stack name\textgreater}\texttt{\_clear\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+\item[\emph{\textless stack name\textgreater}\texttt{\_clear\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ stack)}]
   Request to clear the stack.
   
 \item[\emph{\textless stack name\textgreater}\texttt{\_clear\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
@@ -113,11 +113,12 @@ All stacks are controlled using the following interface:
   The stack will be cleared if \emph{\textless stack name\textgreater}\texttt{\_clear\_i} is asseeted while \\
   \emph{\textless stack name\textgreater}\texttt{\_clear\_bsy\_o} is deasserted.
 
-\item[\emph{\textless stack name\textgreater}\texttt{\_push\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ stack)}]
   Request to push a data word onto the stack.
 
-\item[\emph{\textless stack name\textgreater}\texttt{\_push\_data\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\rightarrow$ stack)}]
-  Data word to be pushed onto the stack.
+\item[\emph{\textless stack name\textgreater}\texttt{\_push\_data\_o}/\texttt{\_i[15:0]} {\scriptsize (controller $\rightarrow$ stack)}]
+  Data word to be pushed onto the stack. \\
+  The data word must be supplied in the same clock cycle as the request.
 
 \item[\emph{\textless stack name\textgreater}\texttt{\_push\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
   Busy indicator. \\
@@ -130,7 +131,7 @@ All stacks are controlled using the following interface:
   Overflow indicator. \\
   \emph{\textless stack name\textgreater}\texttt{\_push\_of\_o} is asserted when the stack is full and a new push request would cause an overflow.
 
-\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_i}/\texttt{\_o} {\scriptsize (controller $\rightarrow$ stack)}]
+\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ stack)}]
   Request to pull a data word from the stack.
 
 \item[\emph{\textless stack name\textgreater}\texttt{\_pull\_data\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\leftarrow$ stack)}]
@@ -153,6 +154,48 @@ All stacks are controlled using the following interface:
 
 \end{description}
 
+\subsubsection{Memory Interface}
+\label{architecture:interfaces:memory}
+
+Memories are connected through the following interface:
+\begin{description}[style=nextline]
+
+\item[\emph{\textless memory name\textgreater}\texttt{\_addr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
+  Memory address.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_raddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
+  Memory address for read accesses to dual ported RAMs.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_waddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
+  Memory address for write accesses to dual ported RAMs.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_write\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
+  Write request.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_read\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
+  Read request.
+
+\item[\emph{\textless memory name\textgreater}\texttt{\_write\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
+  Busy indicator. \\
+  A write request is valid if
+  \emph{\textless memory name\textgreater}\texttt{\_write\_i} is asserted while \\
+  \emph{\textless memory name\textgreater}\texttt{\_write\_bsy\_o} is deasserted.
+
+\item[\emph{\textless memory name\textgreater}\texttt{\_read\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
+  Busy indicator. \\
+  A read request is valid if
+  \emph{\textless memory name\textgreater}\texttt{\_read\_i} is asserted while \\
+  \emph{\textless memory name\textgreater}\texttt{\_read\_bsy\_o} is deasserted.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_wdata\_o}/\texttt{\_i[15:0]} {\scriptsize (controller $\rightarrow$ memory)}]
+  Write data. \\
+  Write data must be driven in the same clock cycle as the request.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_rdata\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\leftarrow$ memory)}]
+  Read data. \\
+  Read data must be captured one clock cyle after a valid request has been captured.
+
+\end{description}
 
 \subsection{Instruction Execution Cycle}
 \label{architecture:excyc}
