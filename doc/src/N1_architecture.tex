@@ -125,18 +125,18 @@ All stacks are controlled using the following interface:
   \emph{\textless stack name\textgreater}\texttt{\_push\_data\_i} will be pushed onto the stack if
   \emph{\textless stack name\textgreater}\texttt{\_push\_i} is asserted while
   \emph{\textless stack name\textgreater}\texttt{\_push\_bsy\_o} and 
-  \emph{\textless stack name\textgreater}\texttt{\_push\_of\_o} are deasserted.
+  \emph{\textless stack name\textgreater}\texttt{\_full\_o} are deasserted.
   
-\item[\emph{\textless stack name\textgreater}\texttt{\_push\_of\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+\item[\emph{\textless stack name\textgreater}\texttt{\_full\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
   Overflow indicator. \\
-  \emph{\textless stack name\textgreater}\texttt{\_push\_of\_o} is asserted when the stack is full and a new push request would cause an overflow.
+  \emph{\textless stack name\textgreater}\texttt{\_full\_o} is asserted when the stack is full and a new push request would cause an overflow.
 
 \item[\emph{\textless stack name\textgreater}\texttt{\_pull\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ stack)}]
   Request to pull a data word from the stack.
 
 \item[\emph{\textless stack name\textgreater}\texttt{\_pull\_data\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\leftarrow$ stack)}]
   Data word to be pulled from the stack. If the stack is not empty \\
-  (\emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} deasserted)
+  (\emph{\textless stack name\textgreater}\texttt{\_empty\_o} deasserted)
   and ready for a pull operation \\
   (\emph{\textless stack name\textgreater}\texttt{\_pull\_bsy\_o} deasserted),
   then \emph{\textless stack name\textgreater}\texttt{\_pull\_data\_o} always shows the data at the top of the stack.
@@ -146,11 +146,11 @@ All stacks are controlled using the following interface:
   The data at the top of the stack will be removed if
   \emph{\textless stack name\textgreater}\texttt{\_pull\_i} is asserted while
   \emph{\textless stack name\textgreater}\texttt{\_pull\_bsy\_o} and 
-  \emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} are deasserted.
+  \emph{\textless stack name\textgreater}\texttt{\_empty\_o} are deasserted.
 
-\item[\emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
+\item[\emph{\textless stack name\textgreater}\texttt{\_empty\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ stack)}]
   Underflow indicator. \\
-  \emph{\textless stack name\textgreater}\texttt{\_pull\_uf\_o} is asserted when the stack is empty and a new pull request would cause an underflow.
+  \emph{\textless stack name\textgreater}\texttt{\_empty\_o} is asserted when the stack is empty and a new pull request would cause an underflow.
 
 \end{description}
 
@@ -161,7 +161,7 @@ Memories are connected through the following interface:
 \begin{description}[style=nextline]
 
 \item[\emph{\textless memory name\textgreater}\texttt{\_addr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
-  Memory address.
+  Memory address for single ported RAMs.
   
 \item[\emph{\textless memory name\textgreater}\texttt{\_raddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
   Memory address for read accesses to dual ported RAMs.
@@ -169,11 +169,23 @@ Memories are connected through the following interface:
 \item[\emph{\textless memory name\textgreater}\texttt{\_waddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
   Memory address for write accesses to dual ported RAMs.
   
+\item[\emph{\textless memory name\textgreater}\texttt{\_access\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
+  Access request for single ported RAMs.
+  
+\item[\emph{\textless memory name\textgreater}\texttt{\_rwb\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
+  Data direction selector for single ported RAMs. (high for read, low fro write)
+  
 \item[\emph{\textless memory name\textgreater}\texttt{\_write\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Write request.
+  Write request for dual ported RAMs.
   
 \item[\emph{\textless memory name\textgreater}\texttt{\_read\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Read request.
+  Read request dual ported RAMs.
+
+\item[\emph{\textless memory name\textgreater}\texttt{\_access\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
+  Busy indicator. \\
+  A request is valid if
+  \emph{\textless memory name\textgreater}\texttt{\_access\_i} is asserted while \\
+  \emph{\textless memory name\textgreater}\texttt{\_access\_bsy\_o} is deasserted.
 
 \item[\emph{\textless memory name\textgreater}\texttt{\_write\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
   Busy indicator. \\
