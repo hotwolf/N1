@@ -34,8 +34,8 @@ module N1_spram
 
     //RAM interface
     input  wire [ADDR_WIDTH-1:0]            spram_addr_i,                                         //address
-    input  wire                             spram_write_i,                                        //write request
-    input  wire                             spram_read_i,                                         //read request
+    input  wire                             spram_access_i,                                       //access request
+    input  wire                             spram_rwb_i,                                          //data direction
     input  wire [15:0]                      spram_wdata_i,                                        //write data
     output reg  [15:0]                      spram_rdata_o);                                       //read data
 
@@ -43,9 +43,9 @@ module N1_spram
    //------
    reg [15:0] mem [0:(2**ADDR_WIDTH)-1];
    always @(posedge clk_i) begin
-      if (  spram_write_i & ~spram_read_i)  mem[spram_addr_i] <= spram_wdata_i;                   //write access
-      if ( ~spram_write_i &  spram_read_i)  spram_rdata_o <= mem[spram_addr_i];                   //read access
-      if (~(spram_write_i ^  spram_read_i)) spram_rdata_o <= 16'hcafe;                            //undefined read data
+      if ( spram_access_i & ~spram_rwb_i)  mem[spram_addr_i] <= spram_wdata_i;                    //write access
+      if (~spram_access_i &  spram_rwb_i)  spram_rdata_o     <= mem[spram_addr_i];                //read access
+      else                                 spram_rdata_o     <= 16'hcafe;                         //undefined read data
    end
           
 endmodule // N1_spram

@@ -35,10 +35,10 @@ module N1_spram
 
     //RAM interface
     input  wire [ADDR_WIDTH-1:0]            spram_addr_i,                                            //address
-    input  wire                             spram_write_i,                                           //write request
-    input  wire                             spram_read_i,                                            //read request
+    input  wire                             spram_access_i,                                          //access request
+    input  wire                             spram_rwb_i,                                             //data direction
     input  wire [15:0]                      spram_wdata_i,                                           //write data
-    output wire  [15:0]                      spram_rdata_o);                                          //read data
+    output wire  [15:0]                     spram_rdata_o);                                          //read data
 
    //Determine the required number if SB_SPRAM256KA instances
    localparam MEM_CNT   = (ADDR_WIDTH > 14) ? 2**(ADDR_WIDTH-14) : 1;                                 //number of instantiated memory blocks
@@ -58,8 +58,8 @@ module N1_spram
    //Select addressed memory
    localparam ADDR_SELHI = (ADDR_WIDTH > 14) ? ADDR_WIDTH-1 : 0;                                     //memory select index in address
    localparam ADDR_SELLO = (ADDR_WIDTH > 14) ? 14           : 0;                                     //memory select index in address
-   assign cs = (ADDR_WIDTH > 14) ? {{MEM_CNT-1{1'b0}},(spram_write_i | spram_read_i)} << spram_addr_i[ADDR_SELHI:ADDR_SELLO] :
-                                    {MEM_CNT{spram_write_i | spram_read_i}};
+   assign cs = (ADDR_WIDTH > 14) ? {{MEM_CNT-1{1'b0}},spram_access_i} << spram_addr_i[ADDR_SELHI:ADDR_SELLO] :
+                                    {MEM_CNT{spram_access_i}};
 
    //Multiplex read data
    assign rdata_shifted = (ADDR_WIDTH > 14) ? rdata >>  16 * spram_addr_i[ADDR_SELHI:ADDR_SELLO] :
@@ -68,16 +68,16 @@ module N1_spram
 
    //Memory instances
    SB_SPRAM256KA mem[MEM_CNT-1:0]
-     (.ADDRESS           (addr),           //address
-      .DATAIN            (spram_wdata_i),  //write data
-      .MASKWREN          (4'hf),           //nibble write mask
-      .WREN              (spram_write_i),  //write enable
-      .CHIPSELECT        (cs),             //memory select
-      .CLOCK             (clk_i),          //clock
-      .STANDBY           (1'b0),           //standby mode
-      .SLEEP             (1'b0),           //sleep mode
-      .POWEROFF          (1'b1),           //power off
-      .DATAOUT           (rdata));         //read data
+     (.ADDRESS           (addr),                           //address
+      .DATAIN            (spram_wdata_i),                  //write data
+      .MASKWREN          (4'hf),                           //nibble write mask
+      .WREN              (spram_access_i & ~spram_rwb_i),  //write enable
+      .CHIPSELECT        (cs),                             //memory select
+      .CLOCK             (clk_i),                          //clock
+      .STANDBY           (1'b0),                           //standby mode
+      .SLEEP             (1'b0),                           //sleep mode
+      .POWEROFF          (1'b1),                           //power off
+      .DATAOUT           (rdata));                         //read data
 
 endmodule // N1_spram
 

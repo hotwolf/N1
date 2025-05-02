@@ -23,190 +23,179 @@
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
-//#   April 25, 2025                                                          #
+//#   April 25, 2025                                                            #
 //#      - Initial release                                                      #
 //###############################################################################
 `default_nettype none
 
 module N1_lprs
-  #(parameter ARRD_WIDTH =  8)                                                                    //RAM address width
-   (//Clock and reset
-    input  wire                            clk_i,                                                //module clock
-    input  wire                            async_rst_i,                                          //asynchronous reset
-    input  wire                            sync_rst_i,                                           //synchronous reset
+  #(parameter ADDR_WIDTH = 14)                                                        //RAM address width
+   (//Clock and reset                                                                 
+    input  wire                              clk_i,                                   //module clock
+    input  wire                              async_rst_i,                             //asynchronous reset
+    input  wire                              sync_rst_i,                              //synchronous reset
 
     //Parameter stack interface
-    input  wire                            us2ls_ps_clr_i,                                       //clear PS
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //Soft reset
-    //Soft reset
-    //Soft reset
-    //Soft reset
-    //Soft reset
-    input  wire                            us2ls_ps_clr_i,                                       //clear PS
-    input  wire                            us2ls_rs_clr_i,                                       //clear RS
-
-    //Interface to the immediate stack
-    input  wire [15:0]                     ips2ls_push_data_i,                                   //parameter stack push data
-    input  wire [15:0]                     irs2ls_push_data_i,                                   //return stack push data
-    input  wire                            ips2ls_push_i,                                        //parameter stack push request
-    input  wire                            irs2ls_push_i,                                        //return stack push request
-    input  wire                            ips2ls_pull_i,                                        //parameter stack pull request
-    input  wire                            irs2ls_pull_i,                                        //return stack pull request
-    output wire [15:0]                     ls2ips_pull_data_del_o,                               //parameter stack delayed pull data (available one cycle after the pull request)
-    output wire [15:0]                     ls2irs_pull_data_del_o,                               //return stack delayed pull data (available one cycle after the pull request)
-    output wire                            ls2ips_push_bsy_o,                                    //parameter stack push busy indicator
-    output wire                            ls2irs_push_bsy_o,                                    //return stack push busy indicator
-    output wire                            ls2ips_pull_bsy_o,                                    //parameter stack pull busy indicator
-    output wire                            ls2irs_pull_bsy_o,                                    //return stack pull busy indicator
-    output wire                            ls2ips_empty_o,                                       //parameter stack empty indicator
-    output wire                            ls2irs_empty_o,                                       //return stack empty indicator
-    output wire                            ls2ips_full_o,                                        //parameter stack full indicator
-    output wire                            ls2irs_full_o,                                        //return stack full indicator
-
-    //RAM interface
-    input  wire [15:0]                     ram2ls_rdata_i,                                       //read data
-    output wire [LS_AWIDTH-1:0]            ls2ram_raddr_o,                                       //read address
-    output wire [LS_AWIDTH-1:0]            ls2ram_waddr_o,                                       //write address
-    output wire [15:0]                     ls2ram_wdata_o,                                       //write data
-    output wire                            ls2ram_re_o,                                          //read enable
-    output wire                            ls2ram_we_o,                                          //write enable
+    input  wire                              lps_clear_i,                             //clear request
+    input  wire                              lps_push_i,                              //push request
+    input  wire                              lps_pull_i,                              //pull request
+    input  wire [15:0]                       lps_push_data_i,                         //push request
+    output wire                              lps_clear_bsy_o,                         //clear request rejected
+    output wire                              lps_push_bsy_o,                          //push request rejected
+    output wire                              lps_pull_bsy_o,                          //pull request rejected
+    output wire                              lps_full_o,                              //overflow indicator
+    output wire                              lps_empty_o,                             //underflow indicator
+    output wire [15:0]                       lps_pull_data_o,                         //pull data
+                                             
+    //Parameter stack interface              
+    input  wire                              lrs_clear_i,                             //clear request
+    input  wire                              lrs_push_i,                              //push request
+    input  wire                              lrs_pull_i,                              //pull request
+    input  wire [15:0]                       lrs_push_data_i,                         //push request
+    output wire                              lrs_clear_bsy_o,                         //clear request rejected
+    output wire                              lrs_push_bsy_o,                          //push request rejected
+    output wire                              lrs_pull_bsy_o,                          //pull request rejected
+    output wire                              lrs_full_o,                              //overflow indicator
+    output wire                              lrs_empty_o,                             //underflow indicator
+    output wire [15:0]                       lrs_pull_data_o,                         //pull data
 
     //Probe signals
-    output wire [LS_AWIDTH-1:0]            prb_lps_addr_o,                                       //parameter stack address probe
-    output wire [LS_AWIDTH-1:0]            prb_lrs_addr_o);                                      //return stack address probe
+    output wire [(2*ADDR_WIDTH)+1:0]         prb_lprs_o);                             //Probe signals
 
    //Internal signals
    //----------------
-   //Parameter stack
-   wire [LS_AWIDTH-1:0]                    ps_addr;                                              //parameter stack addess
-   wire [LS_AWIDTH-1:0]                    ps_inc_addr;                                          //incremented parameter stack addess
-   wire [LS_AWIDTH-1:0]                    ps_dec_addr;                                          //decremented parameter stack addess
-   wire                                    ps_full;                                              //parameter stack full indicator
-   wire                                    ps_empty;                                             //parameter stack empty dicator
+   //LPS
+   wire                                      lpsmem_access_bsy;                       //access request rejected
+   wire [15:0]                               lpsmem_rdata;                            //read data
+   wire [ADDR_WIDTH-1:0]                     lpsmem_addr;                             //address
+   wire                                      lpsmem_access;                           //access request
+   wire                                      lpsmem_rwb;                              //data direction
+   wire [15:0]                               lpsmem_wdata;                            //write data
+   wire [ADDR_WIDTH-1:0]                     lps_tos;                                 //points to the TOS
+   wire [ADDR_WIDTH:0]                       prb_lps;                                 //probe signals
 
-   //Return stack
-   wire [LS_AWIDTH-1:0]                    rs_addr;                                              //return stack addess
-   wire [LS_AWIDTH-1:0]                    rs_inc_addr;                                          //incremented return stack addess
-   wire [LS_AWIDTH-1:0]                    rs_dec_addr;                                          //decremented return stack addess
-   wire                                    rs_full;                                              //return stack full indicator
-   wire                                    rs_empty;                                             //return stack empty dicator
+   //LRS
+   wire                                      lrsmem_access_bsy;                       //access request rejected
+   wire [15:0]                               lrsmem_rdata;                            //read data
+   wire [ADDR_WIDTH-1:0]                     lrsmem_addr;                             //address
+   wire                                      lrsmem_access;                           //access request
+   wire                                      lrsmem_rwb;                              //data direction
+   wire [15:0]                               lrsmem_wdata;                            //write data
+   wire [ADDR_WIDTH-1:0]                     lrs_tos;                                 //points to the TOS
+   wire [ADDR_WIDTH:0]                       prb_lrs;                                 //probe signals
+    
+   //Memory
+   wire [ADDR_WIDTH-1:0]                     spram_addr;                              //address
+   wire                                      spram_access;                            //access request
+   wire                                      spram_rwb;                               //data direction
+   wire [15:0]                               spram_wdata;                             //write data
+   wire [15:0]                               spram_rdata;                             //read data
+    
+   //LPS controller
+   //--------------
+   N1_ls
+    #(.ADDR_WIDTH      (ADDR_WIDTH),                                                  //address width of the memory
+      .STACK_DIRECTION (0))                                                           //1:grow stack upward, 0:grow stack downward
+   lps
+    (//Clock and reset
+     .clk_i                                 (clk_i),                                  //module clock
+     .async_rst_i                           (async_rst_i),                            //asynchronous reset
+     .sync_rst_i                            (sync_rst_i),                             //synchronous reset
+     //Stack interface                      
+     .ls_clear_i                            (lps_clear_i),                            //clear request
+     .ls_push_i                             (lps_push_i),                             //push request
+     .ls_pull_i                             (lps_pull_i),                             //pull request
+     .ls_push_data_i                        (lps_push_data_i),                        //push request
+     .ls_clear_bsy_o                        (lps_clear_bsy_o),                        //clear request rejected
+     .ls_push_bsy_o                         (lps_push_bsy_o),                         //push request rejected
+     .ls_pull_bsy_o                         (lps_pull_bsy_o),                         //pull request rejected
+     .ls_full_o                             (lps_full_o),                             //overflow indicator
+     .ls_empty_o                            (lps_empty_o),                            //underflow indicator
+     .ls_pull_data_o                        (lps_pull_data_o),                        //pull data
+     //Memory interface                     
+     .mem_access_bsy_i                      (lpsmem_access_bsy),                      //access request rejected
+     .mem_rdata_i                           (lpsmem_rdata),                           //read data
+     .mem_addr_o                            (lpsmem_addr),                            //address
+     .mem_access_o                          (lpsmem_access),                          //access request
+     .mem_rwb_o                             (lpsmem_rwb),                             //data direction
+     .mem_wdata_o                           (lpsmem_wdata),                           //write data
+     //Dynamic stack ranges                 
+     .ls_tos_limit_i                        (lrs_tos),                                //address, which the LS must not reach
+     .ls_tos_o                              (lps_tos),                                //points to the TOS
+     //Probe signals                        
+     .prb_ls_o                              (prb_lps));                               //FSM state
+        
+   //LRS controller
+   //--------------
+   N1_ls
+    #(.ADDR_WIDTH      (ADDR_WIDTH),                                                  //address width of the memory
+      .STACK_DIRECTION (0))                                                           //1:grow stack upward, 0:grow stack downward
+   lrs
+    (//Clock and reset
+     .clk_i                                 (clk_i),                                  //module clock
+     .async_rst_i                           (async_rst_i),                            //asynchronous reset
+     .sync_rst_i                            (sync_rst_i),                             //synchronous reset
+     //Stack interface                      
+     .ls_clear_i                            (lrs_clear_i),                            //clear request
+     .ls_push_i                             (lrs_push_i),                             //push request
+     .ls_pull_i                             (lrs_pull_i),                             //pull request
+     .ls_push_data_i                        (lrs_push_data_i),                        //push request
+     .ls_clear_bsy_o                        (lrs_clear_bsy_o),                        //clear request rejected
+     .ls_push_bsy_o                         (lrs_push_bsy_o),                         //push request rejected
+     .ls_pull_bsy_o                         (lrs_pull_bsy_o),                         //pull request rejected
+     .ls_full_o                             (lrs_full_o),                             //overflow indicator
+     .ls_empty_o                            (lrs_empty_o),                            //underflow indicator
+     .ls_pull_data_o                        (lrs_pull_data_o),                        //pull data
+     //Memory interface                     
+     .mem_access_bsy_i                      (lrsmem_access_bsy),                      //access request rejected
+     .mem_rdata_i                           (lrsmem_rdata),                           //read data
+     .mem_addr_o                            (lrsmem_addr),                            //address
+     .mem_access_o                          (lrsmem_access),                          //access request
+     .mem_rwb_o                             (lrsmem_rwb),                             //data direction
+     .mem_wdata_o                           (lrsmem_wdata),                           //write data
+     //Dynamic stack ranges                 
+     .ls_tos_limit_i                        (lps_tos),                                //address, which the LS must not reach
+     .ls_tos_o                              (lrs_tos),                                //points to the TOS
+     //Probe signals                        
+     .prb_ls_o                              (prb_lrs));                               //FSM state
+        
+   //Arbiter
+   //-------
+   assign  spram_addr        = lpsmem_access ? lpsmem_addr  : lrsmem_addr;
+   assign  spram_access      = lpsmem_access | lrsmem_access;
+   assign  spram_rwb         = lpsmem_access ? lpsmem_rwb   : lrsmem_rwb;
+   assign  spram_wdata       = lpsmem_access ? lpsmem_wdata : lrsmem_wdata;
 
-   //Parameter stack (grows with LSFR increment starting  at 1)
-   //----------------------------------------------------------
-   assign  ls2ips_full_o      = ps_full;                                                         //parameter stack overflow (=return stack overflow)
-   assign  ls2ips_push_bsy_o  = ps_full;                                                         //parameter stack push busy indicator
-   assign  ls2ips_pull_bsy_o  = ps_empty;                                                        //parameter stack pull busy indicator
-   assign  ls2ips_empty_o     = ps_empty;                                                        //parameter stack empty indicator
-
-   //AGU (LFSR)
-   N1_lsfr
-     #(.WIDTH                 (8),                                                               //address width
-       .INCLUDE_0             (1),                                                               //cycle through 0
-       .RST_VAL               (8'h01),                                                           //reset value
-       .USE_UPPER_LIMIT       (1),                                                               //enable upper limit
-       .USE_LOWER_LIMIT       (1))                                                               //enable lower limit
-   N1_ls_ps_agu
-      (//Clock and reset
-       .clk_i                 (clk_i),                                                           //module clock
-       .async_rst_i           (async_rst_i),                                                     //asynchronous reset
-       .sync_rst_i            (sync_rst_i),                                                      //synchronous reset
-       //LFSR status
-       .lfsr_val_o            (ps_addr),                                                         //parameter stack addess (points to the next free space)
-       .lfsr_inc_val_o        (ps_inc_addr),                                                     //incremented parameter stack addess
-       .lfsr_dec_val_o        (ps_dec_addr),                                                     //decremented parameter stack addess
-       .lfsr_at_upper_limit_o (ps_full),                                                         //parameter stack address is at upper limit
-       .lfsr_at_lower_limit_o (ps_empty),                                                        //parameter stack address is at lower limit
-       //LFSR control
-       .lfsr_soft_rst_i       (us2ls_ps_clr_i),                                                  //clear PS
-       .lfsr_inc_i            (ips2ls_push_i),                                                   //increment parameter stack address
-       .lfsr_dec_i            (ips2ls_pull_i),                                                   //decrement parameter stack address
-       //LFSR limits
-       .lfsr_upper_limit_i    (rs_dec_addr),                                                     //upper limit
-       .lfsr_lower_limit_i    (8'h01));                                                          //lower limit
-
-   //Return stack (grows with LSFR decrement starting  at 0)
-   //-------------------------------------------------------
-   assign  ls2irs_full_o      = ps_full;                                                         //return stack overflow (=parameter stack overflow)
- //assign  ls2irs_full_o      = rs_full;                                                         //return stack overflow (=parameter stack overflow)
-   assign  ls2irs_push_bsy_o  = ips2ls_push_i | ps_full;                                         //return stack push busy indicator
- //assign  ls2irs_push_bsy_o  = ips2ls_push_i | rs_full;                                         //return stack push busy indicator
-   assign  ls2irs_pull_bsy_o  = ips2ls_pull_i | rs_empty;                                        //return stack pull busy indicator
-   assign  ls2irs_empty_o     = rs_empty;                                                        //return stack empty indicator
-
-   //AGU (LFSR)
-   N1_lsfr
-     #(.WIDTH                 (8),                                                               //address width
-       .INCLUDE_0             (1),                                                               //cycle through 0
-       .RST_VAL               (8'h00),                                                           //reset value
-       .USE_UPPER_LIMIT       (1),                                                               //enable upper limit
-       .USE_LOWER_LIMIT       (1))                                                               //enable lower limit
-   N1_ls_rs_agu
-      (//Clock and reset
-       .clk_i                 (clk_i),                                                           //module clock
-       .async_rst_i           (async_rst_i),                                                     //asynchronous reset
-       .sync_rst_i            (sync_rst_i),                                                      //synchronous reset
-       //LFSR status
-       .lfsr_val_o            (rs_addr),                                                         //return stack addess (points to the next free space)
-       .lfsr_inc_val_o        (rs_inc_addr),                                                     //incremented return stack addess
-       .lfsr_dec_val_o        (rs_dec_addr),                                                     //decremented return stack addess
-       .lfsr_at_upper_limit_o (rs_empty),                                                        //LFSR is at upper limit
-       .lfsr_at_lower_limit_o (rs_full),                                                         //LFSR is at lower limit
-       //LFSR control
-       .lfsr_soft_rst_i       (us2ls_rs_clr_i),                                                  //clear RS
-       .lfsr_inc_i            (irs2ls_pull_i & ~ips2ls_pull_i),                                  //increment LFSR
-       .lfsr_dec_i            (irs2ls_push_i & ~ips2ls_push_i),                                  //decrement LFSR
-       //LFSR limits
-       .lfsr_upper_limit_i    (8'h00),                                                           //upper limit
-       .lfsr_lower_limit_i    (ps_inc_addr));                                                    //lower limit
-
-   //RAM interface
-   //-------------
-   //Read (PS has priority over RS)
-   assign  ls2ram_raddr_o         =  ips2ls_pull_i ? ps_dec_addr : rs_inc_addr;                  //read address
-   assign  ls2ram_re_o            =  ips2ls_pull_i | irs2ls_pull_i;                              //read enable
-   assign  ls2ips_pull_data_del_o =  ram2ls_rdata_i;                                             //parameter stack delayed pull data (available one cycle after the pull request)
-   assign  ls2irs_pull_data_del_o =  ram2ls_rdata_i;                                             //return stack delayed pull data (available one cycle after the pull request)
-
-   //Write (PS has priority over RS)
-   assign  ls2ram_waddr_o         =  ips2ls_push_i ? ps_addr            : rs_addr;               //write address
-   assign  ls2ram_wdata_o         =  ips2ls_push_i ? ips2ls_push_data_i : irs2ls_push_data_i;    //write data
-   assign  ls2ram_we_o            = (ips2ls_push_i | irs2ls_push_i) & ~ps_full;                  //write enable
+   assign  lpsmem_access_bsy = 1'b0;
+   assign  lrsmem_access_bsy = lpsmem_access;
+    
+   assign  lpsmem_rdata      = spram_rdata;
+   assign  lrsmem_rdata      = spram_rdata;
+    
+   //Memory
+   //------
+   N1_spram
+    #(.ADDR_WIDTH      (ADDR_WIDTH))
+   spram
+    (//Clock and reset
+     .clk_i                                 (clk_i),                                  //module clock
+     //RAM interface
+     .spram_addr_i                          (spram_addr),                             //address
+     .spram_access_i                        (spram_access),                           //access request
+     .spram_rwb_i                           (spram_rwb),                              //data direction
+     .spram_wdata_i                         (spram_wdata),                            //write data
+     .spram_rdata_o                         (spram_rdata));                           //read data
 
    //Probe signals
    //-------------
-   assign  prb_lps_addr_o         = ps_addr;                                                     //parameter stack address probe
-   assign  prb_lrs_addr_o         = rs_addr;                                                     //return stack address probe
+   assign  prb_lprs_o   = {prb_lps,  // 2*ADDR_WIDTH + 1 ... ADDR_WIDTH               //concatinated probes
+                           prb_lrs}; //   ADDR_WIDTH     ... 0                                            
 
-   //Assertions
-   //----------
-`ifdef FORMAL
-   //Input checks
-   //------------
-   //Inputs ps_push_i and ps_pull_i must be mutual exclusive
-   assert(&{~ps_push_i, ~ips2ls_pull_i} |
-          &{ ps_push_i, ~ips2ls_pull_i} |
-          &{~ps_push_i,  ips2ls_pull_i});
-
-   //Inputs rs_rst_i, rs_push_i, and rs_pull_i must be mutual exclusive
-   assert(&{~rs_push_i, ~irs2ls_pull_i} |
-          &{ rs_push_i, ~irs2ls_pull_i} |
-          &{~rs_push_i,  irs2ls_pull_i});
-
-`endif //  `ifdef FORMAL
-
-endmodule // N1_ls_dpram
+   //Bit                             instance   Signal 
+   //-------------------------------------------------------------------
+   //2*ADDR_WIDTH+1                  lps        state_reg
+   //2*ADDR_WIDTH ... ADDR_WIDTH+1   lps.agu    lfsr_reg[ADDR_WIDTH-1:0}
+   //ADDR_WIDTH                      lrs        state_reg
+   //ADDR_WIDTH-1 ... 0              lrs.agu    lfsr_reg[ADDR_WIDTH-1:0}
+   
+endmodule // N1_lprs

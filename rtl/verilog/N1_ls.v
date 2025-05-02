@@ -84,14 +84,20 @@ module N1_ls
     output wire [ADDR_WIDTH-1:0]            mem_addr_o,                             //address
     output wire                             mem_access_o,                           //access request
     output wire                             mem_rwb_o,                              //data direction
-    output wire [15:0]                      mem_wdata_0,                            //write data
+    output wire [15:0]                      mem_wdata_o,                            //write data
 
     //Dynamic stack ranges
     input  wire [ADDR_WIDTH-1:0]            ls_tos_limit_i,                         //address, which the LS must not reach
     output wire [ADDR_WIDTH-1:0]            ls_tos_o,                               //points to the TOS
 
     //Probe signals
-    output wire                             prb_ls_state_o);                        //FSM state
+    output wire [ADDR_WIDTH:0]              prb_ls_o);                              //probe signals
+
+   //Internal registers
+   //-----------------
+   //FSM
+   reg                                      state_reg;                              //current state
+
 
    //Local parameters
    //----------------
@@ -126,7 +132,9 @@ module N1_ls
 
    //FSM
    reg                                      state_next;                             //next state
-   reg                                      state_reg;                              //current state
+
+   //Probe signals
+   wire [ADDR_WIDTH-1:0]                    prb_agu;                                //LFSR probes
 
    //LFSR AGU
    assign  agu_restart   =  ls_clear_i                           & ~ls_clear_bsy_o; //soft reset
@@ -165,7 +173,9 @@ module N1_ls
        .lfsr_dec_i     (lfsr_dec),                                                //decrement LFSR
        //LFSR overrun/underrun indicators
        .lfsr_or_o      (),                                                        //overrun at next INC request
-       .lfsr_ur_o      ());                                                       //underrun at next DEC request
+       .lfsr_ur_o      (),                                                        //underrun at next DEC request
+       //Probe signals
+       .prb_lfsr_o     (prb_agu));                                                //LFSR probes
 
    //TOS buffer
    assign  tosbuf_in     = tosbuf_in_sel ? mem_rdata_i : ls_push_data_i;          //input selector (0=push_data_i, 1=mem_rdata_i)
@@ -190,7 +200,7 @@ module N1_ls
    assign  mem_addr_o     = agu_addr_sel ? agu_pull_addr : agu_push_addr;         //address
    assign  mem_access_o   = ls_push_i | ls_pull_i;                                //access request
    assign  mem_rwb_o      = ls_pull_i;                                            //data direction
-   assign  mem_wdata_0    = ls_push_data_i;                                       //write data
+   assign  mem_wdata_o    = ls_push_data_i;                                       //write data
 
    //State encoding
    //--------------
@@ -235,6 +245,13 @@ module N1_ls
 
    //Probe signals
    //-------------
-   assign  prb_ls_state_o     = state_reg;                                       //FSM state
+   assign  prb_ls_o     = {state_reg,  // ADDR_WIDTH                             //concatinated probes
+                           prb_agu};   // ADDR_WIDTH-1 ... 0                                            
+
+   //Bit                  Instance   Signal
+   //--------------------------------------------------------
+   //ADDR_WIDTH                      state_reg
+   //ADDR_WIDTH-1 ... 0   agu        lfsr_reg[ADDR_WIDTH-1:0}
+
 
 endmodule // N1_ls

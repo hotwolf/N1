@@ -52,7 +52,10 @@ module N1_lsfr
 
     //LFSR overrun/underrun indicators
     output  wire                            lfsr_or_o,                                            //overrun at next INC request
-    output  wire                            lfsr_ur_o);                                           //underrun at next DEC request
+    output  wire                            lfsr_ur_o,                                            //underrun at next DEC request
+
+    //Probe signals
+    output wire [WIDTH-1:0]                  prb_lfsr_o);                                         //probe signals
 
    //Internal parameters
    //-------------------
@@ -143,6 +146,10 @@ module N1_lsfr
    assign  lfsr_or_o               = ~|(inc_val ^ START_VAL);                                     //LFSR overrun with next increment
    assign  lfsr_ur_o               = ~|(dec_val ^ START_VAL);                                     //LFSR underrun with next decrement
 
+   //Probe signals
+   //-------------
+   assign  prb_lfsr_o              = lfsr_reg;                                                     //probe signals
+   
 
     //Assertions
     //----------
