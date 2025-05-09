@@ -1,7 +1,7 @@
 //###############################################################################
 //# N1 - Top Level                                                              #
 //###############################################################################
-//#    Copyright 2018 - 2019 Dirk Heisswolf                                     #
+//#    Copyright 2018 - 2025 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
 //#                                                                             #
 //#    N1 is free software: you can redistribute it and/or modify               #
