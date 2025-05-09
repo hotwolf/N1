@@ -74,8 +74,8 @@ module N1_ls
     output wire                             ls_clear_bsy_o,                         //clear request rejected
     output wire                             ls_push_bsy_o,                          //push request rejected
     output wire                             ls_pull_bsy_o,                          //pull request rejected
-    output wire                             ls_full_o,                              //overflow indicator
     output wire                             ls_empty_o,                             //underflow indicator
+    output wire                             ls_full_o,                              //overflow indicator
     output wire [15:0]                      ls_pull_data_o,                         //pull data
 
     //Memory interface
@@ -112,8 +112,8 @@ module N1_ls
    wire                                     agu_addr_sel;                           //address selector (0=agu_push_addr, 1=agu_pull_addr)
    wire [ADDR_WIDTH-1:0]                    agu_push_addr;                          //next free address space
    wire [ADDR_WIDTH-1:0]                    agu_pull_addr;                          //address of 2nd last stack entry
-   wire                                     agu_full;                               //overflow on next push
    wire                                     agu_empty;                              //underflow on next pull
+   wire                                     agu_full;                               //overflow on next push
 
    //LFSR
    wire                                     lfsr_restart;                           //soft reset
@@ -145,8 +145,8 @@ module N1_ls
    assign  agu_push_addr = STACK_DIRECTION ? lfsr_inc_val : lfsr_dec_val;
    assign  agu_pull_addr = lfsr_val;
 
-   assign  agu_full      = ~|(agu_push_addr ^ ls_tos_limit_i);
    assign  agu_empty     = ~|(lfsr_val      ^ START_ADDR);
+   assign  agu_full      = ~|(agu_push_addr ^ ls_tos_limit_i);
 
    assign  lfsr_restart  = agu_restart;
    assign  lfsr_inc      = STACK_DIRECTION ? agu_push : agu_pull;
@@ -248,10 +248,9 @@ module N1_ls
    assign  prb_ls_o     = {state_reg,  // ADDR_WIDTH                             //concatinated probes
                            prb_agu};   // ADDR_WIDTH-1 ... 0                                            
 
-   //Bit                  Instance   Signal
-   //--------------------------------------------------------
-   //ADDR_WIDTH                      state_reg
-   //ADDR_WIDTH-1 ... 0   agu        lfsr_reg[ADDR_WIDTH-1:0}
-
+   // Probe signals
+   //-----------------------------
+   // state_reg
+   // agu.lfsr_reg[ADDR_WIDTH-1:0]
 
 endmodule // N1_ls

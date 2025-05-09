@@ -29,7 +29,9 @@
 `default_nettype none
 
 module N1_lprs
-  #(parameter ADDR_WIDTH = 14)                                                        //RAM address width
+  #(parameter   ADDR_WIDTH  = 14,                                                     //RAM address width
+    localparam  PROBE_WIDTH = (2*ADDR_WIDTH)+2)                                       //width of the concatinated probe output
+
    (//Clock and reset                                                                 
     input  wire                              clk_i,                                   //module clock
     input  wire                              async_rst_i,                             //asynchronous reset
@@ -43,11 +45,11 @@ module N1_lprs
     output wire                              lps_clear_bsy_o,                         //clear request rejected
     output wire                              lps_push_bsy_o,                          //push request rejected
     output wire                              lps_pull_bsy_o,                          //pull request rejected
-    output wire                              lps_full_o,                              //overflow indicator
     output wire                              lps_empty_o,                             //underflow indicator
+    output wire                              lps_full_o,                              //overflow indicator
     output wire [15:0]                       lps_pull_data_o,                         //pull data
                                              
-    //Parameter stack interface              
+    //Return stack interface              
     input  wire                              lrs_clear_i,                             //clear request
     input  wire                              lrs_push_i,                              //push request
     input  wire                              lrs_pull_i,                              //pull request
@@ -55,12 +57,12 @@ module N1_lprs
     output wire                              lrs_clear_bsy_o,                         //clear request rejected
     output wire                              lrs_push_bsy_o,                          //push request rejected
     output wire                              lrs_pull_bsy_o,                          //pull request rejected
-    output wire                              lrs_full_o,                              //overflow indicator
     output wire                              lrs_empty_o,                             //underflow indicator
+    output wire                              lrs_full_o,                              //overflow indicator
     output wire [15:0]                       lrs_pull_data_o,                         //pull data
 
     //Probe signals
-    output wire [(2*ADDR_WIDTH)+1:0]         prb_lprs_o);                             //Probe signals
+    output wire [PROBE_WIDTH-1:0]            prb_lprs_o);                             //Probe signals
 
    //Internal signals
    //----------------
@@ -109,8 +111,8 @@ module N1_lprs
      .ls_clear_bsy_o                        (lps_clear_bsy_o),                        //clear request rejected
      .ls_push_bsy_o                         (lps_push_bsy_o),                         //push request rejected
      .ls_pull_bsy_o                         (lps_pull_bsy_o),                         //pull request rejected
-     .ls_full_o                             (lps_full_o),                             //overflow indicator
      .ls_empty_o                            (lps_empty_o),                            //underflow indicator
+     .ls_full_o                             (lps_full_o),                             //overflow indicator
      .ls_pull_data_o                        (lps_pull_data_o),                        //pull data
      //Memory interface                     
      .mem_access_bsy_i                      (lpsmem_access_bsy),                      //access request rejected
@@ -143,8 +145,8 @@ module N1_lprs
      .ls_clear_bsy_o                        (lrs_clear_bsy_o),                        //clear request rejected
      .ls_push_bsy_o                         (lrs_push_bsy_o),                         //push request rejected
      .ls_pull_bsy_o                         (lrs_pull_bsy_o),                         //pull request rejected
-     .ls_full_o                             (lrs_full_o),                             //overflow indicator
      .ls_empty_o                            (lrs_empty_o),                            //underflow indicator
+     .ls_full_o                             (lrs_full_o),                             //overflow indicator
      .ls_pull_data_o                        (lrs_pull_data_o),                        //pull data
      //Memory interface                     
      .mem_access_bsy_i                      (lrsmem_access_bsy),                      //access request rejected
@@ -191,11 +193,11 @@ module N1_lprs
    assign  prb_lprs_o   = {prb_lps,  // 2*ADDR_WIDTH + 1 ... ADDR_WIDTH               //concatinated probes
                            prb_lrs}; //   ADDR_WIDTH     ... 0                                            
 
-   //Bit                             instance   Signal 
-   //-------------------------------------------------------------------
-   //2*ADDR_WIDTH+1                  lps        state_reg
-   //2*ADDR_WIDTH ... ADDR_WIDTH+1   lps.agu    lfsr_reg[ADDR_WIDTH-1:0}
-   //ADDR_WIDTH                      lrs        state_reg
-   //ADDR_WIDTH-1 ... 0              lrs.agu    lfsr_reg[ADDR_WIDTH-1:0}
+   // Probe signals
+   //---------------------------------
+   // lps.state_reg
+   // lps.agu.lfsr_reg[ADDR_WIDTH-1:0]
+   // lrs.state_reg
+   // lrs.agu.lfsr_reg[ADDR_WIDTH-1:0]
    
 endmodule // N1_lprs

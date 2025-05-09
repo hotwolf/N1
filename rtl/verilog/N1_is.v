@@ -43,9 +43,9 @@
 
 module N1_is
   #(parameter  DEPTH       = 8,                                                                   //depth of the IS
-    localparam STACK_WIDTH = (DEPTH == 0) ? 16 : 16*DEPTH,
-    localparam TAG_WIDTH   = (DEPTH == 0) ?  1 : DEPTH,
-    localparam PROBE_WIDTH = (DEPTH == 0) ?  1 : 17*DEPTH)
+    localparam STACK_WIDTH = (DEPTH == 0) ? 16 : 16*DEPTH,                                        //for IS bypass
+    localparam TAG_WIDTH   = (DEPTH == 0) ?  1 : DEPTH,                                           //for IS bypass
+    localparam PROBE_WIDTH = (DEPTH == 0) ?  1 : 17*DEPTH)                                        //width of the concatinated probe output
 
    (//Clock and reset
     input  wire                             clk_i,                                                //module clock
@@ -79,8 +79,8 @@ module N1_is
     //Probe signals
     output wire [PROBE_WIDTH-1:0]           prb_is_o);                                            //probe signals
 
-   //Internal registers
-   //------------------
+   //Registers
+   //---------
    //Stack
    reg  [STACK_WIDTH-1:0]                   is_cells_reg;                                         //current IS
    reg  [TAG_WIDTH-1:0]                     is_tags_reg;                                          //current IS
@@ -150,11 +150,10 @@ module N1_is
                         is_cells_reg};   // 16*DEPTH-1 ... 0
    assign prb_is_o = (DEPTH == 0) ? {PROBE_WIDTH{1'b0}} : prb_concat[PROBE_WIDTH-1:0];            //probe outputs
 
-   //Bit                       Instance   Signal
-   //--------------------------------------------------------
-   //17*DEPTH-1 ... 16*DEPTH              is_tags_reg
-   //16*DEPTH-1 ... 0                     is_cells_reg
-
+   // Probe signals
+   //---------------------------
+   // is_tags_reg[DEPTH-1:0]
+   // is_cells_reg[16*DEPTH-1:0]
 
    //Assertions
    //----------
