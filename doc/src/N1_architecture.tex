@@ -77,21 +77,6 @@ The request is expected to be immediately accepted by the receiver and processed
 unless the receiver provides a busy indicator (\dots\texttt{\_bsy}).
 In this case the request in only accepted if the busy indicator was deasserted in the cycle, in which the request is made.
 
-\subsubsection{Instruction Boundaries}
-\label{architecture:principles:ibounds}
-
-The \hyperref[architecture:comp:ir]{instruction register} always contains the instruction which is currently in execution.
-Before the execution of an instruction can ce concluded and the next one can begin, the fillowing conditions must be fulfilled:
-\begin{itemize}
-
-\item   
-The program bus must be available - TBD
-  
-\item   
-The parameter and the return stack must be available - TBD
-  
-\end{itemize}
-
 \subsection{Common Internal Interfaces}
 \label{architecture:interfaces}
 
@@ -154,6 +139,8 @@ All stacks are controlled using the following interface:
 
 \end{description}
 
+The stack interface is also used for FIFOs.
+
 \subsubsection{Memory Interface}
 \label{architecture:interfaces:memory}
 
@@ -161,43 +148,19 @@ Memories are connected through the following interface:
 \begin{description}[style=nextline]
 
 \item[\emph{\textless memory name\textgreater}\texttt{\_addr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
-  Memory address for single ported RAMs.
-  
-\item[\emph{\textless memory name\textgreater}\texttt{\_raddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
-  Memory address for read accesses to dual ported RAMs.
-  
-\item[\emph{\textless memory name\textgreater}\texttt{\_waddr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ memory)}]
-  Memory address for write accesses to dual ported RAMs.
-  
+  Memory address.
+
 \item[\emph{\textless memory name\textgreater}\texttt{\_access\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Access request for single ported RAMs.
+  Access request.
   
 \item[\emph{\textless memory name\textgreater}\texttt{\_rwb\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Data direction selector for single ported RAMs. (high for read, low fro write)
+  Data direction selector (high for read, low fro write).
   
-\item[\emph{\textless memory name\textgreater}\texttt{\_write\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Write request for dual ported RAMs.
-  
-\item[\emph{\textless memory name\textgreater}\texttt{\_read\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ memory)}]
-  Read request dual ported RAMs.
-
 \item[\emph{\textless memory name\textgreater}\texttt{\_access\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
   Busy indicator. \\
   A request is valid if
   \emph{\textless memory name\textgreater}\texttt{\_access\_i} is asserted while \\
   \emph{\textless memory name\textgreater}\texttt{\_access\_bsy\_o} is deasserted.
-
-\item[\emph{\textless memory name\textgreater}\texttt{\_write\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
-  Busy indicator. \\
-  A write request is valid if
-  \emph{\textless memory name\textgreater}\texttt{\_write\_i} is asserted while \\
-  \emph{\textless memory name\textgreater}\texttt{\_write\_bsy\_o} is deasserted.
-
-\item[\emph{\textless memory name\textgreater}\texttt{\_read\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ memory)}]
-  Busy indicator. \\
-  A read request is valid if
-  \emph{\textless memory name\textgreater}\texttt{\_read\_i} is asserted while \\
-  \emph{\textless memory name\textgreater}\texttt{\_read\_bsy\_o} is deasserted.
   
 \item[\emph{\textless memory name\textgreater}\texttt{\_wdata\_o}/\texttt{\_i[15:0]} {\scriptsize (controller $\rightarrow$ memory)}]
   Write data. \\
@@ -205,9 +168,28 @@ Memories are connected through the following interface:
   
 \item[\emph{\textless memory name\textgreater}\texttt{\_rdata\_i}/\texttt{\_o[15:0]} {\scriptsize (controller $\leftarrow$ memory)}]
   Read data. \\
-  Read data must be captured one clock cyle after a valid request has been captured.
+  Read data must be captured one clock cyle after a valid request has been captured, unless a delay is indicated. 
+
+\item[\emph{\textless memory name\textgreater}\texttt{\_rdata\_del\_o}/\texttt{\_i[15:0]} {\scriptsize (controller $\rightarrow$ memory)}]
+  Read data delay indicator. \\
+  If asserted, this signalwill postpone expected read data by one clock cycle..
 
 \end{description}
+
+\subsubsection{Instruction Boundaries}
+\label{architecture:principles:ibounds}
+
+The \hyperref[architecture:comp:ir]{instruction register} always contains the instruction which is currently in execution.
+Before the execution of an instruction can ce concluded and the next one can begin, the fillowing conditions must be fulfilled:
+\begin{itemize}
+
+\item   
+The program bus must be available - TBD
+  
+\item   
+The parameter and the return stack must be available - TBD
+  
+\end{itemize}
 
 \subsection{Instruction Execution Cycle}
 \label{architecture:excyc}
