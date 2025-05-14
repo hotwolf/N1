@@ -81,6 +81,7 @@ module N1_ls
     //Memory interface
     input  wire                             mem_access_bsy_i,                       //access request rejected
     input  wire [15:0]                      mem_rdata_i,                            //read data
+    input  wire                             mem_rdata_del_i,                        //read data delay
     output wire [ADDR_WIDTH-1:0]            mem_addr_o,                             //address
     output wire                             mem_access_o,                           //access request
     output wire                             mem_rwb_o,                              //data direction
@@ -118,17 +119,20 @@ module N1_ls
    //LFSR
    wire                                     lfsr_restart;                           //soft reset
    wire                                     lfsr_inc;                               //increment LFSR
-   wire                                     lfsr_dec;                               //decrement LFSR 
+   wire                                     lfsr_dec;                               //decrement LFSR
    wire [ADDR_WIDTH-1:0]                    lfsr_val;                               //LFSR value
    wire [ADDR_WIDTH-1:0]                    lfsr_inc_val;                           //incremented LFSR value
    wire [ADDR_WIDTH-1:0]                    lfsr_dec_val;                           //decremented LFSR value
 
-  //TOS buffer
+   //TOS buffer
    reg                                      tosbuf_bypass;                          //bypass TOS buffer
    reg                                      tosbuf_in_sel;                          //input selector (0=push_data_i, 1=mem_rdata_i)
    reg                                      tosbuf_capture;                         //capture data
    wire [15:0]                              tosbuf_in;                              //TOS buffer input
    reg  [15:0]                              tosbuf_reg;                             //TOS buffer
+
+   //Memory status
+   reg                                      mem_bsy;                                //waiting for read data
 
    //FSM
    reg                                      state_next;                             //next state
@@ -190,8 +194,8 @@ module N1_ls
 
    //Stack interface
    assign  ls_clear_bsy_o = 1'b0;                                                 //clear request rejected
-   assign  ls_push_bsy_o  = mem_access_bsy_i;                                     //push request rejected
-   assign  ls_pull_bsy_o  = mem_access_bsy_i;                                     //pull request rejected
+   assign  ls_push_bsy_o  = mem_access_bsy_i | mem_bsy;                           //push request rejected
+   assign  ls_pull_bsy_o  = mem_access_bsy_i | mem_bsy;                           //pull request rejected
    assign  ls_full_o      = agu_full;                                             //overflow indicator
    assign  ls_empty_o     = agu_empty;                                            //underflow indicator
    assign  ls_pull_data_o = tosbuf_bypass ? mem_rdata_i : tosbuf_reg;             //pull data
@@ -215,6 +219,7 @@ module N1_ls
        tosbuf_bypass   = 1'b0;                                                   //don't bypass TOS buffer
        tosbuf_in_sel   = 1'b0;                                                   //input selector (0=push_data_i, 1=mem_rdata_i)
        tosbuf_capture  = agu_push | agu_pull;                                    //capture data
+       mem_bsy         = 1'b0;                                                   //not stalled by read data_del
        state_next      = agu_pull ? STATE_RDATA : STATE_NO_RDATA;                //next state
 
        //States
@@ -229,8 +234,17 @@ module N1_ls
            begin
               tosbuf_bypass   = 1'b1;                                            //bypass TOS buffer
               tosbuf_in_sel   = ~ls_push_i;                                      //input selector (0=push_data_i, 1=mem_rdata_i)
-              tosbuf_capture  = 1'b1;                                            //capture data
-            end
+
+              if (mem_rdata_del_i)
+                begin
+                   mem_bsy         = 1'b0;                                       //not stalled by read data_del
+                   state_next      = STATE_RDATA;                                //next state
+                end
+              else
+                begin
+                   tosbuf_capture  = 1'b1;                                       //capture data
+                end
+           end // case: STATE_RDATA
 
         endcase // case (lps_state_reg)
      end // always @ *
@@ -246,7 +260,7 @@ module N1_ls
    //Probe signals
    //-------------
    assign  prb_ls_o     = {state_reg,  // ADDR_WIDTH                             //concatinated probes
-                           prb_agu};   // ADDR_WIDTH-1 ... 0                                            
+                           prb_agu};   // ADDR_WIDTH-1 ... 0
 
    // Probe signals
    //-----------------------------
