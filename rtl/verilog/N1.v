@@ -101,56 +101,77 @@
 //#   May 8, 2019                                                               #
 //#      - Added RTY_I support to PBUS                                          #
 //#      - Updated overflow monitoring                                          #
+//#   May 15, 2025                                                              #
+//#      - New implementation                                                   #
 //###############################################################################
 `default_nettype none
 
+// Supported N1 variants:
+//-------------------------------------------------------------------------------
+// DEFAULT       - Standard configuration foe evaluation and software development
+//-------------------------------------------------------------------------------
+// iCE40UP5K_1C  - Single core configuration for ICE40 targets
+//-------------------------------------------------------------------------------
 module N1
-  #(parameter SP_WIDTH         = 12,                                 //width of a stack pointer
-    parameter IPS_DEPTH        =  8,                                 //depth of the intermediate parameter stack
-    parameter IPS_BYPASS       =  0,                                 //conncet the LS directly to the US
-    parameter IRS_DEPTH        =  8,                                 //depth of the intermediate return stack
-    parameter IRS_BYPASS       =  0,                                 //conncet the LS directly to the US
-    parameter PBUS_AADR_OFFSET = 16'h0000,                           //offset for direct program address
-    parameter PBUS_MADR_OFFSET = 16'h0000)                           //offset for direct data address
-
+  #(parameter  VARIANT          = "DEFAULT"                            //machne configuration
+    localparam ROT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //ROT extension
+                                                                   1,
+    localparam INT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //interrupt extension
+                                                                   1,
+    localparam KEY_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //KEY/EMIT extension
+                                                                   1,
+    localparam START_ADDR       = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : //reset and interrupt start address
+                                                            16'h0000,
+    localparam DIR_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : //offset for direct program address
+                                                            16'h0000,
+    localparam DIR_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : //offset for direct data address
+                                                            16'h00ff,   
+    localparam IPS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : //depth of the intermediate parameter stack
+                                                                   4,
+    localparam IRS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : //depth of the intermediate return stack
+                                                                   4,
+    localparam SP_ADDR_WIDTH    = VARIANT=="iCE40UP5K_1C" ?       14 : //address width of stack bus
+                                                                  14)
    (//Clock and reset
-    input  wire                              clk_i,                  //module clock
-    input  wire                              async_rst_i,            //asynchronous reset
-    input  wire                              sync_rst_i,             //synchronous reset
+    input  wire                              clk_i,                   //module clock
+    input  wire                              async_rst_i,             //asynchronous reset
+    input  wire                              sync_rst_i,              //synchronous reset
+								      
+    //Program bus (wishbone)					      
+    input  wire                              pbus_ack_i,              //bus cycle acknowledge     +-
+    input  wire                              pbus_stall_i,            //access delay              | target to initiator
+    input  wire [15:0]                       pbus_dat_i,              //read data bus             +-
+    output wire                              pbus_cyc_o,              //bus cycle indicator       +-
+    output wire                              pbus_stb_o,              //access request            |
+    output wire                              pbus_we_o,               //write enable              | initiator
+    output wire                              pbus_tga_opc_o,          //opcode fetch              | to
+    output wire                              pbus_tga_dat_o,          //data access               | target
+    output wire [15:0]                       pbus_adr_o,              //address bus               | 
+    output wire [15:0]                       pbus_dat_o,              //write data bus            +-
+								      
+    //Stack bus (wishbone)					      
+    input  wire                              sbus_ack_i,              //bus cycle acknowledge     +-
+    input  wire                              sbus_stall_i,            //access delay              | target to initiator
+    input  wire [15:0]                       sbus_dat_i,              //read data bus             +-
+    output wire                              sbus_cyc_o,              //bus cycle indicator       +-
+    output wire                              sbus_stb_o,              //access request            |
+    output wire                              sbus_we_o,               //write enable              | initiator
+    output wire                              pbus_tga_ps_o,           //PS push/pull              | to
+    output wire                              pbus_tga_rs_o,           //RS push/pull              | target
+    output wire [SBUS_ADDR_WIDTH:0]          sbus_adr_o,              //address bus               |
+    output wire [15:0]                       sbus_dat_o,              //write data bus            +-
+ 								      
+    //Interrupt interface					      
+    input  wire [15:0]                       irq_req_i,               //requested interrupt vector
+    output wire                              irq_ack_o,               //interrupt acknowledge
 
-    //Program bus (wishbone)
-    output wire                              pbus_cyc_o,             //bus cycle indicator       +-
-    output wire                              pbus_stb_o,             //access request            |
-    output wire                              pbus_we_o,              //write enable              |
-    output wire [15:0]                       pbus_adr_o,             //address bus               |
-    output wire [15:0]                       pbus_dat_o,             //write data bus            | initiator
-    output wire                              pbus_tga_cof_jmp_o,     //COF jump                  | to
-    output wire                              pbus_tga_cof_cal_o,     //COF call                  | target
-    output wire                              pbus_tga_cof_bra_o,     //COF conditional branch    |
-    output wire                              pbus_tga_cof_eow_o,     //COF return from call      |
-    output wire                              pbus_tga_dat_o,         //data access               |
-    input  wire                              pbus_ack_i,             //bus cycle acknowledge     +-
-    input  wire                              pbus_err_i,             //error indicator           | target
-    input  wire                              pbus_rty_i,             //retry request             | to
-    input  wire                              pbus_stall_i,           //access delay              | initiator
-    input  wire [15:0]                       pbus_dat_i,             //read data bus             +-
- 
-    //Interrupt interface
-    output wire                              irq_ack_o,              //interrupt acknowledge
-    input  wire [15:0]                       irq_req_i,              //requested interrupt vector
-
-
-
-
-
-
-
-
-
-
-
-
-
+    //I/O interface
+    output wire                              io_push_o,               //push request
+    output wire                              io_pull_o,               //pull request
+    output wire [15:0]                       io_push_data_o,          //push request
+    input  wire                              io_push_bsy_i,           //push request reject
+    input  wire                              io_pull_bsy_i,           //pull request reject
+    input  wire [15:0]                       io_pull_data_i,          //pull data
 
     //Probe signals
     //DSP - DSP macro container
@@ -181,6 +202,46 @@ module N1
     //PAGU - Program bus AGU
     output wire [15:0]                       prb_pagu_prev_adr_o);   //address register
 
+   //Internal interfaces
+   //-------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
    //Internal interfaces
    //-------------------
    //ALU - Arithmetic logic unit

@@ -785,18 +785,18 @@ and must be set manually by writing a true value to the Interrupt Enable Registe
 \end{center}  
 \endgroup
 
-%EKEY/EMIT extension
-\subsection{EKEY/EMIT Extension}
-\label{extensions:ekey}
+%KEY/EMIT extension
+\subsection{KEY/EMIT Extension}
+\label{extensions:key}
 
-The EKEY/EMIT extension adds support for an I/O device to the N1 core.
-\gls{forth} words EKEY, EKEY?, EMIT, ands EMIT? dre direcly mapped to a set of \gls{freg}.
+The KEY/EMIT extension adds support for an I/O device to the N1 core.
+\gls{forth} words KEY, KEY?, EMIT, ands EMIT? dre direcly mapped to a set of \gls{freg}.
 
-%EKEY? register
-\subsubsection{EKEY? Register}
-\label{extensions:ekey:ekeyq}
+%KEY? register
+\subsubsection{KEY? Register}
+\label{extensions:key:keyq}
 
-The EKEY? register (see \figref{extensions:ekey:ekeyq:fig}) indicates whether there is data to be received from the input device. 
+The KEY? register (see \figref{extensions:key:keyq:fig}) indicates whether there is data to be received from the input device. 
 
 \begin{figure}[H]
   \begin{center}
@@ -835,18 +835,18 @@ The EKEY? register (see \figref{extensions:ekey:ekeyq:fig}) indicates whether th
         %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
         %\node at (29,0.5) {\Large{\texttt{IMWE}}};
         \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
-        \node at (16,1.5)   {\Large{\texttt{EKEY?}}};
+        \node at (16,1.5)   {\Large{\texttt{KEY?}}};
         \end{tikzpicture}
     }
   }
-  \caption{EKEY? Register}
-  \label{extensions:ekey:ekeyq:fig}
+  \caption{KEY? Register}
+  \label{extensions:key:keyq:fig}
   \end{center}
 \end{figure}
 
 
-The \texttt{EKEY?} field in this read only register resembles the functionality of the \texttt{EKEY?} word
-(see \tabref{extensions:ekey:ekeyq:tab}.
+The \texttt{KEY?} field in this read only register resembles the functionality of the \texttt{KEY?} word
+(see \tabref{extensions:key:keyq:tab}.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -856,7 +856,7 @@ The \texttt{EKEY?} field in this read only register resembles the functionality 
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
     \caption{Exception and Interrupt Mask Register Bit Description}
-    \label{extensions:ekey:ekeyq:tab} \\
+    \label{extensions:key:keyq:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -873,8 +873,8 @@ The \texttt{EKEY?} field in this read only register resembles the functionality 
     \hline
     \endlastfoot
 
-    %EKEY?
-    \texttt{EKEY?} &
+    %KEY?
+    \texttt{KEY?} &
     15..0        &
     \multicolumn{1}{m{36em}|}{
       \makecell[l]{
@@ -894,9 +894,9 @@ The \texttt{EKEY?} field in this read only register resembles the functionality 
 
 %EMIT? register
 \subsubsection{EMIT? Register}
-\label{extensions:ekey:emitq}
+\label{extensions:key:emitq}
 
-The EMIT? (see \figref{extensions:ekey:emitq:fig}) register indicates whether the I/O device is ready to transmit data. 
+The EMIT? (see \figref{extensions:key:emitq:fig}) register indicates whether the I/O device is ready to transmit data. 
 
 \begin{figure}[H]
   \begin{center}
@@ -940,12 +940,12 @@ The EMIT? (see \figref{extensions:ekey:emitq:fig}) register indicates whether th
     }
   }
   \caption{EMIT? Register}
-  \label{extensions:ekey:emitq:fig}
+  \label{extensions:key:emitq:fig}
   \end{center}
 \end{figure}
 
 The \texttt{EMIT?} field in this read only register resembles the functionality of the \texttt{EMIT?} word
-(see \tabref{extensions:ekey:emitq:tab}.
+(see \tabref{extensions:key:emitq:tab}.
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -955,7 +955,7 @@ The \texttt{EMIT?} field in this read only register resembles the functionality 
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
     \caption{Exception and Interrupt Mask Register Bit Description}
-    \label{extensions:ekey:ekeyq:tab} \\
+    \label{extensions:key:keyq:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -991,14 +991,113 @@ The \texttt{EMIT?} field in this read only register resembles the functionality 
 \end{center}  
 \endgroup
 
-%PEEK register
-\subsubsection{Peek Register}
-\label{extensions:ekey:peek}
+%%PEEK register
+%\subsubsection{Peek Register}
+%\label{extensions:key:peek}
+%
+%The PEEK register (see \figref{extensions:key:peek:fig}) allows the software to preview at the input buffer of the I/O device,
+%without removing any data. 
+%This functionality is needed to implement the \texttt{KEY?} word.
+%
+%
+%\begin{figure}[H]
+%  \begin{center}
+%  \makebox[\textwidth][c]{
+%    %\scalebox{0.5125} {
+%    \scalebox{0.515} {
+%      \begin{tikzpicture}
+%
+%        %Offset
+%        \node [align=left, anchor=west] at (-2,3) {
+%          \huge{Offset: \texttt{0x06}}
+%        };        
+%        %Index
+%        \node [above] at  (1,2) {15};
+%        \node [above] at  (3,2) {14};
+%        \node [above] at  (5,2) {13};
+%        \node [above] at  (7,2) {12};
+%        \node [above] at  (9,2) {11};
+%        \node [above] at (11,2) {10};
+%        \node [above] at (13,2)  {9};
+%        \node [above] at (15,2)  {8};
+%        \node [above] at (17,2)  {7};
+%        \node [above] at (19,2)  {6};
+%        \node [above] at (21,2)  {5};
+%        \node [above] at (23,2)  {4};
+%        \node [above] at (25,2)  {3};
+%        \node [above] at (27,2)  {2};
+%        \node [above] at (29,2)  {1};
+%        \node [above] at (31,2)  {0};
+%        %Read
+%        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+%        \draw [thick, fill=white] (0,1) rectangle (32,2);
+%         %Write
+%        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+%        \draw [thick, fill=white] (0,0) rectangle (32,1);
+%        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+%        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+%        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
+%        \node at (16,1.5)   {\Large{\texttt{PEEK}}};
+%        \end{tikzpicture}
+%    }
+%  }
+%  \caption{EMIT? Register}
+%  \label{extensions:key:peek:fig}
+%  \end{center}
+%\end{figure}
+%
+%The data in the \texttt{PEEK} field (see \tabref{extensions:key:emitq:tab} is only valid if
+%\texttt{KEY?} holds a true value.
+%
+%\begingroup
+%\setlength{\LTleft}{-20cm plus -1fill}
+%\setlength{\LTright}{\LTleft}
+%\begin{center}
+%  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+%  \begin{longtable}{|c|c|c|c|}
+%    \rowcolor{white}
+%    \caption{Exception and Interrupt Mask Register Bit Description}
+%    \label{extensions:key:keyq:tab} \\
+%    %Header
+%    \hline                                     
+%    \rowcolor{gray!25}
+%    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+%     \hline
+%    \endhead                               
+%    %Footers
+%    \hline
+%    \rowcolor{white}
+%    \multicolumn{4}{r}{\tiny{...continued}} \\
+%    \endfoot
+%    \hline
+%    \endlastfoot
+%
+%    %PEEK
+%    \texttt{PEEK} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Input Data Preview}}
+%          \begin{description}[style=nextline]
+%          \item[Read:]
+%            Next word of read data from the input device \\[1pt]
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%    
+%  \end{longtable}
+%\end{center}  
+%\endgroup
 
-The PEEK register (see \figref{extensions:ekey:peek:fig}) allows the software to preview at the input buffer of the I/O device,
-without removing any data. 
-This functionality is needed to implement the \texttt{KEY?} word.
+%KEY/EMIT register
+\subsubsection{KEY/EMIT Register}
+\label{extensions:key:key}
 
+The KEY/EMIT register (see \figref{extensions:key:key:fig} is used to receive data from and to transmit daza to the I/O device.
+Accesses to this register are blocking.
 
 \begin{figure}[H]
   \begin{center}
@@ -1034,119 +1133,20 @@ This functionality is needed to implement the \texttt{KEY?} word.
          %Write
         \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
         \draw [thick, fill=white] (0,0) rectangle (32,1);
-        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
-        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
-        \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
-        \node at (16,1.5)   {\Large{\texttt{PEEK}}};
-        \end{tikzpicture}
-    }
-  }
-  \caption{EMIT? Register}
-  \label{extensions:ekey:peek:fig}
-  \end{center}
-\end{figure}
-
-The data in the \texttt{PEEK} field (see \tabref{extensions:ekey:emitq:tab} is only valid if
-\texttt{EKEY?} holds a true value.
-
-\begingroup
-\setlength{\LTleft}{-20cm plus -1fill}
-\setlength{\LTright}{\LTleft}
-\begin{center}
-  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
-    \rowcolor{white}
-    \caption{Exception and Interrupt Mask Register Bit Description}
-    \label{extensions:ekey:ekeyq:tab} \\
-    %Header
-    \hline                                     
-    \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
-     \hline
-    \endhead                               
-    %Footers
-    \hline
-    \rowcolor{white}
-    \multicolumn{4}{r}{\tiny{...continued}} \\
-    \endfoot
-    \hline
-    \endlastfoot
-
-    %PEEK
-    \texttt{PEEK} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Input Data Preview}}
-          \begin{description}[style=nextline]
-          \item[Read:]
-            Next word of read data from the input device \\[1pt]
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-    
-  \end{longtable}
-\end{center}  
-\endgroup
-
-%EKEY/EMIT register
-\subsubsection{EKEY/EMIT Register}
-\label{extensions:ekey:ekey}
-
-The EKEY/EMIT register (see \figref{extensions:ekey:ekey:fig} is used to receive data from and to transmit daza to the I/O device.
-Accesses to this register are blocking.
-
-\begin{figure}[H]
-  \begin{center}
-  \makebox[\textwidth][c]{
-    %\scalebox{0.5125} {
-    \scalebox{0.515} {
-      \begin{tikzpicture}
-
-        %Offset
-        \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x07}}
-        };        
-        %Index
-        \node [above] at  (1,2) {15};
-        \node [above] at  (3,2) {14};
-        \node [above] at  (5,2) {13};
-        \node [above] at  (7,2) {12};
-        \node [above] at  (9,2) {11};
-        \node [above] at (11,2) {10};
-        \node [above] at (13,2)  {9};
-        \node [above] at (15,2)  {8};
-        \node [above] at (17,2)  {7};
-        \node [above] at (19,2)  {6};
-        \node [above] at (21,2)  {5};
-        \node [above] at (23,2)  {4};
-        \node [above] at (25,2)  {3};
-        \node [above] at (27,2)  {2};
-        \node [above] at (29,2)  {1};
-        \node [above] at (31,2)  {0};
-        %Read
-        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        \draw [thick, fill=white] (0,1) rectangle (32,2);
-         %Write
-        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        \draw [thick, fill=white] (0,0) rectangle (32,1);
         \draw [thick, fill=gray!3] (0,0) rectangle (32,1);  % 1
         \node at (16,0.5) {\Large{\texttt{EMIT}}};
         \draw [thick, fill=gray!3] (0,1) rectangle (32,2);  % 0
-        \node at (16,1.5)   {\Large{\texttt{EKEY}}};
+        \node at (16,1.5)   {\Large{\texttt{KEY}}};
         \end{tikzpicture}
     }
   }
-  \caption{EKEY/EMIT Register}
-  \label{extensions:ekey:ekey:fig}
+  \caption{KEY/EMIT Register}
+  \label{extensions:key:key:fig}
   \end{center}
 \end{figure}
 
-The \texttt{EKEY} field resembles the \texttt{EKEY} word and the \texttt{EMIT} field resembles the \texttt{EMIT} word
-(see \tabref{extensions:ekey:ekey:tab}), 
+The \texttt{KEY} field resembles the \texttt{KEY} word and the \texttt{EMIT} field resembles the \texttt{EMIT} word
+(see \tabref{extensions:key:key:tab}), 
 
 \begingroup
 \setlength{\LTleft}{-20cm plus -1fill}
@@ -1156,7 +1156,7 @@ The \texttt{EKEY} field resembles the \texttt{EKEY} word and the \texttt{EMIT} f
   \begin{longtable}{|c|c|c|c|}
     \rowcolor{white}
     \caption{Exception and Interrupt Mask Register Bit Description}
-    \label{extensions:ekey:ekey:tab} \\
+    \label{extensions:key:key:tab} \\
     %Header
     \hline                                     
     \rowcolor{gray!25}
@@ -1173,8 +1173,8 @@ The \texttt{EKEY} field resembles the \texttt{EKEY} word and the \texttt{EMIT} f
     \hline
     \endlastfoot
 
-    %EKEY
-    \texttt{EKEY} &
+    %KEY
+    \texttt{KEY} &
     15..0        &
     \multicolumn{1}{m{36em}|}{
       \makecell[l]{

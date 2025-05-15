@@ -61,6 +61,8 @@ module N1_wbi
     output wire                              wb_cyc_o,                                 //bus cycle indicator
     output wire                              wb_stb_o,                                 //access request
     output wire                              wb_we_o,                                  //write enable
+    output wire                              wb_tga_hiprio_o,                          //access from high prio interface
+    output wire                              wb_tga_loprio_o,                          //access from low prio interface
     output wire [ADDR_WIDTH-1:0]             wb_adr_o,                                 //address bus
     output wire [15:0]                       wb_dat_o);                                //write data bus
 
@@ -72,6 +74,8 @@ module N1_wbi
    //-------
    assign wb_stb_o            = hiprio_access_i ?  hiprio_access_i :  loprio_access_i; //access request
    assign wb_we_o             = hiprio_access_i ? ~hiprio_rwb_i    : ~loprio_rwb_i;    //write enable
+   assign wb_tga_hiprio_o     =  hiprio_access_i;                                      //access from high prio interface
+   assign wb_tga_loprio_o     = ~hiprio_access_i;                                      //access from low prio interface
    assign wb_adr_o            = hiprio_access_i ?  hiprio_addr_i   :  loprio_addr_i;   //address bus
    assign wb_dat_o            = hiprio_access_i ?  hiprio_wdata_i  :  loprio_wdata_i;  //write data bus
 

@@ -43,9 +43,9 @@
 `default_nettype none
 
 module N1_uprs
-  #(parameter  PSD_WIDTH     = 15,                                               //width of parameter stack depth register
+  #(parameter  ROT_EXTENSION =  1,                                               //implement ROT extension
+    parameter  PSD_WIDTH     = 15,                                               //width of parameter stack depth register
     parameter  RSD_WIDTH     = 15,                                               //width of return stack depth register
-    parameter  ROT_EXTENSION =  1,                                               //implement ROT extension
     localparam PROBE_WIDTH   = PSD_WIDTH + RSD_WIDTH + 80)                       //width of the concatinated probe output
 
    (//Clock and reset
@@ -92,8 +92,8 @@ module N1_uprs
     output wire [15:0]                  uprs_rs0_pull_data_o,                    //RS0 pull data
 
     //Stack depths
-    output wire [PSD_WIDTH-1:0]         psd_o,                                   //parameter stack depths
-    output wire [RSD_WIDTH-1:0]         rsd_o,                                   //return stack depth
+    output wire [PSD_WIDTH-1:0]         uprs_psd_o,                              //parameter stack depths
+    output wire [RSD_WIDTH-1:0]         uprs_rsd_o,                              //return stack depth
 
     //IPS interface
     input  wire                         ips_clear_bsy_i,                         //IPS clear busy indicator
@@ -386,6 +386,8 @@ module N1_uprs
        psd_reg <= {PSD_WIDTH{1'b0}};
      else if (psd_we)                                                            //state transition
        psd_reg <= psd_next[PSD_WIDTH-1:0];
+ 
+   assign uprs_psd_o = psd_reg;                                                  //PSD output
 
    //RSD
    assign rsd_next  = rsd_reg + {{RSD_WIDTH-1{rsd_dec}},1'b1};                   //next PS depth
@@ -400,6 +402,8 @@ module N1_uprs
        rsd_reg <= {RSD_WIDTH{1'b0}};
      else if (rsd_we)                                                            //state transition
        rsd_reg <= rsd_next[RSD_WIDTH-1:0];
+
+   assign uprs_rsd_o = rsd_reg;                                                   //RSD output
 
    //PS
    assign ps0_next  = ({16{uprs_dat_2_ps0_i}} & uprs_ps0_push_data_i)    |       //push data     -> PS0

@@ -40,8 +40,13 @@ For all signals, which do not implement a common standard (e.g. \gls{wb}),
 the following signal naming rules are used throughout the design:
 \begin{itemize}
 
-\item   
-All interface signals of a point-to-point connection, contain a mnemonic of the sending and the receiving block in its prefix.
+\item
+Signals which are grouped into an interface are prefixed with a meaningful interface name.\\
+Example: \texttt{\underline{ups\_}push}
+
+  
+\item
+All other point-to-point connections, contain a mnemonic of the sending and the receiving block in its prefix.
 The format of the prefix is: \\
 \emph{\textless sender mnemonic\textgreater}\texttt{2}\emph{\textless receiver mnemonic\textgreater }\texttt{\_}\dots \\
 Example: \texttt{\underline{fc2ir\_}capture}
@@ -173,6 +178,38 @@ Memories are connected through the following interface:
 \item[\emph{\textless memory name\textgreater}\texttt{\_rdata\_del\_o}/\texttt{\_i[15:0]} {\scriptsize (controller $\rightarrow$ memory)}]
   Read data delay indicator. \\
   If asserted, this signalwill postpone expected read data by one clock cycle..
+
+\end{description}
+
+\subsubsection{Register Interface}
+\label{architecture:interfaces:registers}
+
+Registers are accessed through the following interface:
+\begin{description}[style=nextline]
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_addr\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ register block)}]
+  Register address.
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_set\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ register block)}]
+  Register write request. \\
+  Register address and write data must be supplied in the same clock cycle as the write request.
+  
+\item[\emph{\textless register block name\textgreater}\texttt{\_set\_data\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ register block)}]
+  Register write data.
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_set\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ register block)}]
+  Register write busy indicator.
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_get\_o}/\texttt{\_i} {\scriptsize (controller $\rightarrow$ register block)}]
+  Register read request.\\
+  The register address must be supplied in the same clock cycle as the write request. Unless the busy indicator is asserted, read data is available in
+  the same clock cycle as the request.
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_get\_data\_o}/\texttt{\_i[$n$-1:0]} {\scriptsize (controller $\rightarrow$ register block)}]
+  Register read data.
+
+\item[\emph{\textless register block name\textgreater}\texttt{\_get\_bsy\_i}/\texttt{\_o} {\scriptsize (controller $\leftarrow$ register block)}]
+  Register read busy indicator.
 
 \end{description}
 
