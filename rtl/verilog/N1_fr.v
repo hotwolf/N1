@@ -119,14 +119,14 @@ module N1_fr
    //+----+----------+
    //| ...| reserved |
 
-   assign fr_addr_lt_8 = ~|fr_addr_i[15:3];                          //fr_addr_i < 8
-   assign fr_sel_psd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b000); //  PSD selected
-   assign fr_sel_rsd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b001); //  RSD selected
-   assign fr_sel_ien   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b010); //  IEN selected
-   assign fr_sel_keyq  = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b100); // KEY? selected
-   assign fr_sel_emitq = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b101); //EMIT? selected
-   assign fr_sel_key   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b110); //  KEY selected
-   assign fr_push_zero = ~|fr_set_data_i[15:3];                      //fr_set_data_i == 0
+   assign fr_addr_lt_8 = ~|fr_addr_i[15:3];                                           //fr_addr_i < 8
+   assign fr_sel_psd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b000);                  //  PSD selected
+   assign fr_sel_rsd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b001);                  //  RSD selected
+   assign fr_sel_ien   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b010) & |INT_EXTENSION; //  IEN selected
+   assign fr_sel_keyq  = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b100) & |KEY_EXTENSION; // KEY? selected
+   assign fr_sel_emitq = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b101) & |KEY_EXTENSION; //EMIT? selected
+   assign fr_sel_key   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b110) & |KEY_EXTENSION; //  KEY selected
+   assign fr_push_zero = ~|fr_set_data_i[15:3];                                       //fr_set_data_i == 0
 
    //PSD
    always @*
@@ -169,7 +169,7 @@ module N1_fr
    //EMIT?
    assign emitq_get_data = {16{~io_push_bsy_i & fr_sel_emitq}};
 
-    //KEY
+   //KEY
    assign key_get_data   = io_pull_data_i & {16{fr_sel_key}};
    assign key_set_bsy    = io_push_bsy_i  &     fr_sel_key;
    assign key_get_bsy    = io_pull_bsy_i  &     fr_sel_key;

@@ -92,13 +92,14 @@ module N1_ls
     output wire [ADDR_WIDTH-1:0]            ls_tos_o,                               //points to the TOS
 
     //Probe signals
-    output wire [ADDR_WIDTH:0]              prb_ls_o);                              //probe signals
+    output wire                             prb_ls_state_o,                          //probed FSM state
+    output wire [15:0]                      prb_ls_tosbuf_o,                         //probed TOS buffer
+    output wire [ADDR_WIDTH:0]              prb_ls_agu_o);                           //probed AGU address output
 
    //Internal registers
    //-----------------
    //FSM
    reg                                      state_reg;                              //current state
-
 
    //Local parameters
    //----------------
@@ -136,9 +137,6 @@ module N1_ls
 
    //FSM
    reg                                      state_next;                             //next state
-
-   //Probe signals
-   wire [ADDR_WIDTH-1:0]                    prb_agu;                                //LFSR probes
 
    //LFSR AGU
    assign  agu_restart   =  ls_clear_i                           & ~ls_clear_bsy_o; //soft reset
@@ -179,7 +177,7 @@ module N1_ls
        .lfsr_or_o      (),                                                        //overrun at next INC request
        .lfsr_ur_o      (),                                                        //underrun at next DEC request
        //Probe signals
-       .prb_lfsr_o     (prb_agu));                                                //LFSR probes
+       .prb_lfsr_o     (prb_ls_agu_o));                                           //LFSR probes
 
    //TOS buffer
    assign  tosbuf_in     = tosbuf_in_sel ? mem_rdata_i : ls_push_data_i;          //input selector (0=push_data_i, 1=mem_rdata_i)
@@ -259,12 +257,7 @@ module N1_ls
 
    //Probe signals
    //-------------
-   assign  prb_ls_o     = {state_reg,  // ADDR_WIDTH                             //concatinated probes
-                           prb_agu};   // ADDR_WIDTH-1 ... 0
-
-   // Probe signals
-   //-----------------------------
-   // state_reg
-   // agu.lfsr_reg[ADDR_WIDTH-1:0]
+   assign prb_ls_tosbuf_o = tosbuf_reg;                                          //TOS buffer
+   assign prb_ls_state_o  = state_reg;                                           //probed FSM state
 
 endmodule // N1_ls

@@ -120,7 +120,13 @@ module N1_uprs
     output wire [15:0]                  irs_push_data_o,                         //IRS push data
 
     //Probe signals
-    output wire [PROBE_WIDTH-1:0]       prb_uprs_o);                             //probe signals
+    output wire [PSD_WIDTH-1:0]         prb_uprs_psd_o,                          //probed PSD
+    output wire [RSD_WIDTH-1:0]         prb_uprs_rsd_o,                          //probed RSD
+    output wire [15:0]                  prb_uprs_ps0_o,                          //probed PS0
+    output wire [15:0]                  prb_uprs_ps1_o,                          //probed PS1
+    output wire [15:0]                  prb_uprs_ps2_o,                          //probed PS2
+    output wire [15:0]                  prb_uprs_ps3_o,                          //probed PS3
+    output wire [15:0]                  prb_uprs_rs0_o);                         //probed RS0
 
    //Registers
    //---------
@@ -386,7 +392,7 @@ module N1_uprs
        psd_reg <= {PSD_WIDTH{1'b0}};
      else if (psd_we)                                                            //state transition
        psd_reg <= psd_next[PSD_WIDTH-1:0];
- 
+
    assign uprs_psd_o = psd_reg;                                                  //PSD output
 
    //RSD
@@ -506,23 +512,13 @@ module N1_uprs
 
    //Probe signals
    //-------------
-   assign prb_uprs_o = {psd_reg,         // PSD_WIDTH+RSD_WIDTH+79 ... RSD_WIDTH+80
-                        rsd_reg,         //           RSD_WIDTH+79 ... 80
-                        ps0_reg,         //                     79 ... 64
-                        ps1_reg,         //                     63 ... 48
-                        ps2_reg,         //                     47 ... 32
-                        ps3_reg,         //                     31 ... 16
-                        rs0_reg};        //                     15 ...  0
-
-   // Probe signals
-   //--------------
-   // psd_reg[15:0]
-   // rsd_reg[15:0]
-   // ps0_reg[15:0]
-   // ps1_reg[15:0]
-   // ps2_reg[15:0]
-   // ps3_reg[15:0]
-   // rs0_reg[15:0]
+   assign prb_uprs_psd_o   = psd_reg;                                            //probed PSD
+   assign prb_uprs_rsd_o   = rsd_reg;                                            //probed RSD
+   assign prb_uprs_ps0_o   = ps0_reg;                                            //probed PS0
+   assign prb_uprs_ps1_o   = ps1_reg;                                            //probed PS1
+   assign prb_uprs_ps2_o   = ps2_reg;                                            //probed PS2
+   assign prb_uprs_ps3_o   = ps3_reg;                                            //probed PS3
+   assign prb_uprs_rs0_o   = rs0_reg;                                            //probed RS0
 
    //Assertions
    //----------

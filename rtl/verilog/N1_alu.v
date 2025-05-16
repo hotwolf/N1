@@ -37,11 +37,11 @@ module N1_alu
     input  wire [4:0]             ir2alu_opd_i,                                //immediate operand
     input  wire                   ir2alu_opd_sel_i,                            //0: PS1, 1: immediate
 
-    //PRS interface
-    output wire [15:0]            alu2prs_ps0_push_data_o,                     //new PS0 (TOS)
-    output wire [15:0]            alu2prs_ps1_push_data_o,                     //new PS1 (TOS+1)
-    input  wire [15:0]            prs2alu_ps0_pull_data_i,                     //current PS0 (TOS)
-    input  wire [15:0]            prs2alu_ps1_pull_data_i);                    //current PS1 (TOS+1)
+    //UPRS interface
+    output wire [15:0]            alu2pspm_ps0_push_data_o,                    //new PS0 (TOS)
+    output wire [15:0]            alu2pspm_ps1_push_data_o,                    //new PS1 (TOS+1)
+    input  wire [15:0]            uprs_ps0_pull_data_i,                        //current PS0 (TOS)
+    input  wire [15:0]            uprs_ps1_pull_data_i);                       //current PS1 (TOS+1)
 
    //Internal signals
    //----------------
@@ -118,13 +118,13 @@ module N1_alu
    //Hard IP adder
    //-------------
    assign add_opr     = |ir2alu_opr_i[3:1] |                                   //0:op1 + op0, 1:op1 - op0
-                        (ir2alu_opr_i[0] & prs2alu_ps0_pull_data_i[15]);       //absolute value
+                        (ir2alu_opr_i[0] & uprs_ps0_pull_data_i[15]);       //absolute value
 
-   assign add_opd0    =  ir2alu_opr_i[0] ? prs2alu_ps0_pull_data_i :
-                                          (ir2alu_opd_sel_i ? uimm : prs2alu_ps1_pull_data_i);
+   assign add_opd0    =  ir2alu_opr_i[0] ? uprs_ps0_pull_data_i :
+                                          (ir2alu_opd_sel_i ? uimm : uprs_ps1_pull_data_i);
 
-   assign add_opd1    =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm : prs2alu_ps1_pull_data_i) :
-                                            prs2alu_ps0_pull_data_i;
+   assign add_opd1    =  ir2alu_opr_i[0] ? (ir2alu_opd_sel_i ? oimm : uprs_ps1_pull_data_i) :
+                                            uprs_ps0_pull_data_i;
 
    N1_alu_add add
       (//ALU interface
@@ -160,15 +160,15 @@ module N1_alu
    //------------------
    assign max_sel         = ir2alu_opr_i[1] ^
                             (ir2alu_opr_i[1] ? cmp_slt : cmp_ult);
-   assign max_res         = max_sel ? prs2alu_ps0_pull_data_i : prs2alu_ps1_pull_data_i;
+   assign max_res         = max_sel ? uprs_ps0_pull_data_i : uprs_ps1_pull_data_i;
    assign max_out         = {16'h0000,
                              (~|(ir2alu_opr_i[4:2] ^ 3'b001) ? max_res : 16'h0000)};
 
    //Hard IP multiplier
    //------------------
-   assign umul_opd0       = &(ir2alu_opr_i[4:2]^3'b100) ? prs2alu_ps0_pull_data_i : 16'h0000;
+   assign umul_opd0       = &(ir2alu_opr_i[4:2]^3'b100) ? uprs_ps0_pull_data_i : 16'h0000;
    assign smul_opd0       = umul_opd0;
-   assign umul_opd1       = ir2alu_opd_sel_i ? (ir2alu_opr_i[0] ?  simm : uimm) : prs2alu_ps1_pull_data_i;
+   assign umul_opd1       = ir2alu_opd_sel_i ? (ir2alu_opr_i[0] ?  simm : uimm) : uprs_ps1_pull_data_i;
    assign smul_opd1       = umul_opd1;
 
    N1_alu_umul umul
@@ -190,13 +190,13 @@ module N1_alu
    //------------------
    //AND
    assign bl_and           = ~|{ir2alu_opr_i[1:0]^2'b00} ?
-                             (ir2alu_opd_sel_i ? (prs2alu_ps0_pull_data_i & simm) : (prs2alu_ps0_pull_data_i & prs2alu_ps1_pull_data_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (uprs_ps0_pull_data_i & simm) : (uprs_ps0_pull_data_i & uprs_ps1_pull_data_i)) : 16'h0000;
    //XOR
    assign bl_xor            = ~(ir2alu_opr_i[0]^1'b0) ?
-                             (ir2alu_opd_sel_i ? (prs2alu_ps0_pull_data_i ^ simm) : (prs2alu_ps0_pull_data_i ^ prs2alu_ps1_pull_data_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (uprs_ps0_pull_data_i ^ simm) : (uprs_ps0_pull_data_i ^ uprs_ps1_pull_data_i)) : 16'h0000;
    //AND
    assign bl_or            = ~|{ir2alu_opr_i[1:0]^2'b10} ?
-                             (ir2alu_opd_sel_i ? (prs2alu_ps0_pull_data_i | uimm) : (prs2alu_ps0_pull_data_i | prs2alu_ps1_pull_data_i)) : 16'h0000;
+                             (ir2alu_opd_sel_i ? (uprs_ps0_pull_data_i | uimm) : (uprs_ps0_pull_data_i | uprs_ps1_pull_data_i)) : 16'h0000;
    //Result
    assign bl_out           = ~|{ir2alu_opr_i[4:2]^3'b101} ?
                               {16'h0000, bl_and | bl_xor | bl_or} : 32'h00000000;
@@ -204,8 +204,8 @@ module N1_alu
    //Barrel shifter
    //--------------
    //Right shift
-   assign lsr_op0 = prs2alu_ps1_pull_data_i;                                   //first operand
-   assign lsr_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps0_pull_data_i;         //second operand
+   assign lsr_op0 = uprs_ps1_pull_data_i;                                      //first operand
+   assign lsr_op1 = ir2alu_opd_sel_i ? uimm : uprs_ps0_pull_data_i;            //second operand
    assign lsr_msb = ir2alu_opr_i[1] ? lsr_op0[15] : 1'b0;                      //MSB of first operand
    assign lsr_sh0 = lsr_op1[0] ?                                               //shift 1 bit
                     {lsr_msb, lsr_op0[15:1]} :                                 //
@@ -226,8 +226,8 @@ module N1_alu
                     {{16{lsr_msb}}, lsr_sh4} :                                 //
                     32'h00000000;                                              //
    //Left shift
-   assign lsl_op0 = prs2alu_ps1_pull_data_i;                                   //first operand
-   assign lsl_op1 = ir2alu_opd_sel_i ? uimm : prs2alu_ps0_pull_data_i;         //second operand
+   assign lsl_op0 = uprs_ps1_pull_data_i;                                      //first operand
+   assign lsl_op1 = ir2alu_opd_sel_i ? uimm : uprs_ps0_pull_data_i;            //second operand
    assign lsl_sh0 = lsl_op1[0] ?                                               //shift 1 bit
                     {15'h0000, lsl_op0, 1'b0} :                                //
                     {16'h0000, lsl_op0};                                       //
@@ -255,19 +255,19 @@ module N1_alu
    //Literal value
    //-------------
    assign lit_out = ~|{ir2alu_opr_i[4:2]^3'b110} ?
-                    {{15{simm[5]}}, simm[4:0], prs2alu_ps0_pull_data_i[11:0]} :
+                    {{15{simm[5]}}, simm[4:0], uprs_ps0_pull_data_i[11:0]} :
                     32'h00000000;
 
    //ALU output
    //----------
-    assign alu_out = add_out  |
-                     max_out  |
-                     cmp_out  |
-                     mul_out  |
-                     bl_out   |
-                     ls_out   |
-                     lit_out;
-    assign alu2prs_ps1_push_data_o = alu_out[31:16];                           //new PS1 (TOS+1)
-    assign alu2prs_ps0_push_data_o = alu_out[15:0];                            //new PS0 (TOS)
+   assign alu_out = add_out  |
+                    max_out  |
+                    cmp_out  |
+                    mul_out  |
+                    bl_out   |
+                    ls_out   |
+                    lit_out;
+   assign alu2pspm_ps1_push_data_o = alu_out[31:16];                          //new PS1 (TOS+1)
+   assign alu2pspm_ps0_push_data_o = alu_out[15:0];                           //new PS0 (TOS)
 
 endmodule // N1_alu

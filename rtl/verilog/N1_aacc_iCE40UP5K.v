@@ -1,7 +1,7 @@
 //###############################################################################
-//# N1 - Accumulator for AGU Operations                                         #
+//# N1 - Address Accumulator                                                    #
 //###############################################################################
-//#    Copyright 2018 - 2024 Dirk Heisswolf                                     #
+//#    Copyright 2018 - 2025 Dirk Heisswolf                                     #
 //#    This file is part of the N1 project.                                     #
 //#                                                                             #
 //#    N1 is free software: you can redistribute it and/or modify               #
@@ -18,37 +18,41 @@
 //#    along with N1.  If not, see <http://www.gnu.org/licenses/>.              #
 //###############################################################################
 //# Description:                                                                #
-//#    This module implements a 16 bit accumulator utilizing a DSP cell         #
-//#    (SB_MAC16) instance of the Lattice iCE40UP5K FPGA.                       #
+//#    This module implements a 16 bit accumulator for address calculationsu    #
+//#    utilizing a DSP cell (SB_MAC16) instance of the Lattice iCE40UP5K FPGA.  #
+//#                                                                             #
+//#    The combinational logicaddress output (aacc_addr_o) is intended to be    #
+//#    used as memory address. The (internal) accumulator register can serve as #
+//#    program counter.                                                         #
+//#                                                                             #
 //#    This partition is to be replaced for other target architectures.         #
 //#                                                                             #
 //###############################################################################
 //# Version History:                                                            #
 //#   February 12, 2024                                                         #
 //#      - Initial release                                                      #
+//#   May 15, 2025                                                              #
+//#      - New naming                                                           #
 //###############################################################################
 `default_nettype none
 
-module N1_agu_acc
-  #(//Integration parameters
-    parameter   SP_WIDTH   =  12)                                         //width of a stack pointer
-
-   (//Clock and reset
+module N1_aacc
+    (//Clock and reset
     input  wire                             clk_i,                        //module clock
     input  wire                             async_rst_i,                  //asynchronous reset
     input  wire                             sync_rst_i,                   //synchronous reset
 
 
-    //AGU interface
-    output wire [15:0]                      acc2agu_adr_o,                //program AGU output
-    input  wire [15:0]                      agu2acc_aadr_i,               //absolute COF address
-    input  wire [15:0]                      agu2acc_radr_i,               //relative COF address
-    input  wire                             agu2acc_adr_sel_i,            //1:absolute COF, 0:relative COF
-    input  wire                             agu2acc_pc_hold_i,            //maintain PC
-    input  wire                             agu2acc_radr_inc_i,           //increment relative address
+    //Accumulator interface
+    input  wire [15:0]                      aacc_abs_addr_i,              //absolute address input
+    input  wire [15:0]                      aacc_rel_addr_i,              //relative address input
+    input  wire                             aacc_rel_inc_i,               //increment relative address
+    input  wire                             aacc_pc_hold_i,               //maintain PC
+    input  wire                             aacc_sel_i,                   //1:absolute COF, 0:relative COF
+    output wire [15:0]                      aacc_addr_o,                  //program AGU output
 
     //Probe signals
-    output wire [15:0]                      prb_dsp_pc_o);                //PC
+    output wire [15:0]                      prb_aacc_pc_o);               //PC
 
    //Internal signals
    //----------------
@@ -88,8 +92,8 @@ module N1_agu_acc
       .CE                        (1'b1),                                  //clock enable
       .C                         (16'h0000),                              //unused
       .A                         (16'h0000),                              //unused
-      .B                         (agu2acc_radr_i),                        //relative COF address
-      .D                         (agu2acc_aadr_i),                        //absolute COF address
+      .B                         (aacc_rel_addr_i),                       //relative COF address
+      .D                         (aacc_abs_addr_i),                       //absolute COF address
       .AHOLD                     (1'b1),                                  //keep hold register stable
       .BHOLD                     (1'b1),                                  //keep hold register stable
       .CHOLD                     (1'b1),                                  //keep hold register stable
@@ -99,12 +103,12 @@ module N1_agu_acc
       .ORSTTOP                   (1'b1),                                  //keep hold register in reset
       .ORSTBOT                   (|{async_rst_i,sync_rst_i}),             //use common reset
       .OLOADTOP                  (1'b0),                                  //no bypass
-      .OLOADBOT                  (agu2acc_adr_sel_i),                     //absolute COF
+      .OLOADBOT                  (aacc_sel_i),                            //absolute COF
       .ADDSUBTOP                 (1'b0),                                  //subtract
       .ADDSUBBOT                 (1'b0),                                  //always use adder
       .OHOLDTOP                  (1'b1),                                  //keep hold register stable
-      .OHOLDBOT                  (agu2acc_pc_hold_i),                     //update PC
-      .CI                        (agu2acc_radr_inc_i),                    //address increment
+      .OHOLDBOT                  (aacc_pc_hold_i),                        //update PC
+      .CI                        (aacc_rel_inc_i),                        //address increment
       .ACCUMCI                   (1'b0),                                  //no carry
       .SIGNEXTIN                 (1'b0),                                  //no sign extension
       .O                         (acc_out),                               //result
@@ -119,14 +123,14 @@ module N1_agu_acc
           pc_mirror_reg <= 16'h0000;                                      //reset PC
         else if (sync_rst_i)                                              //synchronous reset
           pc_mirror_reg <= 16'h0000;                                      //reset PC
-        else if (~agu2acc_pc_hold_i)                                      //update PC
+        else if (~aacc_pc_hold_i)                                         //update PC
           pc_mirror_reg <= acc_out[15:0];                                 //
      end // always @ (posedge async_rst_i or posedge clk_i)
 
    //Outputs
-   assign acc2agu_adr_o     = acc_out[15:0];                              //AGU autput
+   assign aacc_addr_o     = acc_out[15:0];                                //AGU autput
 
    //Probe signals
-   assign prb_dsp_pc_o      = pc_mirror_reg;                              //PC
+   assign prb_aacc_pc_o      = pc_mirror_reg;                             //PC
 
 endmodule // N1_agu_acc

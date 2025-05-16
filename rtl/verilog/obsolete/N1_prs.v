@@ -283,8 +283,8 @@ module N1_prs
       .ls_clear_bsy_i			(lps_clear_bsy),                                 //LPS clear busy indicator
       .ls_push_bsy_i			(lps_push_bsy),                                  //LPS push busy indicator
       .ls_pull_bsy_i			(lps_pull_bsy),                                  //LPS pull busy indicator
-      .ls_empty_i			(lrs_empty),                                     //LPS empty indicator
-      .ls_full_i			(lrs_full),                                      //LPS overflow indicator
+      .ls_empty_i			(lps_empty),                                     //LPS empty indicator
+      .ls_full_i			(lps_full),                                      //LPS overflow indicator
       .ls_pull_data_i			(lps_pull_data),                                 //LPS pull data
       .ls_clear_o			(lps_clear),                                     //LPS clear request
       .ls_push_o			(lps_push),                                      //LPS push request
@@ -313,16 +313,16 @@ module N1_prs
       .us_full_o			(irs_full),                                      //UPS overflow indicator
       .us_pull_data_o			(irs_pull_data),                                 //UPS pull data
       //Interface to lower stack
-      .ls_clear_bsy_i			(lps_clear_bsy),                                 //LPS clear busy indicator
-      .ls_push_bsy_i			(lps_push_bsy),                                  //LPS push busy indicator
-      .ls_pull_bsy_i			(lps_pull_bsy),                                  //LPS pull busy indicator
+      .ls_clear_bsy_i			(lrs_clear_bsy),                                 //LPS clear busy indicator
+      .ls_push_bsy_i			(lrs_push_bsy),                                  //LPS push busy indicator
+      .ls_pull_bsy_i			(lrs_pull_bsy),                                  //LPS pull busy indicator
       .ls_empty_i			(lrs_empty),                                     //LPS empty indicator
       .ls_full_i			(lrs_full),                                      //LPS overflow indicator
-      .ls_pull_data_i			(lps_pull_data),                                 //LPS pull data
-      .ls_clear_o			(lps_clear),                                     //LPS clear request
-      .ls_push_o			(lps_push),                                      //LPS push request
-      .ls_pull_o			(lps_pull),                                      //LPS pull request
-      .ls_push_data_o			(lps_push_data),                                 //LPS push data
+      .ls_pull_data_i			(lrs_pull_data),                                 //LPS pull data
+      .ls_clear_o			(lrs_clear),                                     //LPS clear request
+      .ls_push_o			(lrs_push),                                      //LPS push request
+      .ls_pull_o			(lrs_pull),                                      //LPS pull request
+      .ls_push_data_o			(lrs_push_data),                                 //LPS push data
       //Probe signals
       .prb_is_o				(prb_irs));                                      //probe signals
 

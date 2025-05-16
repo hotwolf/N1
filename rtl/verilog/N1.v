@@ -113,98 +113,267 @@
 // iCE40UP5K_1C  - Single core configuration for ICE40 targets
 //-------------------------------------------------------------------------------
 module N1
-  #(parameter  VARIANT          = "DEFAULT"                            //machne configuration
-    localparam ROT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //ROT extension
-                                                                   1,
-    localparam INT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //interrupt extension
-                                                                   1,
-    localparam KEY_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : //KEY/EMIT extension
-                                                                   1,
-    localparam START_ADDR       = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : //reset and interrupt start address
-                                                            16'h0000,
-    localparam DIR_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : //offset for direct program address
-                                                            16'h0000,
-    localparam DIR_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : //offset for direct data address
-                                                            16'h00ff,   
-    localparam IPS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : //depth of the intermediate parameter stack
-                                                                   4,
-    localparam IRS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : //depth of the intermediate return stack
-                                                                   4,
-    localparam SP_ADDR_WIDTH    = VARIANT=="iCE40UP5K_1C" ?       14 : //address width of stack bus
-                                                                  14)
+  #(parameter  VARIANT          = "DEFAULT"                            		//machne configuration
+    //Core configuration					       		
+    localparam ROT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//ROT extension
+                                                                   1,  		
+    localparam INT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//interrupt extension
+                                                                   1,  		
+    localparam KEY_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//KEY/EMIT extension
+                                                                   1,  		
+    localparam START_ADDR       = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//reset and interrupt start address
+                                                            16'h0000,  		
+    localparam DIR_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//offset for direct program address
+                                                            16'h0000,  		
+    localparam DIR_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : 		//offset for direct data address
+                                                            16'h00ff,  		 
+    localparam IPS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : 		//depth of the intermediate parameter stack
+                                                                   4,  		
+    localparam IRS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : 		//depth of the intermediate return stack
+                                                                   4,  		
+    localparam SBUS_ADDR_WIDTH  = VARIANT=="iCE40UP5K_1C" ?       14 : 		//address width of the stack bus 
+                                                                  14,  		
+    //Derived parameters					       		
+    localparam PSD_WIDTH        = SBUS_ADDR_WIDTH+1,                   		//width of parameter stack depth register
+    localparam RSD_WIDTH        = SBUS_ADDR_WIDTH+1)                   		//width of return stack depth register
+    localparam IPS_STACK_WIDTH  = (IPS_DEPTH == 0) ? 16 : 16*IPS_DEPTH,		//width of the IPS cell probes
+    localparam IPS_TAG_WIDTH    = (IPS_DEPTH == 0) ?  1 :    IPS_DEPTH),	//width of the IPS tag probes
+    localparam IRS_STACK_WIDTH  = (IRS_DEPTH == 0) ? 16 : 16*IRS_DEPTH,		//width of the IPS cell probes
+    localparam IRS_TAG_WIDTH    = (IRS_DEPTH == 0) ?  1 :    IRS_DEPTH),	//width of the IPS tag probes
+   
+  
    (//Clock and reset
-    input  wire                              clk_i,                   //module clock
-    input  wire                              async_rst_i,             //asynchronous reset
-    input  wire                              sync_rst_i,              //synchronous reset
-								      
-    //Program bus (wishbone)					      
-    input  wire                              pbus_ack_i,              //bus cycle acknowledge     +-
-    input  wire                              pbus_stall_i,            //access delay              | target to initiator
-    input  wire [15:0]                       pbus_dat_i,              //read data bus             +-
-    output wire                              pbus_cyc_o,              //bus cycle indicator       +-
-    output wire                              pbus_stb_o,              //access request            |
-    output wire                              pbus_we_o,               //write enable              | initiator
-    output wire                              pbus_tga_opc_o,          //opcode fetch              | to
-    output wire                              pbus_tga_dat_o,          //data access               | target
-    output wire [15:0]                       pbus_adr_o,              //address bus               | 
-    output wire [15:0]                       pbus_dat_o,              //write data bus            +-
-								      
-    //Stack bus (wishbone)					      
-    input  wire                              sbus_ack_i,              //bus cycle acknowledge     +-
-    input  wire                              sbus_stall_i,            //access delay              | target to initiator
-    input  wire [15:0]                       sbus_dat_i,              //read data bus             +-
-    output wire                              sbus_cyc_o,              //bus cycle indicator       +-
-    output wire                              sbus_stb_o,              //access request            |
-    output wire                              sbus_we_o,               //write enable              | initiator
-    output wire                              pbus_tga_ps_o,           //PS push/pull              | to
-    output wire                              pbus_tga_rs_o,           //RS push/pull              | target
-    output wire [SBUS_ADDR_WIDTH:0]          sbus_adr_o,              //address bus               |
-    output wire [15:0]                       sbus_dat_o,              //write data bus            +-
- 								      
-    //Interrupt interface					      
-    input  wire [15:0]                       irq_req_i,               //requested interrupt vector
-    output wire                              irq_ack_o,               //interrupt acknowledge
+    input  wire                              clk_i,                   		//module clock
+    input  wire                              async_rst_i,             		//asynchronous reset
+    input  wire                              sync_rst_i,              		//synchronous reset
+								      		
+    //Program bus (wishbone)					      		
+    input  wire                              pbus_ack_i,              		//bus cycle acknowledge     +-
+    input  wire                              pbus_err_i,              		//bus error                 | target to
+    input  wire                              pbus_stall_i,            		//access delay              | initiator
+    input  wire [15:0]                       pbus_dat_i,              		//read data bus             +-
+    output wire                              pbus_cyc_o,              		//bus cycle indicator       +-
+    output wire                              pbus_stb_o,              		//access request            |
+    output wire                              pbus_we_o,               		//write enable              | initiator
+    output wire                              pbus_tga_opc_o,          		//opcode fetch              | to
+    output wire                              pbus_tga_dat_o,          		//data access               | target
+    output wire [15:0]                       pbus_adr_o,              		//address bus               | 
+    output wire [15:0]                       pbus_dat_o,              		//write data bus            +-
+								      		
+    //Stack bus (wishbone)					      		
+    input  wire                              sbus_ack_i,              		//bus cycle acknowledge     +-
+    input  wire                              sbus_err_i,              		//bus error                 | target to
+    input  wire                              sbus_stall_i,            		//access delay              | initiator
+    input  wire [15:0]                       sbus_dat_i,              		//read data bus             +-
+    output wire                              sbus_cyc_o,              		//bus cycle indicator       +-
+    output wire                              sbus_stb_o,              		//access request            |
+    output wire                              sbus_we_o,               		//write enable              | initiator
+    output wire                              sbus_tga_ps_o,           		//PS push/pull              | to
+    output wire                              sbus_tga_rs_o,           		//RS push/pull              | target
+    output wire [SBUS_ADDR_WIDTH:0]          sbus_adr_o,              		//address bus               |
+    output wire [15:0]                       sbus_dat_o,              		//write data bus            +-
+ 								      		
+    //Interrupt interface					      		
+    input  wire [15:0]                       irq_req_i,               		//requested interrupt vector
+    output wire                              irq_ack_o,               		//interrupt acknowledge
+								      		
+    //I/O interface						      		
+    input  wire                              io_push_bsy_i,           		//push request reject
+    input  wire                              io_pull_bsy_i,           		//pull request reject
+    input  wire [15:0]                       io_pull_data_i,          		//pull data
+    output wire                              io_push_o,               		//push request
+    output wire                              io_pull_o,               		//pull request
+    output wire [15:0]                       io_push_data_o,          		//push request
+								      		
+    //Probe signals						      		
+ 								      		
+								      		
+    output wire [2:0]                        prb_fr_ien_o,            		//FR   - interrupt enable (interrupt extension)
+								      		
+    output wire [PSD_WIDTH-1:0]              prb_uprs_psd_o,                    //UPRS - probed PSD
+    output wire [RSD_WIDTH-1:0]              prb_uprs_rsd_o,                    //UPRS - probed RSD
+    output wire [15:0]                       prb_uprs_ps0_o,                    //UPRS - probed PS0
+    output wire [15:0]                       prb_uprs_ps1_o,                    //UPRS - probed PS1
+    output wire [15:0]                       prb_uprs_ps2_o,                    //UPRS - probed PS2
+    output wire [15:0]                       prb_uprs_ps3_o,                    //UPRS - probed PS3
+    output wire [15:0]                       prb_uprs_rs0_o);                   //UPRS - probed RS0
 
-    //I/O interface
-    output wire                              io_push_o,               //push request
-    output wire                              io_pull_o,               //pull request
-    output wire [15:0]                       io_push_data_o,          //push request
-    input  wire                              io_push_bsy_i,           //push request reject
-    input  wire                              io_pull_bsy_i,           //pull request reject
-    input  wire [15:0]                       io_pull_data_i,          //pull data
+    output wire [IPS_STACK_WIDTH-1:0]        prb_ips_cells_o,                   //IPS  - probed cells
+    output wire [IPS_TAG_WIDTH-1:0]          prb_ips_tags_o,                    //IPS  - probed tags
+  					    		      			       
+    output wire [IRS_STACK_WIDTH-1:0]        prb_irs_cells_o,                   //IRS  _ probed cells
+    output wire [IRS_TAG_WIDTH-1:0]          prb_irs_tags_o,                    //IRS  _ probed tags
+										       
+    output wire                              prb_lps_state_o,         		//LPS  - probed FSM state
+    output wire [15:0]                       prb_lps_tosbuf_o,        		//LPS  - probed TOS buffer
+    output wire [SBUS_ADDR_WIDTH:0]          prb_lps_agu_o,           		//LPS  - probed AGU address output
+ 										       
+    output wire                              prb_lrs_state_o,         		//LRS  - probed FSM state
+    output wire [15:0]                       prb_lrs_tosbuf_o,        		//LRS  - probed TOS buffer
+    output wire [SBUS_ADDR_WIDTH:0]          prb_lrs_agu_o,           		//LRS  - probed AGU address output
+ 
+   
 
-    //Probe signals
-    //DSP - DSP macro container
-    output wire [15:0]                       prb_dsp_pc_o,           //PC
-    //EXCPT - Exception aggregator
-    output wire [2:0]                        prb_excpt_o,            //exception tracker
-    output wire                              prb_excpt_en_o,         //exception enable
-    output wire                              prb_irq_en_o,           //interrupt enable
-    //FC - Flow control
-    output wire [2:0]                        prb_fc_state_o,         //state variable
-    output wire                              prb_fc_pbus_acc_o,      //ongoing bus access
-    //IPS - Intermediate parameter stack
-    output wire [(16*IPS_DEPTH)-1:0]         prb_ips_cells_o,        //current IS cells
-    output wire [IPS_DEPTH-1:0]              prb_ips_tags_o,         //current IS tags
-    output wire [1:0]                        prb_ips_state_o,        //current state
-    //IR - Instruction register
-    output wire [15:0]                       prb_ir_o,               //current instruction register
-    output wire [15:0]                       prb_ir_stash_o,         //stashed instruction register
-    //IRS - Intermediate return stack	     
-    output wire [(16*IRS_DEPTH)-1:0]         prb_irs_cells_o,        //current IS cells
-    output wire [IRS_DEPTH-1:0]              prb_irs_tags_o,         //current IS tags
-    output wire [1:0]                        prb_irs_state_o,        //current state
-    //LS - Lower stack
-    output wire [2:0]                        prb_lps_state_o,        //LPS state
-    output wire [2:0]                        prb_lrs_state_o,        //LRS state
-    output wire [15:0]                       prb_lps_tos_o,          //LPS TOS
-    output wire [15:0]                       prb_lrs_tos_o,          //LRS TOS
-    //PAGU - Program bus AGU
-    output wire [15:0]                       prb_pagu_prev_adr_o);   //address register
+);
+
 
    //Internal interfaces
    //-------------------
 
+   //UPRS
+   wire                                      uprs_ps_clear;                     //parameter stack clear request
+   wire                                      uprs_rs_clear;                     //return stack clear request
+   wire                                      uprs_shift;                        //stack shift request
+   wire                                      uprs_dat_2_ps0;                    //push data -> PS0
+   wire                                      uprs_dat_2_ps1;                    //push data -> PS1
+   wire                                      uprs_dat_2_rs0;                    //push data -> RS1
+   wire                                      uprs_ps3_2_ips;                    //PS3       -> IPS
+   wire                                      uprs_ips_2_ps3;                    //IPS       -> PS3
+   wire                                      uprs_ps2_2_ps3;                    //PS2       -> PS3
+   wire                                      uprs_ps3_2_ps2;                    //PS3       -> PS2
+   wire                                      uprs_ps0_2_ps2;                    //PS0       -> PS2 (ROT extension)
+   wire                                      uprs_ps1_2_ps2;                    //PS1       -> PS2
+   wire                                      uprs_ps2_2_ps1;                    //PS2       -> PS1
+   wire                                      uprs_ps0_2_ps1;                    //PS0       -> PS1
+   wire                                      uprs_ps1_2_ps0;                    //PS1       -> PS0
+   wire                                      uprs_ps2_2_ps0;                    //PS2       -> PS0 (ROT extension)
+   wire                                      uprs_rs0_2_ps0;                    //RS0       -> PS0
+   wire                                      uprs_ps0_2_rs0;                    //PS0       -> RS0
+   wire                                      uprs_irs_2_rs0;                    //IRS       -> RS0
+   wire                                      uprs_rs0_2_irs;                    //RS0       -> IRS
+   wire [15:0]                               uprs_ps0_push_data;                //PS0 push data
+   wire [15:0]                               uprs_ps1_push_data;                //PS1 push data
+   wire [15:0]                               uprs_rs0_push_data;                //RS0 push data
+   wire                                      uprs_ps_clear_bsy;                 //parameter stack clear busy indicator
+   wire                                      uprs_rs_clear_bsy;                 //return stack clear busy indicator
+   wire                                      uprs_shift_bsy;                    //stack shift busy indicator
+   wire                                      uprs_ps_uf;                        //parameter stack underflow
+   wire                                      uprs_ps_of;                        //parameter stack overflow
+   wire                                      uprs_rs_uf;                        //return stack underflow
+   wire                                      uprs_rs_of;                        //return stack overflow
+   wire                                      uprs_ps0_loaded;                   //PS0 contains data
+   wire                                      uprs_ps1_loaded;                   //PS1 contains data
+   wire                                      uprs_rs0_loaded;                   //RS0 contains data
+   wire [15:0]                               uprs_ps0_pull_data;                //PS0 pull data
+   wire [15:0]                               uprs_ps1_pull_data;                //PS1 pull data
+   wire [15:0]                               uprs_rs0_pull_data;                //RS0 pull data
+   				             					
+   wire [PSD_WIDTH-1:0]                      uprs_psd;                          //parameter stack depths
+   wire [RSD_WIDTH-1:0]                      uprs_rsd;                          //return stack depth
+
+   //IPS
+   wire                                      ips_clear;                         //clear request
+   wire                                      ips_push;                          //push request
+   wire                                      ips_pull;                          //pull request
+   wire [15:0]                               ips_push_data;                     //push data
+   wire                                      ips_clear_bsy;                     //clear busy indicator
+   wire                                      ips_push_bsy;                      //push busy indicator
+   wire                                      ips_pull_bsy;                      //pull busy indicator
+   wire                                      ips_empty;                         //empty indicator
+   wire                                      ips_full;                          //overflow indicator
+   wire [15:0]                               ips_pull_data;                     //pull data
+
+   //IRS
+   wire                                      irs_clear;                         //clear request
+   wire                                      irs_push;                          //push request
+   wire                                      irs_pull;                          //pull request
+   wire [15:0]                               irs_push_data;                     //push data
+   wire                                      irs_clear_bsy;                     //clear busy indicator
+   wire                                      irs_push_bsy;                      //push busy indicator
+   wire                                      irs_pull_bsy;                      //pull busy indicator
+   wire                                      irs_empty;                         //empty indicator
+   wire                                      irs_full;                          //overflow indicator
+   wire [15:0]                               irs_pull_data;                     //pull data
+
+   //LPS
+   wire                                      lps_clear;                         //clear request
+   wire                                      lps_push;                          //push request
+   wire                                      lps_pull;                          //pull request
+   wire [15:0]                               lps_push_data;                     //push request
+   wire                                      lps_clear_bsy;                     //clear request rejected
+   wire                                      lps_push_bsy;                      //push request rejected
+   wire                                      lps_pull_bsy;                      //pull request rejected
+   wire                                      lps_empty;                         //underflow indicator
+   wire                                      lps_full;                          //overflow indicator
+   wire [15:0]                               lps_pull_data;                     //pull data
+
+   wire                                      lpsmem_access_bsy;                 //access request rejected
+   wire [15:0]                               lpsmem_rdata;                      //read data
+   wire                                      lpsmem_rdata_del;                  //read data delay
+   wire [SBUS_ADDR_WIDTH-1:0]                lpsmem_addr;                       //address
+   wire                                      lpsmem_access;                     //access request
+   wire                                      lpsmem_rwb;                        //data direction
+   wire [15:0]                               lpsmem_wdata;                      //write data
+
+   wire [SBUS_ADDR_WIDTH-1:0]                lps_tos;                           //points to the TOS
+
+   //LRS
+   wire                                      lrs_clear;                         //clear request
+   wire                                      lrs_push;                          //push request
+   wire                                      lrs_pull;                          //pull request
+   wire [15:0]                               lrs_push_data;                     //push request
+   wire                                      lrs_clear_bsy;                     //clear request rejected
+   wire                                      lrs_push_bsy;                      //push request rejected
+   wire                                      lrs_pull_bsy;                      //pull request rejected
+   wire                                      lrs_empty;                         //underflow indicator
+   wire                                      lrs_full;                          //overflow indicator
+   wire [15:0]                               lrs_pull_data;  
+
+   wire                                      lrsmem_access_bsy;                 //access request rejected
+   wire [15:0]                               lrsmem_rdata;                      //read data
+   wire                                      lrsmem_rdata_del;                  //read data delay
+   wire [SBUS_ADDR_WIDTH-1:0]                lrsmem_addr;                       //address
+   wire                                      lrsmem_access;                     //access request
+   wire                                      lrsmem_rwb;                        //data direction
+   wire [15:0]                               lrsmem_wdata;                      //write data
+
+   wire [SBUS_ADDR_WIDTH-1:0]                lrs_tos;                           //points to the TOS
+  
+
+
+
+
+
+
+
+   //Function registers
+   //------------------
+   N1_fr
+     #(.INT_EXTENSION 			(INT_EXTENSION),                            //interrupt extension
+       .KEY_EXTENSION 			(KEY_EXTENSION),                            //KEY/EMIT extension
+       .PSD_WIDTH     			(PSD_WIDTH),                                //width of parameter stack depth register
+       .RSD_WIDTH     			(RSD_WIDTH))                                //width of return stack depth register
+   fr
+     (//Clock and reset
+      .clk_i				(clk_i),                                    //module clock
+      .async_rst_i			(async_rst_i),                              //asynchronous reset
+      .sync_rst_i			(sync_rst_i),                               //synchronous reset
+      //Function register interface
+      .fr_addr_i			(),                                //address
+      .fr_set_i				(),                                 //write request
+      .fr_get_i				(),                                 //read request
+      .fr_set_data_i			(),                            //write data
+      .fr_set_bsy_o			(),                             //write request reject
+      .fr_get_bsy_o			(),                             //read request reject
+      .fr_get_data_o			(),                            //read data
+      //I/O interface
+      .io_push_bsy_i			(io_push_bsy_i),                            //push request reject
+      .io_pull_bsy_i			(io_pull_bsy_i),                            //pull request reject
+      .io_pull_data_i			(io_pull_data_i),                           //pull data
+      .io_push_o			(io_push_o),                                //push request
+      .io_pull_o			(io_pull_o),                                //pull request
+      .io_push_data_o			(io_push_data_o),                           //push data
+      //UPRS interface
+      .uprs_psd_i			(uprs_psd),                                 //parameter stack depths
+      .uprs_rsd_i			(uprs_rsd),                                 //return stack depth
+      .uprs_ps_clear_bsy_i		(uprs_ps_clear_bsy),                        //parameter stack clear busy indicator
+      .uprs_rs_clear_bsy_i		(uprs_rs_clear_bsy),                        //return stack clear busy indicator
+      .uprs_ps_clear_o			(uprs_ps_clear),                            //parameter stack clear request
+      .uprs_rs_clear_o			(uprs_rs_clear),                            //return stack clear request
+      //Exception interface
+      .excpt_ien_o			(),                                         //interrupts enabled
+      //Probe signals
+      .prb_fr_ien_o			(prb_fr_ien_o));                             //probe signals
 
 
 
@@ -220,6 +389,342 @@ module N1
 
 
 
+
+
+
+   
+
+
+   //PBI - Program bus interface
+   //---------------------------
+   N1_wbi
+     #(.ADDR_WIDTH                      (16))                                       //RAM address width
+   pbi
+     (//Clock and reset
+      .clk_i				(clk_i),                                    //module clock
+      .async_rst_i			(async_rst_i),                              //asynchronous reset
+      .sync_rst_i			(sync_rst_i),                               //synchronous reset
+      //High priority memory interface (data bus)
+      .hiprio_addr_i			(),                            //address
+      .hiprio_access_i			(),                          //access request
+      .hiprio_rwb_i			(),                             //data direction
+      .hiprio_wdata_i			(),                           //write data
+      .hiprio_access_bsy_o		(),                      //access request rejected
+      .hiprio_rdata_o			(),                           //read data
+      .hiprio_rdata_del_o		(),                       //read data delay
+      //Low priority memory interface (instruction bus)
+      .loprio_addr_i			(),                            //address
+      .loprio_access_i			(),                          //access request
+      .loprio_rwb_i			(1'b1),                             //data direction
+      .loprio_wdata_i			(),                           //write data
+      .loprio_access_bsy_o		(),                      //access request rejected
+      .loprio_rdata_o			(),                           //read data
+      .loprio_rdata_del_o		(),                       //read data delay
+      //Wishbone bus
+      .wb_ack_i				(pbus_ack_i),                               //bus cycle acknowledge
+      .wb_stall_i			(pbus_stall_i),                             //access delay
+      .wb_dat_i				(pbus_dat_i),                               //read data bus
+      .wb_cyc_o				(pbus_cyc_o),                               //bus cycle indicator
+      .wb_stb_o				(pbus_stb_o),                               //access request
+      .wb_we_o				(pbus_we_o),                                //write enable
+      .wb_tga_hiprio_o			(pbus_tga_dat_o),                           //access from high prio interface
+      .wb_tga_loprio_o			(pbus_tga_opc_o),                           //access from low prio interface
+      .wb_adr_o				(pbus_adr_o),                               //address bus
+      .wb_dat_o				(pbus_dat_o));                              //write data bus
+
+
+
+
+
+
+
+
+
+   //ALU - Arithmetic logic unit
+   //---------------------------
+   N1_alu
+     (//IR interface
+      .ir2alu_opr_i			(),                                //ALU operator
+      .ir2alu_opd_i			(),                                //immediate operand
+      .ir2alu_opd_sel_i			(),                                //0: PS1, 1: immediate
+      //UPRS interface                       
+      .alu2pspm_ps0_push_data_o		(),                                //new PS0 (TOS)
+      .alu2pspm_ps1_push_data_o		(),                                //new PS1 (TOS+1)
+      .uprs_ps0_pull_data_i		(uprs_ps0_pull_data),                       //current PS0 (TOS)
+      .uprs_ps1_pull_data_i		(uprs_ps1_pull_data));                      //current PS1 (TOS+1)
+
+   //PSPM - Parameter stack push multiplexer
+   //---------------------------------------
+
+
+
+
+   
+
+
+
+   
+   //UPRS - Upper parameter and return stack
+   //---------------------------------------
+   N1_uprs
+     #(.ROT_EXTENSION                   (ROT_EXTENSION),                            //implement ROT extension
+       .PSD_WIDTH                       (PSD_WIDTH),                                //width of parameter stack depth register
+       .RSD_WIDTH                       (RSD_WIDTH))                                //width of return stack depth register
+   uprs
+     (//Clock and reset
+      .clk_i                            (clk_i),                                    //module clock
+      .async_rst_i                      (async_rst_i),                              //asynchronous reset
+      .sync_rst_i                       (sync_rst_i),                               //synchronous reset
+      //Upper parameter and return stack interface				    
+      .uprs_ps_clear_i                  (uprs_ps_clear),                            //parameter stack clear request
+      .uprs_rs_clear_i                  (uprs_rs_clear),                            //return stack clear request
+      .uprs_shift_i                     (uprs_shift),                               //stack shift request
+      .uprs_dat_2_ps0_i                 (uprs_dat_2_ps0),                           //push data -> PS0
+      .uprs_dat_2_ps1_i                 (uprs_dat_2_ps1),                           //push data -> PS1
+      .uprs_dat_2_rs0_i                 (uprs_dat_2_rs0),                           //push data -> RS1
+      .uprs_ps3_2_ips_i                 (uprs_ps3_2_ips),                           //PS3       -> IPS
+      .uprs_ips_2_ps3_i                 (uprs_ips_2_ps3),                           //IPS       -> PS3
+      .uprs_ps2_2_ps3_i                 (uprs_ps2_2_ps3),                           //PS2       -> PS3
+      .uprs_ps3_2_ps2_i                 (uprs_ps3_2_ps2),                           //PS3       -> PS2
+      .uprs_ps0_2_ps2_i                 (uprs_ps0_2_ps2),                           //PS0       -> PS2 (ROT extension)
+      .uprs_ps1_2_ps2_i                 (uprs_ps1_2_ps2),                           //PS1       -> PS2
+      .uprs_ps2_2_ps1_i                 (uprs_ps2_2_ps1),                           //PS2       -> PS1
+      .uprs_ps0_2_ps1_i                 (uprs_ps0_2_ps1),                           //PS0       -> PS1
+      .uprs_ps1_2_ps0_i                 (uprs_ps1_2_ps0),                           //PS1       -> PS0
+      .uprs_ps2_2_ps0_i                 (uprs_ps2_2_ps0),                           //PS2       -> PS0 (ROT extension)
+      .uprs_rs0_2_ps0_i                 (uprs_rs0_2_ps0),                           //RS0       -> PS0
+      .uprs_ps0_2_rs0_i                 (uprs_ps0_2_rs0),                           //PS0       -> RS0
+      .uprs_irs_2_rs0_i                 (uprs_irs_2_rs0),                           //IRS       -> RS0
+      .uprs_rs0_2_irs_i                 (uprs_rs0_2_irs),                           //RS0       -> IRS
+      .uprs_ps0_push_data_i             (uprs_ps0_push_data),                       //PS0 push data
+      .uprs_ps1_push_data_i             (uprs_ps1_push_data),                       //PS1 push data
+      .uprs_rs0_push_data_i             (uprs_rs0_push_data),                       //RS0 push data
+      .uprs_ps_clear_bsy_o              (uprs_ps_clear_bsy),                        //parameter stack clear busy indicator
+      .uprs_rs_clear_bsy_o              (uprs_rs_clear_bsy),                        //return stack clear busy indicator
+      .uprs_shift_bsy_o                 (uprs_shift_bsy),                           //stack shift busy indicator
+      .uprs_ps_uf_o                     (uprs_ps_uf),                               //parameter stack underflow
+      .uprs_ps_of_o                     (uprs_ps_of),                               //parameter stack overflow
+      .uprs_rs_uf_o                     (uprs_rs_uf),                               //return stack underflow
+      .uprs_rs_of_o                     (uprs_rs_of),                               //return stack overflow
+      .uprs_ps0_loaded_o                (uprs_ps0_loaded),                          //PS0 contains data
+      .uprs_ps1_loaded_o                (uprs_ps1_loaded),                          //PS1 contains data
+      .uprs_rs0_loaded_o                (uprs_rs0_loaded),                          //RS0 contains data
+      .uprs_ps0_pull_data_o             (uprs_ps0_pull_data),                       //PS0 pull data
+      .uprs_ps1_pull_data_o             (uprs_ps1_pull_data),                       //PS1 pull data
+      .uprs_rs0_pull_data_o             (uprs_rs0_pull_data),                       //RS0 pull data
+      //Stack depths								    
+      .psd_o                            (uprs_psd),                                 //parameter stack depths
+      .rsd_o                            (uprs_rsd),                                 //return stack depth
+      //IPS interface
+      .ips_clear_bsy_i                  (ips_clear_bsy),                            //IPS clear busy indicator
+      .ips_push_bsy_i                   (ips_push_bsy),                             //IPS push busy indicator
+      .ips_pull_bsy_i                   (ips_pull_bsy),                             //IPS pull busy indicator
+      .ips_empty_i                      (ips_empty),                                //IPS empty indicator
+      .ips_full_i                       (ips_full),                                 //IPS overflow indicator
+      .ips_pull_data_i                  (ips_pull_data),                            //IPS pull data
+      .ips_clear_o                      (ips_clear),                                //IPS clear request
+      .ips_push_o                       (ips_push),                                 //IPS push request
+      .ips_pull_o                       (ips_pull),                                 //IPS pull request
+      .ips_push_data_o                  (ips_push_data),                            //IPS push data
+      //IRS interface 								    
+      .irs_clear_bsy_i                  (irs_clear_bsy),                            //IRS clear busy indicator
+      .irs_push_bsy_i                   (irs_push_bsy),                             //IRS push busy indicator
+      .irs_pull_bsy_i                   (irs_pull_bsy),                             //IRS pull busy indicator
+      .irs_empty_i                      (irs_empty),                                //IRS empty indicator
+      .irs_full_i                       (irs_full),                                 //IRS overflow indicator
+      .irs_pull_data_i                  (irs_pull_data),                            //IRS pull data
+      .irs_clear_o                      (irs_clear),                                //IRS clear request
+      .irs_push_o                       (irs_push),                                 //IRS push request
+      .irs_pull_o                       (irs_pull),                                 //IRS pull request
+      .irs_push_data_o                  (irs_push_data),                            //IRS push data
+      //Probe signals   							    
+      .prb_uprs_psd_o                   (prb_uprs_psd_o),                           //probed PSD
+      .prb_uprs_rsd_o                   (prb_uprs_rsd_o),                           //probed RSD
+      .prb_uprs_ps0_o                   (prb_uprs_ps0_o),                           //probed PS0
+      .prb_uprs_ps1_o                   (prb_uprs_ps1_o),                           //probed PS1
+      .prb_uprs_ps2_o                   (prb_uprs_ps2_o),                           //probed PS2
+      .prb_uprs_ps3_o                   (prb_uprs_ps3_o),                           //probed PS3
+      .prb_uprs_rs0_o                   (prb_uprs_rs0_o));                          //probed RS0
+
+   //IPS - Intermediate parameter stack
+   //----------------------------------
+   N1_is
+     #(.DEPTH                           (IPS_DEPTH))                                //depth of the IPS
+   ips
+     (//Clock and reset
+      .clk_i                            (clk_i),                                    //module clock
+      .async_rst_i                      (async_rst_i),                              //asynchronous reset
+      .sync_rst_i                       (sync_rst_i),                               //synchronous reset
+      //Interface to upper stack
+      .is_clear_i			(ips_clear),                                //IPS clear request
+      .is_push_i			(ips_push),                                 //IPS push request
+      .is_pull_i			(ips_pull),                                 //IPS pull request
+      .is_push_data_i			(ips_push_data),                            //IPS push data
+      .is_clear_bsy_o			(ips_clear_bsy),                            //IPS clear busy indicator
+      .is_push_bsy_o			(ips_push_bsy),                             //IPS push busy indicator
+      .is_pull_bsy_o			(ips_pull_bsy),                             //IPS pull busy indicator
+      .is_empty_o			(ips_empty),                                //IPS empty indicator
+      .is_full_o			(ips_full),                                 //IPS overflow indicator
+      .is_pull_data_o			(ips_pull_data),                            //IPS pull data
+      //Interface to lower stack
+      .ls_clear_bsy_i			(lps_clear_bsy),                            //LPS clear busy indicator
+      .ls_push_bsy_i			(lps_push_bsy),                             //LPS push busy indicator
+      .ls_pull_bsy_i			(lps_pull_bsy),                             //LPS pull busy indicator
+      .ls_empty_i			(lps_empty),                                //LPS empty indicator
+      .ls_full_i			(lps_full),                                 //LPS overflow indicator
+      .ls_pull_data_i			(lps_pull_data),                            //LPS pull data
+      .ls_clear_o			(lps_clear),                                //LPS clear request
+      .ls_push_o			(lps_push),                                 //LPS push request
+      .ls_pull_o			(lps_pull),                                 //LPS pull request
+      .ls_push_data_o			(lps_push_data),                            //LPS push data
+      //Probe signals
+      .prb_is_cells_o                   (prb_ips_cells_o),                          //probed cells
+      .prb_is_tags_o                    (prb_ips_tags_o));                          //probed tags
+
+   //IRS - Intermediate return stack
+   //-------------------------------
+   N1_is
+     #(.DEPTH                           (IRS_DEPTH))                                //depth of the IRS
+   irs
+     (//Clock and reset
+      .clk_i                            (clk_i),                                    //module clock
+      .async_rst_i                      (async_rst_i),                              //asynchronous reset
+      .sync_rst_i                       (sync_rst_i),                               //synchronous reset
+      //Interface to upper stack
+      .is_clear_i			(irs_clear),                                //IRS clear request
+      .is_push_i			(irs_push),                                 //IRS push request
+      .is_pull_i			(irs_pull),                                 //IRS pull request
+      .is_push_data_i			(irs_push_data),                            //IRS push data
+      .is_clear_bsy_o			(irs_clear_bsy),                            //IRS clear busy indicator
+      .is_push_bsy_o			(irs_push_bsy),                             //IRS push busy indicator
+      .is_pull_bsy_o			(irs_pull_bsy),                             //IRS pull busy indicator
+      .is_empty_o			(irs_empty),                                //IRS empty indicator
+      .is_full_o			(irs_full),                                 //IRS overflow indicator
+      .is_pull_data_o			(irs_pull_data),                            //IRS pull data
+      //Interface to lower stack
+      .ls_clear_bsy_i			(lrs_clear_bsy),                            //LRS clear busy indicator
+      .ls_push_bsy_i			(lrs_push_bsy),                             //LRS push busy indicator
+      .ls_pull_bsy_i			(lrs_pull_bsy),                             //LRS pull busy indicator
+      .ls_empty_i			(lrs_empty),                                //LRS empty indicator
+      .ls_full_i			(lrs_full),                                 //LRS overflow indicator
+      .ls_pull_data_i			(lrs_pull_data),                            //LRS pull data
+      .ls_clear_o			(lrs_clear),                                //LRS clear request
+      .ls_push_o			(lrs_push),                                 //LRS push request
+      .ls_pull_o			(lrs_pull),                                 //LRS pull request
+      .ls_push_data_o			(lrs_push_data),                            //LRS push data
+      //Probe signals
+      .prb_is_cells_o                   (prb_irs_cells_o),                          //probed cells
+      .prb_is_tags_o                    (prb_irs_tags_o));                          //probed tags
+
+   //LPS - Lower parameter stack
+   //---------------------------
+   N1_ls
+    #(.ADDR_WIDTH                       (SBUS_ADDR_WIDTH),                          //address width of the memory
+      .STACK_DIRECTION                  (1))                                        //1:grow stack upward, 0:grow stack downward
+   lps										    
+    (//Clock and reset								    
+     .clk_i                             (clk_i),                                    //module clock
+     .async_rst_i                       (async_rst_i),                              //asynchronous reset
+     .sync_rst_i                        (sync_rst_i),                               //synchronous reset
+     //Stack interface                  					    
+     .ls_clear_i                        (lps_clear),                                //clear request
+     .ls_push_i                         (lps_push),                                 //push request
+     .ls_pull_i                         (lps_pull),                                 //pull request
+     .ls_push_data_i                    (lps_push_data),                            //push request
+     .ls_clear_bsy_o                    (lps_clear_bsy),                            //clear request rejected
+     .ls_push_bsy_o                     (lps_push_bsy),                             //push request rejected
+     .ls_pull_bsy_o                     (lps_pull_bsy),                             //pull request rejected
+     .ls_empty_o                        (lps_empty),                                //underflow indicator
+     .ls_full_o                         (lps_full),                                 //overflow indicator
+     .ls_pull_data_o                    (lps_pull_data),                            //pull data
+     //Memory interface                 					    
+     .mem_access_bsy_i                  (lpsmem_access_bsy),                        //access request rejected
+     .mem_rdata_i                       (lpsmem_rdata),                             //read data
+     .mem_rdata_del_i                   (lrsmem_rdata_del),                         //read data delay
+     .mem_addr_o                        (lpsmem_addr),                              //address
+     .mem_access_o                      (lpsmem_access),                            //access request
+     .mem_rwb_o                         (lpsmem_rwb),                               //data direction
+     .mem_wdata_o                       (lpsmem_wdata),                             //write data
+     //Dynamic stack ranges             					    
+     .ls_tos_limit_i                    (lrs_tos),                                  //address, which the LS must not reach
+     .ls_tos_o                          (lps_tos),                                  //points to the TOS
+     //Probe signals                    					    
+     .prb_ls_state_o                    (prb_lps_state_o),                          //probed FSM state
+     .prb_ls_tosbuf_o                   (prb_lps_tosbuf_o),                         //TOS buffer
+     .prb_ls_agu_o                      (prb_lps_agu_o));                           //probed AGU address output
+        									    
+   //LRS - Lower return stack							    
+   //------------------------							    
+   N1_ls									    
+    #(.ADDR_WIDTH                       (SBUS_ADDR_WIDTH),                          //address width of the memory
+      .STACK_DIRECTION                  (0))                                        //1:grow stack upward, 0:grow stack downward
+   lrs										    
+    (//Clock and reset								    
+     .clk_i                             (clk_i),                                    //module clock
+     .async_rst_i                       (async_rst_i),                              //asynchronous reset
+     .sync_rst_i                        (sync_rst_i),                               //synchronous reset
+     //Stack interface                  					    
+     .ls_clear_i                        (lrs_clear),                                //clear request
+     .ls_push_i                         (lrs_push),                                 //push request
+     .ls_pull_i                         (lrs_pull),                                 //pull request
+     .ls_push_data_i                    (lrs_push_data),                            //push request
+     .ls_clear_bsy_o                    (lrs_clear_bsy),                            //clear request rejected
+     .ls_push_bsy_o                     (lrs_push_bsy),                             //push request rejected
+     .ls_pull_bsy_o                     (lrs_pull_bsy),                             //pull request rejected
+     .ls_empty_o                        (lrs_empty),                                //underflow indicator
+     .ls_full_o                         (lrs_full),                                 //overflow indicator
+     .ls_pull_data_o                    (lrs_pull_data),                            //pull data
+     //Memory interface                 					    
+     .mem_access_bsy_i                  (lrsmem_access_bsy),                        //access request rejected
+     .mem_rdata_i                       (lrsmem_rdata),                             //read data
+     .mem_rdata_del_i                   (lrsmem_rdata_del),                         //read data delay
+     .mem_addr_o                        (lrsmem_addr),                              //address
+     .mem_access_o                      (lrsmem_access),                            //access request
+     .mem_rwb_o                         (lrsmem_rwb),                               //data direction
+     .mem_wdata_o                       (lrsmem_wdata),                             //write data
+     //Dynamic stack ranges             					    
+     .ls_tos_limit_i                    (lps_tos),                                  //address, which the LS must not reach
+     .ls_tos_o                          (lrs_tos),                                  //points to the TOS
+     //Probe signals                    
+     .prb_ls_state_o                    (prb_lrs_state_o),                          //probed FSM state
+     .prb_ls_tosbuf_o                   (prb_lrs_tosbuf_o),                         //TOS buffer
+     .prb_ls_agu_o                      (prb_lrs_agu_o));                           //probed AGU address output
+ 
+   //SBI - Stack bus interface
+   N1_wbi
+     #(.ADDR_WIDTH                      (SBUS_ADDR_WIDTH))                                       //RAM address width
+   sbi
+     (//Clock and reset
+      .clk_i				(clk_i),                                    //module clock
+      .async_rst_i			(async_rst_i),                              //asynchronous reset
+      .sync_rst_i			(sync_rst_i),                               //synchronous reset
+      //High priority memory interface (parameter stack)
+      .hiprio_addr_i			(lpsmem_addr),                              //address
+      .hiprio_access_i			(lpsmem_access),                            //access request
+      .hiprio_rwb_i			(lpsmem_rwb),                               //data direction
+      .hiprio_wdata_i			(lpsmem_wdata),                             //write data
+      .hiprio_access_bsy_o		(lpsmem_access_bsy),                        //access request rejected
+      .hiprio_rdata_o			(lpsmem_rdata),                             //read data
+      .hiprio_rdata_del_o		(lrsmem_rdata_del),                         //read data delay
+      //Low priority memory interface (return stack)				    
+      .loprio_addr_i			(lrsmem_addr),                              //address
+      .loprio_access_i			(lrsmem_access),                            //access request
+      .loprio_rwb_i			(lrsmem_rwb),                               //data direction
+      .loprio_wdata_i			(lrsmem_wdata),                             //write data
+      .loprio_access_bsy_o		(lrsmem_access_bsy),                        //access request rejected
+      .loprio_rdata_o			(lrsmem_rdata),                             //read data
+      .loprio_rdata_del_o		(lrsmem_rdata_del),                         //read data delay
+      //Wishbone bus
+      .wb_ack_i				(sbus_ack_i),                               //bus cycle acknowledge
+      .wb_stall_i			(sbus_stall_i),                             //access delay
+      .wb_dat_i				(sbus_dat_i),                               //read data bus
+      .wb_cyc_o				(sbus_cyc_o),                               //bus cycle indicator
+      .wb_stb_o				(sbus_stb_o),                               //access request
+      .wb_we_o				(sbus_we_o),                                //write enable
+      .wb_tga_hiprio_o			(sbus_tga_ps_o),                            //access from high prio interface
+      .wb_tga_loprio_o			(sbus_tga_ls_o),                            //access from low prio interface
+      .wb_adr_o				(sbus_adr_o),                               //address bus
+      .wb_dat_o				(sbus_dat_o));                              //write data bus
 
 
 
@@ -726,154 +1231,6 @@ module N1
       //Probe signals
       .prb_ir_o                 (prb_ir_o),                          //current instruction register
       .prb_ir_stash_o           (prb_ir_stash_o));                   //stashed instruction register
-
-   //PRS - Parameter and return stack
-   //--------------------------------
-   N1_prs
-     #(.STACK_DEPTH_WIDTH (9),                                        //width of stack depth registers
-       .IPS_DEPTH         (4),                                        //depth of the intermediate parameter stack
-       .IRS_DEPTH         (2),                                        //depth of the intermediate return stack
-       .LS_AWIDTH         (8))                                        //lower stack address width
-   prs
-     (//Clock and reset
-      .clk_i			(),                                 //module clock
-      .async_rst_i		(),                           //asynchronous reset
-      .sync_rst_i		(),                            //synchronous reset
-  
-      //Stack outputs
-      .prs_ps0_o		(),                             //PS0
-      .prs_ps1_o		(),                             //PS1
-      .prs_rs0_o		(),                             //RS0
-  
-      //IR interface
-      .ir2prs_ir_ps0_next_i	(),                  //IR output (literal value)
-      .ir2prs_ps0_required_i	(),                 //at least one cell on the PS required
-      .ir2prs_ps1_required_i	(),                 //at least two cells on the PS required
-      .ir2prs_rs0_required_i	(),                 //at least one cell on the RS rwquired
-      .ir2prs_ir_2_ps0_i	(),                     //IR output     -> PS0
-      .ir2prs_psd_2_ps0_i	(),                    //PS depth      -> PS0
-      .ir2prs_rsd_2_ps0_i	(),                    //RS depth      -> PS0
-      .ir2prs_excpt_2_ps0_i	(),                  //EXCPT output  -> PS0
-      .ir2prs_biu_2_ps0_i	(),                    //BI output     -> PS0
-      .ir2prs_alu_2_ps0_i	(),                    //ALU output    -> PS0
-      .ir2prs_alu_2_ps1_i	(),                    //ALU output    -> PS1
-      .ir2prs_ps0_2_rsd_i	(),                    //PS0           -> RS depth (clears RS)
-      .ir2prs_ps0_2_psd_i	(),                    //PS0           -> PS depth (clears PS)
-      .ir2prs_agu_2_rs0_i	(),                    //AGU output    -> RS0
-      .ir2prs_ips_2_ps3_i	(),                    //IPS           -> PS3
-      .ir2prs_ps3_2_ips_i	(),                    //PS3           -> IPS
-      .ir2prs_ps3_2_ps2_i	(),                    //PS3           -> PS2
-      .ir2prs_ps2_2_ps3_i	(),                    //PS2           -> PS3
-      .ir2prs_ps2_2_ps1_i	(),                    //PS2           -> PS1
-      .ir2prs_ps1_2_ps2_i	(),                    //PS1           -> PS2
-      .ir2prs_ps1_2_ps0_i	(),                    //PS1           -> PS0
-      .ir2prs_ps0_2_ps1_i	(),                    //PS0           -> PS1
-      .ir2prs_ps2_2_ps0_i	(),                    //PS2           -> PS0 (ROT extension)
-      .ir2prs_ps0_2_ps2_i	(),                    //PS0           -> PS2 (ROT extension)
-      .ir2prs_ps0_2_rs0_i	(),                    //PS0           -> RS0
-      .ir2prs_rs0_2_ps0_i	(),                    //RS0           -> PS0
-      .ir2prs_rs0_2_irs_i	(),                    //RS0           -> IRS
-      .ir2prs_irs_2_rs0_i	(),                    //IRS           -> RS0
-      .prs2ir_bsy_o		(),                          //PS and RS stalled
-  
-      //ALU interface
-      .alu2prs_ps0_next_i	(),                    //ALU result (lower word)
-      .alu2prs_ps1_next_i	(),                    //ALU result (upper word)
-  
-      //AGU interface
-      .agu2prs_rs0_next_i	(),                    //PC
-  
-      //EXCPT interface
-      .prs2excpt_psof_o		(),                      //parameter stack overflow
-      .prs2excpt_psuf_o		(),                      //parameter stack underflow
-      .prs2excpt_rsof_o		(),                      //return stack overflow
-      .prs2excpt_rsuf_o		(),                      //return stack underflow
-      .excpt2prs_ps0_next_i	(),                  //throw code
-  
-      //Bus interface
-      .bi2prs_ps0_next_i	(),                     //read data
-  
-      //Probe signals
-      .prb_us_rsd_o		(),                          //RS depth
-      .prb_us_psd_o		(),                          //PS depth
-      .prb_us_r0_o		(),                           //URS R0
-      .prb_us_p0_o		(),                           //UPS P0
-      .prb_us_p1_o		(),                           //UPS P1
-      .prb_us_p2_o		(),                           //UPS P2
-      .prb_us_p3_o		(),                           //URS R0
-      .prb_ips_cells_o		(),                       //current IS cells
-      .prb_ips_tags_o		(),                        //current IS tags
-      .prb_ips_state_o		(),                       //current state
-      .prb_irs_cells_o		(),                       //current IS cells
-      .prb_irs_tags_o		(),                        //current IS tags
-      .prb_irs_state_o		(),                       //current state
-      .prb_lps_addr_o		(),                        //parameter stack address probe
-      .prb_lrs_addr_o		());                       //return stack address probe
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   //PAGU - Program bus address generation unit
-   //------------------------------------------
-   N1_pagu
-     #(.PBUS_AADR_OFFSET (PBUS_AADR_OFFSET),                         //offset for direct program address
-       .PBUS_MADR_OFFSET (PBUS_MADR_OFFSET))                         //offset for direct data
-   pagu
-     (//Clock and reset
-      .clk_i                    (clk_i),                             //module clock
-      .async_rst_i              (async_rst_i),                       //asynchronous reset
-      .sync_rst_i               (sync_rst_i),                        //synchronous reset
-
-      //Program bus (wishbone)
-      .pbus_adr_o               (pbus_adr_o),                        //address bus
-
-      //DSP interface
-      .pagu2dsp_adr_sel_o       (pagu2dsp_adr_sel),                  //1:absolute COF, 0:relative COF
-      .pagu2dsp_radr_o          (pagu2dsp_radr),                     //relative COF address
-      .pagu2dsp_aadr_o          (pagu2dsp_aadr),                     //absolute COF address
-      .dsp2pagu_adr_i           (dsp2pagu_adr),                      //AGU output
-
-      //FC interface
-      .fc2pagu_prev_adr_hold_i  (fc2pagu_prev_adr_hold),             //maintain stored address
-      .fc2pagu_prev_adr_sel_i   (fc2pagu_prev_adr_sel),              //0:AGU output, 1:previous address
-
-      //IR interface
-      .ir2pagu_eow_i            (ir2pagu_eow),                       //end of word (EOW bit)
-      .ir2pagu_eow_postpone_i   (ir2pagu_eow_postpone),              //postpone EOW
-      .ir2pagu_jmp_or_cal_i     (ir2pagu_jmp_or_cal),                //jump or call instruction
-      .ir2pagu_bra_i            (ir2pagu_bra),                       //conditional branch
-      .ir2pagu_scyc_i           (ir2pagu_scyc),                      //single cycle instruction
-      .ir2pagu_mem_i            (ir2pagu_mem),                       //memory I/O
-      .ir2pagu_aadr_sel_i       (ir2pagu_aadr_sel),                  //select (indirect) absolute address
-      .ir2pagu_madr_sel_i       (ir2pagu_madr_sel),                  //select (indirect) data address
-      .ir2pagu_aadr_i           (ir2pagu_aadr),                      //direct absolute address
-      .ir2pagu_radr_i           (ir2pagu_radr),                      //direct relative address
-      .ir2pagu_madr_i           (ir2pagu_madr),                      //direct memory address
-
-      //PRS interface
-      .pagu2prs_prev_adr_o      (pagu2prs_prev_adr),                 //address register output
-      .prs2pagu_ps0_i           (prs2pagu_ps0),                      //PS0
-      .prs2pagu_rs0_i           (prs2pagu_rs0),                      //RS0
-
-      //Probe signals
-      .prb_pagu_prev_adr_o      (prb_pagu_prev_adr_o));              //address register
-
-
-
-
 
 
 
