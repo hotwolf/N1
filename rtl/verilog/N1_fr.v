@@ -63,10 +63,9 @@ module N1_fr
     output wire                              uprs_rs_clear_o,                          //return stack clear request
 
     //Exception interface
-    output wire                              excpt_ien_o,                              //interrupts enabled
-
-    //Probe signals
-    output wire                              prb_fr_ien_o);                            //probe signals
+    input wire                               excpt_ien_i,                              //interrupts enabled
+    output wire                              excpt_ien_set_o,                          //interrupts enabled
+    output wire                              excpt_ien_clear_o);                       //interrupts enabled
 
    //Registers
    //---------
@@ -151,7 +150,13 @@ module N1_fr
    assign rsd_set_bsy = uprs_rs_clear_bsy_i & fr_sel_rsd;
 
    //IEN
-   assign ien_get_data = {16{ien_reg & fr_sel_ien}};
+   assign ien_get_data      = INT_EXTENSION ? {16{excpt_ien_i}} : 16'h0000;
+   assign excpt_ien_set_o   = fr_set_i & | fr_set_data_i;                        //enable interrupts
+   assign excpt_ien_clear_o = fr_set_i & ~|fr_set_data_i;                        //enable interrupts
+
+
+
+{16{ien_reg & fr_sel_ien}};
    assign ien_next     = ~fr_push_zero;                                          //next P1 cell value
    assign ien_we       = fr_set_i & fr_sel_ien;                                  //P1 write enable
 
@@ -196,11 +201,5 @@ module N1_fr
    //UPRS interface
    assign uprs_ps_clear_o = fr_set_i & fr_push_zero & fr_sel_psd;    //parameter stack clear request
    assign uprs_rs_clear_o = fr_set_i & fr_push_zero & fr_sel_rsd;    //return stack clear request
-
-   //Exception interface
-   assign excpt_ien_o = ien_reg;                                     //interrupts enabled
-
-   //Probe signals
-   assign prb_fr_ien_o = ien_reg;                                    //probe signals
 
 endmodule // N1_fr

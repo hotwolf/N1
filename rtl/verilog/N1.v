@@ -116,30 +116,39 @@ module N1
   #(parameter  VARIANT          = "DEFAULT"                            		//machne configuration
     //Core configuration					       		
     localparam ROT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//ROT extension
+                                  VARIANT=="MINIMAL"      ?        0 :
                                                                    1,  		
     localparam INT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//interrupt extension
+                                  VARIANT=="MINIMAL"      ?        0 :
                                                                    1,  		
     localparam KEY_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//KEY/EMIT extension
+                                  VARIANT=="MINIMAL"      ?        0 :
                                                                    1,  		
     localparam START_ADDR       = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//reset and interrupt start address
+                                  VARIANT=="MINIMAL"      ? 16'h0000 :
                                                             16'h0000,  		
     localparam DIR_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//offset for direct program address
+                                  VARIANT=="MINIMAL"      ? 16'h0000 :
                                                             16'h0000,  		
     localparam DIR_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : 		//offset for direct data address
+                                  VARIANT=="MINIMAL"      ? 16'h00ff :
                                                             16'h00ff,  		 
     localparam IPS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : 		//depth of the intermediate parameter stack
+                                  VARIANT=="MINIMAL"      ?        0 :
                                                                    4,  		
     localparam IRS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : 		//depth of the intermediate return stack
+                                  VARIANT=="MINIMAL"      ?        0 :
                                                                    4,  		
     localparam SBUS_ADDR_WIDTH  = VARIANT=="iCE40UP5K_1C" ?       14 : 		//address width of the stack bus 
+                                  VARIANT=="MINIMAL"      ?        8 :
                                                                   14,  		
     //Derived parameters					       		
     localparam PSD_WIDTH        = SBUS_ADDR_WIDTH+1,                   		//width of parameter stack depth register
-    localparam RSD_WIDTH        = SBUS_ADDR_WIDTH+1)                   		//width of return stack depth register
+    localparam RSD_WIDTH        = SBUS_ADDR_WIDTH+1,                   		//width of return stack depth register
     localparam IPS_STACK_WIDTH  = (IPS_DEPTH == 0) ? 16 : 16*IPS_DEPTH,		//width of the IPS cell probes
-    localparam IPS_TAG_WIDTH    = (IPS_DEPTH == 0) ?  1 :    IPS_DEPTH),	//width of the IPS tag probes
+    localparam IPS_TAG_WIDTH    = (IPS_DEPTH == 0) ?  1 :    IPS_DEPTH,	        //width of the IPS tag probes
     localparam IRS_STACK_WIDTH  = (IRS_DEPTH == 0) ? 16 : 16*IRS_DEPTH,		//width of the IPS cell probes
-    localparam IRS_TAG_WIDTH    = (IRS_DEPTH == 0) ?  1 :    IRS_DEPTH),	//width of the IPS tag probes
+    localparam IRS_TAG_WIDTH    = (IRS_DEPTH == 0) ?  1 :    IRS_DEPTH)  	//width of the IPS tag probes
    
   
    (//Clock and reset
