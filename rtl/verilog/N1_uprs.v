@@ -57,26 +57,34 @@ module N1_uprs
     input  wire                         uprs_ps_clear_i,                         //parameter stack clear request
     input  wire                         uprs_rs_clear_i,                         //return stack clear request
     input  wire                         uprs_shift_i,                            //stack shift request
-    input  wire                         uprs_dat_2_ps0_i,                        //push data -> PS0
-    input  wire                         uprs_dat_2_ps1_i,                        //push data -> PS1
-    input  wire                         uprs_dat_2_rs0_i,                        //push data -> RS1
-    input  wire                         uprs_ps3_2_ips_i,                        //PS3       -> IPS
-    input  wire                         uprs_ips_2_ps3_i,                        //IPS       -> PS3
-    input  wire                         uprs_ps2_2_ps3_i,                        //PS2       -> PS3
-    input  wire                         uprs_ps3_2_ps2_i,                        //PS3       -> PS2
-    input  wire                         uprs_ps0_2_ps2_i,                        //PS0       -> PS2 (ROT extension)
-    input  wire                         uprs_ps1_2_ps2_i,                        //PS1       -> PS2
-    input  wire                         uprs_ps2_2_ps1_i,                        //PS2       -> PS1
-    input  wire                         uprs_ps0_2_ps1_i,                        //PS0       -> PS1
-    input  wire                         uprs_ps1_2_ps0_i,                        //PS1       -> PS0
-    input  wire                         uprs_ps2_2_ps0_i,                        //PS2       -> PS0 (ROT extension)
-    input  wire                         uprs_rs0_2_ps0_i,                        //RS0       -> PS0
-    input  wire                         uprs_ps0_2_rs0_i,                        //PS0       -> RS0
-    input  wire                         uprs_irs_2_rs0_i,                        //IRS       -> RS0
-    input  wire                         uprs_rs0_2_irs_i,                        //RS0       -> IRS
-    input  wire [15:0]                  uprs_ps0_push_data_i,                    //PS0 push data
-    input  wire [15:0]                  uprs_ps1_push_data_i,                    //PS1 push data
-    input  wire [15:0]                  uprs_rs0_push_data_i,                    //RS0 push data
+    input  wire                         uprs_imm_2_ps0_i,                        //immediate value -> PS0
+    input  wire                         uprs_alu_2_ps0_i,                        //ALU             -> PS0
+    input  wire                         uprs_wbi_2_ps0_i,                        //WBI             -> PS0
+    input  wire                         uprs_fr_2_ps0_i,                         //FR              -> PS0
+    input  wire                         uprs_excpt_2_ps0_i,                      //exception       -> PS0
+    input  wire                         uprs_alu_2_ps1_i,                        //ALU             -> PS1
+    input  wire                         uprs_pc_2_rs0_i,                         //PC              -> RS1
+    input  wire                         uprs_ps3_2_ips_i,                        //PS3             -> IPS
+    input  wire                         uprs_ips_2_ps3_i,                        //IPS             -> PS3
+    input  wire                         uprs_ps2_2_ps3_i,                        //PS2             -> PS3
+    input  wire                         uprs_ps3_2_ps2_i,                        //PS3             -> PS2
+    input  wire                         uprs_ps0_2_ps2_i,                        //PS0             -> PS2 (ROT extension)
+    input  wire                         uprs_ps1_2_ps2_i,                        //PS1             -> PS2
+    input  wire                         uprs_ps2_2_ps1_i,                        //PS2             -> PS1
+    input  wire                         uprs_ps0_2_ps1_i,                        //PS0             -> PS1
+    input  wire                         uprs_ps1_2_ps0_i,                        //PS1             -> PS0
+    input  wire                         uprs_ps2_2_ps0_i,                        //PS2             -> PS0 (ROT extension)
+    input  wire                         uprs_rs0_2_ps0_i,                        //RS0             -> PS0
+    input  wire                         uprs_ps0_2_rs0_i,                        //PS0             -> RS0
+    input  wire                         uprs_irs_2_rs0_i,                        //IRS             -> RS0
+    input  wire                         uprs_rs0_2_irs_i,                        //RS0             -> IRS
+    input  wire [15:0]                  uprs_imm_2_ps0_push_data_i,              //PS0 immediate push data
+    input  wire [15:0]                  uprs_alu_2_ps0_push_data_i,              //PS0 ALU push data
+    input  wire [15:0]                  uprs_wbi_2_ps0_push_data_i,              //PS0 WBI push data
+    input  wire [15:0]                  uprs_fr_2_ps0_push_data_i,               //PS0 FR push data
+    input  wire [15:0]                  uprs_excpt_2_ps0_push_data_i,            //PS0 exception push data
+    input  wire [15:0]                  uprs_alu_2_ps1_push_data_i,              //PS1 ALU push data
+    input  wire [15:0]                  uprs_pc_2_rs0_push_data_i,               //RS0 PC push data
     output wire                         uprs_ps_clear_bsy_o,                     //parameter stack clear busy indicator
     output wire                         uprs_rs_clear_bsy_o,                     //return stack clear busy indicator
     output wire                         uprs_shift_bsy_o,                        //stack shift busy indicator
@@ -167,9 +175,17 @@ module N1_uprs
 
    //Internal signals
    //-----------------
+   //Push data mux
+   wire                                 uprs_dat_2_ps0;                          //push data -> PS0
+   wire                                 uprs_dat_2_ps1;                          //push data -> PS1
+   wire                                 uprs_dat_2_rs0;                          //push data -> RS1
+   wire [15:0]                          uprs_ps0_push_data;                      //PS0 push data
+   wire [15:0]                          uprs_ps1_push_data;                      //PS1 push data
+   wire [15:0]                          uprs_rs0_push_data;                      //RS0 push data
+
    //ROT extension
-   wire                                uprs_ps0_2_ps2;                           //PS0 -> PS2 (ROT extension)
-   wire                                uprs_ps2_2_ps0;                           //PS2 -> PS0 (ROT extension)
+   wire                                 uprs_ps0_2_ps2;                          //PS0 -> PS2 (ROT extension)
+   wire                                 uprs_ps2_2_ps0;                          //PS2 -> PS0 (ROT extension)
 
    //Cell load status
    wire                                 ps0_loaded;                              //true if PSD>=1
@@ -199,6 +215,24 @@ module N1_uprs
    wire                                 psd_dec;                                 //decrement PS depth
    wire                                 rsd_inc;                                 //increment RS depth
    wire                                 rsd_dec;                                 //decrement RS depth
+
+   //Push data mux
+   assign uprs_dat_2_ps0     = uprs_imm_2_ps0_i  |                               //immediate value -> PS0
+                               uprs_alu_2_ps0_i  |                               //ALU             -> PS0
+                               uprs_wbi_2_ps0_i  |                               //WBI             -> PS0
+                               uprs_fr_2_ps0_i   |                               //FR              -> PS0
+                               uprs_excpt_2_ps0_i;                               //exception       -> PS0
+
+   assign uprs_dat_2_ps1     = uprs_alu_2_ps1_i;                                 //ALU             -> PS1
+   assign uprs_dat_2_rs0     = uprs_pc_2_rs0_i;                                  //PC              -> RS1
+   assign uprs_ps0_push_data =
+                     ({16{uprs_imm_2_ps0_i}}   & uprs_imm_2_ps0_push_data_i)   | //immediate value -> PS0
+                     ({16{uprs_alu_2_ps0_i}}   & uprs_alu_2_ps0_push_data_i)   | //ALU             -> PS0
+                     ({16{uprs_wbi_2_ps0_i}}   & uprs_wbi_2_ps0_push_data_i)   | //WBI             -> PS0
+                     ({16{uprs_fr_2_ps0_i}}    & uprs_fr_2_ps0_push_data_i)    | //FR              -> PS0
+                     ({16{uprs_excpt_2_ps0_i}} & uprs_excpt_2_ps0_push_data_i);  //exception       -> PS0
+   assign uprs_ps1_push_data = uprs_alu_2_ps1_push_data_i;                       //ALU             -> PS1
+   assign uprs_rs0_push_data = uprs_pc_2_rs0_push_data_i;                        //PC              -> RS1
 
    //Gated ROT extension signals
    assign uprs_ps0_2_ps2 = |ROT_EXTENSION & uprs_ps0_2_ps2_i;                    //PS0 -> PS2 (ROT extension)
@@ -245,7 +279,7 @@ module N1_uprs
                   //  +-+   +-+   +-+   +-+
                   //  | |   | |   | |<+ | |
                   //  +-+   +-+   +-+ | +-+
-                  (~ps0_loaded              & uprs_dat_2_ps1_i                   ) |
+                  (~ps0_loaded              & uprs_dat_2_ps1                     ) |
                   // PS3   PS2   PS1   PS0   RS0
                   // +-+   +-+   +-+   +-+ | +-+
                   // | |   | |   | |   | |-->|X|
@@ -311,7 +345,7 @@ module N1_uprs
                        // --+   +-+   +-+   +-+   +-+
                        //   |   | |   | |   | |<+ |X|
                        // --+   +-+   +-+   +-+ | +-+
-                       (~ps1_loaded              & uprs_dat_2_ps1_i) |
+                       (~ps1_loaded              & uprs_dat_2_ps1  ) |
                        // IPS   PS3   PS2   PS1   PS0   RS0
                        // --+   +-+   +-+   +-+   +-+ | +-+
                        //   |   | |   | |   | |   | |<--|X|
@@ -321,7 +355,7 @@ module N1_uprs
                        // --+   +-+   +-+   +-+   +-+
                        //   |   | |   | |   | |   | |<+
                        // --+   +-+   +-+   +-+   +-+ |
-                       (~ps0_loaded              & uprs_dat_2_ps0_i);
+                       (~ps0_loaded              & uprs_dat_2_ps0  );
 
    //Parameter stack depth decrement condition
                        // IPS   PS3   PS2   PS1   PS0
@@ -365,7 +399,7 @@ module N1_uprs
                        //       +-+   +--
                        //     +>| |-->|
                        //     | +-+   +--
-                       (~rs0_loaded              & uprs_dat_2_rs0_i);
+                       (~rs0_loaded              & uprs_dat_2_rs0  );
 
    //Return stack depth decrement condition
                        //       RS0   IRS
@@ -412,21 +446,21 @@ module N1_uprs
    assign uprs_rsd_o = rsd_reg;                                                   //RSD output
 
    //PS
-   assign ps0_next  = ({16{uprs_dat_2_ps0_i}} & uprs_ps0_push_data_i)    |       //push data     -> PS0
+   assign ps0_next  = ({16{uprs_dat_2_ps0}}   & uprs_ps0_push_data)      |       //push data     -> PS0
                       ({16{uprs_ps1_2_ps0_i}} & ps1_reg)                 |       //PS1           -> PS0
                       ({16{uprs_ps2_2_ps0}}   & ps2_reg)                 |       //PS2           -> PS0 (ROT extension)
                       ({16{uprs_rs0_2_ps0_i}} & rs0_reg);                        //RS0           -> PS0
    assign ps0_we    = ~shift_bsy & shift_valid &
-                      (uprs_dat_2_ps0_i                                  |       //push data     -> PS0
+                      (uprs_dat_2_ps0                                    |       //push data     -> PS0
                        uprs_ps1_2_ps0_i                                  |       //PS1           -> PS0
                        uprs_ps2_2_ps0                                    |       //PS2           -> PS0 (ROT extension)
                        uprs_rs0_2_ps0_i);                                        //RS0           -> PS0
 
-   assign ps1_next  = ({16{uprs_dat_2_ps1_i}} & uprs_ps1_push_data_i)    |       //push data     -> PS1
+   assign ps1_next  = ({16{uprs_dat_2_ps1}}   & uprs_ps1_push_data)      |       //push data     -> PS1
                       ({16{uprs_ps2_2_ps1_i}} & ps2_reg)                 |       //PS2           -> PS1
                       ({16{uprs_ps0_2_ps1_i}} & ps0_reg);                        //PS0           -> PS1
    assign ps1_we    = ~shift_bsy & shift_valid &
-                      (uprs_dat_2_ps1_i                                  |       //push data     -> PS1
+                      (uprs_dat_2_ps1                                    |       //push data     -> PS1
                        uprs_ps2_2_ps1_i                                  |       //PS2           -> PS1
                        uprs_ps0_2_ps1_i);                                        //PS0           -> PS1
 
@@ -481,11 +515,11 @@ module N1_uprs
        ps3_reg <= ps3_next;
 
    //RS
-   assign rs0_next  = ({16{uprs_dat_2_rs0_i}} &  uprs_rs0_push_data_i)   |       //push data     -> RS0
-                      ({16{uprs_ps0_2_rs0_i}} &  ps0_reg)                |       //PS0           -> RS0
-                      ({16{uprs_irs_2_rs0_i}} &  irs_pull_data_i);               //IRS           -> RS0
+   assign rs0_next  = ({16{uprs_dat_2_rs0}}    &  uprs_rs0_push_data)    |       //push data     -> RS0
+                      ({16{uprs_ps0_2_rs0_i}}  &  ps0_reg)               |       //PS0           -> RS0
+                      ({16{uprs_irs_2_rs0_i}}  &  irs_pull_data_i);              //IRS           -> RS0
    assign rs0_we    = ~shift_bsy & shift_valid &
-                      (uprs_dat_2_rs0_i                                  |       //push data     -> RS0
+                      (uprs_dat_2_rs0                                    |       //push data     -> RS0
                        uprs_ps0_2_rs0_i                                  |       //PS0           -> RS0
                        uprs_irs_2_rs0_i);                                        //IRS           -> RS0
 
