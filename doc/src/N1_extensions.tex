@@ -677,6 +677,60 @@ These rules are listed in \tabref{opcodes:stack:ufrules}.
 \end{center}  
 \endgroup
 
+%PC extension
+\subsection{Program Counter Extension}
+\label{extensions:pc}
+
+The Program Counter Extension maps the PC into the \gls{freg} space. 
+The Program Counter Register (PC) (see \figref{extensions:pc:fig}) always reads the PC of the current instruction.
+Write accesses are not supported.
+With the help of this extension, the N1 processor is able to perform relative jumps.
+
+\begin{figure}[H]
+  \begin{center}
+  \makebox[\textwidth][c]{
+    %\scalebox{0.5125} {
+    \scalebox{0.515} {
+      \begin{tikzpicture}
+
+        %Offset
+        \node [align=left, anchor=west] at (-2,3) {
+          \huge{Offset: \texttt{0x02}}
+        };        
+        %Index
+        \node [above] at  (1,2) {15};
+        \node [above] at  (3,2) {14};
+        \node [above] at  (5,2) {13};
+        \node [above] at  (7,2) {12};
+        \node [above] at  (9,2) {11};
+        \node [above] at (11,2) {10};
+        \node [above] at (13,2)  {9};
+        \node [above] at (15,2)  {8};
+        \node [above] at (17,2)  {7};
+        \node [above] at (19,2)  {6};
+        \node [above] at (21,2)  {5};
+        \node [above] at (23,2)  {4};
+        \node [above] at (25,2)  {3};
+        \node [above] at (27,2)  {2};
+        \node [above] at (29,2)  {1};
+        \node [above] at (31,2)  {0};
+        %Read
+        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+        \draw [thick, fill=white] (0,1) rectangle (32,2);
+         %Write
+        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+        \draw [thick, fill=white] (0,0) rectangle (32,1);
+        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+        \draw [thick, fill=gray!3] (0,0) rectangle (32,2);  % 0
+        \node at (16,1)   {\Large{\texttt{PC}}};
+        \end{tikzpicture}
+    }
+  }
+  \caption{Program Counter Register}
+  \label{extensions:pc:fig}
+  \end{center}
+\end{figure}
 
 %Interrupt extension
 \subsection{Interrupt Extension}
@@ -695,7 +749,7 @@ is mapped into the \gls{freg} space, allowing interrupts to be temporarily disab
 
         %Offset
         \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x02}}
+          \huge{Offset: \texttt{0x03}}
         };        
         %Index
         \node [above] at  (1,2) {15};

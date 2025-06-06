@@ -3119,43 +3119,43 @@ These \glspl{freg} are read and written through special \glspl{opcode}.
     \endlastfoot
 
     %Parameter Stack Depth Register (PSD)
-    \texttt{0x00}                                               &
-    \hyperref[opcodes:freg:psd]{PSD}                            &
+    \texttt{0x00}                       &
+    \hyperref[opcodes:freg:psd]{PSD}    &
     \hyperref[opcodes:freg:psd]{Parameter Stack Depth Register} \\ \hline
 
     %Return Stack Depth Register (PSD)
-    \texttt{0x01}                                            &
-    \hyperref[opcodes:freg:psd]{RSD}                         &
+    \texttt{0x01}                       &
+    \hyperref[opcodes:freg:psd]{RSD}    &
     \hyperref[opcodes:freg:psd]{Return Stack Depth Register} \\ \hline
     
-    %%Throw Code Register (TCR)
-    %\texttt{0x02}                                    &
-    %\hyperref[opcodes:freg:tcr]{TCR}                 &
-    %\hyperref[opcodes:freg:tcr]{Throw Code Register} \\ \hline
+    %%Program Counter (PC)
+    \texttt{0x02}                       &
+    \hyperref[extensions:pc]{PC}        &
+    \hyperref[extensions:pc]{\textbf{Optional} Program Counter Register} \\ \hline
 
     %Interrupt Mask Register (IEN)
-    \texttt{0x02}                                                        &
-    \hyperref[extensions:int]{IEN}                                       &
+    \texttt{0x03}                       &
+    \hyperref[extensions:int]{IEN}      &
     \hyperref[extensions:int]{\textbf{Optional} Interrupt Enable Register} \\ \hline
 
     %KEY? Register (KEY?)
-    \texttt{0x04}                                             &
-    \hyperref[extensions:key]{KEY?}                           &
+    \texttt{0x04}                       &
+    \hyperref[extensions:key]{KEY?}     &
     \hyperref[extensions:key:keyq]{\textbf{Optional} KEY? Register} \\ \hline
 
     %EMIT? Register (EMIT?)
-    \texttt{0x05}                                                  &
-    \hyperref[extensions:key]{EMIT?}                                &
+    \texttt{0x05}                       &
+    \hyperref[extensions:key]{EMIT?}    &
     \hyperref[extensions:key:emitq]{\textbf{Optional} EMIT? Register} \\ \hline
 
-%    %PEEK Register (PEEK)
-%    \texttt{0x06}                                             &
-%    \hyperref[extensions:ke]{PEEK}                            &
-%    \hyperref[extensions:ke]{\textbf{Optional} PEEK Register} \\ \hline
+%   %PEEK Register (PEEK)
+%   \texttt{0x06}                        &
+%   \hyperref[extensions:ke]{PEEK}       &
+%   \hyperref[extensions:ke]{\textbf{Optional} PEEK Register} \\ \hline
 
     %KEY/EMIT Register (KEY)
-    \texttt{0x06}                                                  &
-    \hyperref[extensions:key]{KEY}                                 &
+    \texttt{0x06}                       &
+    \hyperref[extensions:key]{KEY}      &
     \hyperref[extensions:key:key]{\textbf{Optional} KEY/EMIT Register} \\ \hline
 
   \end{longtable}
