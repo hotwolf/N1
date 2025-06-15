@@ -58,7 +58,7 @@
     March 22, 2019 &
     \makecell[l]{
       Changed encoding of ALU operands 
-      (see \tabref{opcodes:alu:operators} and \tabref{words:list})
+      (see \tabref{opcodes:alu:operators} and \tabref{words:ans:list})
     } \\
          
     April 17, 2019 &
@@ -115,9 +115,9 @@
 
     February 29, 2024 &
     \makecell[l]{
-      Added \secref{opcodes:freg:tcr}, \\
+      Added \secref{opcodes:freg:tc}, \\
       \secref{extensions:int}, \\
-      \secref{extensions:ekey}, and \\
+      \secref{extensions:key}, and \\
       \secref{words:nstd:list} \\
       Updated multiplication operators in \tabref{opcodes:alu:operators}
     } \\
@@ -146,10 +146,21 @@
       Updated \secref{opcodes:freg} mapping
     } \\
 
-   \today &
-    %June 6, 2025 &
+    June 6, 2025 &
     \makecell[l]{
       Added \secref{extensions:pc} \\   
+    } \\
+
+   \today &
+    %June 15, 2025 &
+    \makecell[l]{
+      Updated \secref{opcodes:branch} \\
+      Reintroduced \secref{opcodes:freg:tc} \\
+      Redefined reset and exception behavior in
+      \secref{reset:rst}, \\
+      \secref{reset:excpt}, 
+      \tabref{reset:tc} \\
+      Updated \secref{extensions:int}
     } \\
 
   \end{longtable}

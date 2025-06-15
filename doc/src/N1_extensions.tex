@@ -677,6 +677,115 @@ These rules are listed in \tabref{opcodes:stack:ufrules}.
 \end{center}  
 \endgroup
 
+%Interrupt extension
+\subsection{Interrupt Extension}
+\label{extensions:int}
+
+Interrupt are exceptions which are triggered by external hardware events.
+They are support by N1 processor with optional Interrupt Extension.
+If available, hardware, external to the processor, is able to trigger exceptions as described in \secref{reset:excpt}.
+Interrupts are only enabled if the \hyperref[[opcodes:freg:tc]{Throw Code Register (TC)} holds the value \texttt{0x0000}.
+By setting the \hyperref[[opcodes:freg:tc]{Throw Code Register (TC)} to \texttt{0x0001}, interrupts can be blocked, without triggering a new exception.
+
+%\begin{figure}[H]
+%  \begin{center}
+%  \makebox[\textwidth][c]{
+%    %\scalebox{0.5125} {
+%    \scalebox{0.515} {
+%      \begin{tikzpicture}
+%
+%        %Offset
+%        \node [align=left, anchor=west] at (-2,3) {
+%          \huge{Offset: \texttt{0x03}}
+%        };        
+%        %Index
+%        \node [above] at  (1,2) {15};
+%        \node [above] at  (3,2) {14};
+%        \node [above] at  (5,2) {13};
+%        \node [above] at  (7,2) {12};
+%        \node [above] at  (9,2) {11};
+%        \node [above] at (11,2) {10};
+%        \node [above] at (13,2)  {9};
+%        \node [above] at (15,2)  {8};
+%        \node [above] at (17,2)  {7};
+%        \node [above] at (19,2)  {6};
+%        \node [above] at (21,2)  {5};
+%        \node [above] at (23,2)  {4};
+%        \node [above] at (25,2)  {3};
+%        \node [above] at (27,2)  {2};
+%        \node [above] at (29,2)  {1};
+%        \node [above] at (31,2)  {0};
+%        %Read
+%        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
+%        \draw [thick, fill=white] (0,1) rectangle (32,2);
+%         %Write
+%        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
+%        \draw [thick, fill=white] (0,0) rectangle (32,1);
+%        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
+%        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
+%        \draw [thick, fill=gray!3] (0,0) rectangle (32,2);  % 0
+%        \node at (16,1)   {\Large{\texttt{IEN}}};
+%        \end{tikzpicture}
+%    }
+%  }
+%  \caption{Interrupt Enable Register}
+%  \label{extensions:int:ien:fig}
+%  \end{center}
+%\end{figure}
+%
+%Interrupt  handling can be disabled through clearing the interrupt Enable Flag \texttt{IEN}.
+%
+%The \texttt{IEN} bit is automatically cleared when an interrupt service routine is started
+%and must be set manually by writing a true value to the Interrupt Enable Register (see \tabref{extensions:int:ien:tab}).
+%
+%\begingroup
+%\setlength{\LTleft}{-20cm plus -1fill}
+%\setlength{\LTright}{\LTleft}
+%\begin{center}
+%  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
+%  \begin{longtable}{|c|c|c|c|}
+%    \rowcolor{white}
+%    \caption{Exception and Interrupt Mask Register Bit Description}
+%    \label{extensions:int:ien:tab} \\
+%    %Header
+%    \hline                                     
+%    \rowcolor{gray!25}
+%    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
+%    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
+%     \hline
+%    \endhead                               
+%    %Footers
+%    \hline
+%    \rowcolor{white}
+%    \multicolumn{4}{r}{\tiny{...continued}} \\
+%    \endfoot
+%    \hline
+%    \endlastfoot
+%
+%  
+%    %IEN
+%    \texttt{IEN} &
+%    15..0        &
+%    \multicolumn{1}{m{36em}|}{
+%      \makecell[l]{
+%        \begin{minipage}[t]{\linewidth}%  
+%          \centerline{\textbf{Interrupt Enable Flag}}
+%          \begin{description}[style=nextline]
+%          \item[Read:]
+%            \texttt{ true}: \tabto{4em} Interrupts are enabled \\
+%            \texttt{false}: \tabto{4em} Interrupts are disabled
+%          \item[Write:]
+%            \texttt{ true}: \tabto{4em} Enable interrupts \\
+%            \texttt{false}: \tabto{4em} Disable interrupts\\[1pt]
+%          \end{description}
+%        \end{minipage}%
+%    }}  \\ \hline
+%    
+%  \end{longtable}
+%\end{center}  
+%\endgroup
+
 %PC extension
 \subsection{Program Counter Extension}
 \label{extensions:pc}
@@ -685,60 +794,6 @@ The Program Counter Extension maps the PC into the \gls{freg} space.
 The Program Counter Register (PC) (see \figref{extensions:pc:fig}) always reads the PC of the current instruction.
 Write accesses are not supported.
 With the help of this extension, the N1 processor is able to perform relative jumps.
-
-\begin{figure}[H]
-  \begin{center}
-  \makebox[\textwidth][c]{
-    %\scalebox{0.5125} {
-    \scalebox{0.515} {
-      \begin{tikzpicture}
-
-        %Offset
-        \node [align=left, anchor=west] at (-2,3) {
-          \huge{Offset: \texttt{0x02}}
-        };        
-        %Index
-        \node [above] at  (1,2) {15};
-        \node [above] at  (3,2) {14};
-        \node [above] at  (5,2) {13};
-        \node [above] at  (7,2) {12};
-        \node [above] at  (9,2) {11};
-        \node [above] at (11,2) {10};
-        \node [above] at (13,2)  {9};
-        \node [above] at (15,2)  {8};
-        \node [above] at (17,2)  {7};
-        \node [above] at (19,2)  {6};
-        \node [above] at (21,2)  {5};
-        \node [above] at (23,2)  {4};
-        \node [above] at (25,2)  {3};
-        \node [above] at (27,2)  {2};
-        \node [above] at (29,2)  {1};
-        \node [above] at (31,2)  {0};
-        %Read
-        \node [align=right, anchor=east] at (0,1.5) {\large{Read}};
-        \draw [thick, fill=white] (0,1) rectangle (32,2);
-         %Write
-        \node [align=right, anchor=east] at (0,0.5) {\large{Write}};
-        \draw [thick, fill=white] (0,0) rectangle (32,1);
-        %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
-        %\node at (29,0.5) {\Large{\texttt{IMWE}}};
-        \draw [thick, fill=gray!3] (0,0) rectangle (32,2);  % 0
-        \node at (16,1)   {\Large{\texttt{PC}}};
-        \end{tikzpicture}
-    }
-  }
-  \caption{Program Counter Register}
-  \label{extensions:pc:fig}
-  \end{center}
-\end{figure}
-
-%Interrupt extension
-\subsection{Interrupt Extension}
-\label{extensions:int}
-
-Interrupt support is optional on the N1 processor.
-If it is available, the Interupt Enable Register (IEN) (see \figref{extensions:int:ien:fig})
-is mapped into the \gls{freg} space, allowing interrupts to be temporarily disabled.
 
 \begin{figure}[H]
   \begin{center}
@@ -777,67 +832,14 @@ is mapped into the \gls{freg} space, allowing interrupts to be temporarily disab
         %\draw [thick, fill=gray!3] (28,0) rectangle (30,1);  % 1
         %\node at (29,0.5) {\Large{\texttt{IMWE}}};
         \draw [thick, fill=gray!3] (0,0) rectangle (32,2);  % 0
-        \node at (16,1)   {\Large{\texttt{IEN}}};
+        \node at (16,1)   {\Large{\texttt{PC}}};
         \end{tikzpicture}
     }
   }
-  \caption{Interrupt Enable Register}
-  \label{extensions:int:ien:fig}
+  \caption{Program Counter Register}
+  \label{extensions:pc:fig}
   \end{center}
 \end{figure}
-
-Interrupt  handling can be disabled through clearing the interrupt Enable Flag \texttt{IEN}.
-
-The \texttt{IEN} bit is automatically cleared when an interrupt service routine is started
-and must be set manually by writing a true value to the Interrupt Enable Register (see \tabref{extensions:int:ien:tab}).
-
-\begingroup
-\setlength{\LTleft}{-20cm plus -1fill}
-\setlength{\LTright}{\LTleft}
-\begin{center}
-  \rowcolors{1}{gray!12}{white}                                         %set alternating row color
-  \begin{longtable}{|c|c|c|c|}
-    \rowcolor{white}
-    \caption{Exception and Interrupt Mask Register Bit Description}
-    \label{extensions:int:ien:tab} \\
-    %Header
-    \hline                                     
-    \rowcolor{gray!25}
-    \multicolumn{1}{|c|}{\textbf{\rule{0pt}{2.5ex}Bit}}       &  
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Postion}}    & 
-    \multicolumn{1}{c|}{\textbf{\rule{0pt}{2.5ex}Description}} \\
-     \hline
-    \endhead                               
-    %Footers
-    \hline
-    \rowcolor{white}
-    \multicolumn{4}{r}{\tiny{...continued}} \\
-    \endfoot
-    \hline
-    \endlastfoot
-
-  
-    %IEN
-    \texttt{IEN} &
-    15..0        &
-    \multicolumn{1}{m{36em}|}{
-      \makecell[l]{
-        \begin{minipage}[t]{\linewidth}%  
-          \centerline{\textbf{Interrupt Enable Flag}}
-          \begin{description}[style=nextline]
-          \item[Read:]
-            \texttt{ true}: \tabto{4em} Interrupts are enabled \\
-            \texttt{false}: \tabto{4em} Interrupts are disabled
-          \item[Write:]
-            \texttt{ true}: \tabto{4em} Enable interrupts \\
-            \texttt{false}: \tabto{4em} Disable interrupts\\[1pt]
-          \end{description}
-        \end{minipage}%
-    }}  \\ \hline
-    
-  \end{longtable}
-\end{center}  
-\endgroup
 
 %KEY/EMIT extension
 \subsection{KEY/EMIT Extension}
