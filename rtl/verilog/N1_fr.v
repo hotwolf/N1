@@ -28,7 +28,8 @@
 `default_nettype none
 
 module N1_fr
-  #(parameter  INT_EXTENSION =  1,                                                     //interrupt extension
+  #(parameter  PC_EXTENSION  =  1,                                                     //program counter extension
+    parameter  INT_EXTENSION =  1,                                                     //interrupt extension
     parameter  KEY_EXTENSION =  1,                                                     //KEY/EMIT extension
     parameter  PSD_WIDTH     = 15,                                                     //width of parameter stack depth register
     parameter  RSD_WIDTH     = 15)                                                     //width of return stack depth register
@@ -62,6 +63,9 @@ module N1_fr
     output wire                              uprs_ps_clear_o,                          //parameter stack clear request
     output wire                              uprs_rs_clear_o,                          //return stack clear request
 
+    //PC interface
+     input  wire [15:0]                      pc_prev_i,                                //previous PC
+
     //Exception interface
     input wire                               excpt_ien_i,                              //interrupts enabled
     output wire                              excpt_ien_set_o,                          //interrupts enabled
@@ -78,6 +82,7 @@ module N1_fr
    wire                                      fr_addr_lt_8;                              //fr_addr_i < 8
    wire                                      fr_sel_psd;                                //  PSD selected
    wire                                      fr_sel_rsd;                                //  RSD selected
+   wire                                      fr_sel_pc;                                 //   PC selected
    wire                                      fr_sel_ien;                                //  IEN selected
    wire                                      fr_sel_keyq;                               // KEY? selected
    wire                                      fr_sel_emitq;                              //EMIT? selected
@@ -86,6 +91,7 @@ module N1_fr
 
    reg  [15:0]                               psd_get_data;                              //  PSD read data
    reg  [15:0]                               rsd_get_data;                              //  RSD read data
+   wire [15:0]                               pc_get_data;                               //   PC read data
    wire [15:0]                               ien_get_data;                              //  IEN read data
    wire [15:0]                               keyq_get_data;                             // KEY? read data
    wire [15:0]                               emitq_get_data;                            //EMIT? read data
@@ -104,9 +110,9 @@ module N1_fr
    //+----+----------+
    //|0x01| RSD      |
    //+----+----------+
-   //|0x02| IEN      |
+   //|0x02| PC       |
    //+----+----------+
-   //|0x03| reserved |
+   //|0x03| IEN      |
    //+----+----------+
    //|0x04| KEY?     |
    //+----+----------+
@@ -121,7 +127,8 @@ module N1_fr
    assign fr_addr_lt_8 = ~|fr_addr_i[15:3];                                           //fr_addr_i < 8
    assign fr_sel_psd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b000);                  //  PSD selected
    assign fr_sel_rsd   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b001);                  //  RSD selected
-   assign fr_sel_ien   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b010) & |INT_EXTENSION; //  IEN selected
+   assign fr_sel_pc    = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b010) & |PC_EXTENSION;  //  PC  selected
+   assign fr_sel_ien   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b011) & |INT_EXTENSION; //  IEN selected
    assign fr_sel_keyq  = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b100) & |KEY_EXTENSION; // KEY? selected
    assign fr_sel_emitq = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b101) & |KEY_EXTENSION; //EMIT? selected
    assign fr_sel_key   = fr_addr_lt_8 & ~|(fr_addr_i[2:0] ^ 3'b110) & |KEY_EXTENSION; //  KEY selected
@@ -149,14 +156,13 @@ module N1_fr
      end
    assign rsd_set_bsy = uprs_rs_clear_bsy_i & fr_sel_rsd;
 
+   //PC
+   assign pc_get_data       = PC_EXTENSION ? {16{pc_prev_i}} : 16'h0000;
+
    //IEN
    assign ien_get_data      = INT_EXTENSION ? {16{excpt_ien_i}} : 16'h0000;
    assign excpt_ien_set_o   = fr_set_i & | fr_set_data_i;                        //enable interrupts
    assign excpt_ien_clear_o = fr_set_i & ~|fr_set_data_i;                        //enable interrupts
-
-
-
-{16{ien_reg & fr_sel_ien}};
    assign ien_next     = ~fr_push_zero;                                          //next P1 cell value
    assign ien_we       = fr_set_i & fr_sel_ien;                                  //P1 write enable
 

@@ -222,7 +222,6 @@ module N1_uprs
                                uprs_wbi_2_ps0_i  |                               //WBI             -> PS0
                                uprs_fr_2_ps0_i   |                               //FR              -> PS0
                                uprs_excpt_2_ps0_i;                               //exception       -> PS0
-
    assign uprs_dat_2_ps1     = uprs_alu_2_ps1_i;                                 //ALU             -> PS1
    assign uprs_dat_2_rs0     = uprs_pc_2_rs0_i;                                  //PC              -> RS1
    assign uprs_ps0_push_data =

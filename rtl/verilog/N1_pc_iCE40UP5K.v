@@ -39,19 +39,29 @@
 `default_nettype none
 
 module N1_pc
-  #(parameter  INT_EXTENSION    = 1)                                      //interrupt extension
+  #(parameter  PC_EXTENSION     =        1,                               //program counter extension
+    parameter  INT_EXTENSION    =        1,                               //interrupt extension
+    parameter  IMM_PADDR_OFFS   = 16'h0000)                               //offset for immediate program address
    (//Clock and reset
     input  wire                             clk_i,                        //module clock
     input  wire                             async_rst_i,                  //asynchronous reset
     input  wire                             sync_rst_i,                   //synchronous reset
 
+    //FE interface
+    input  wire                             fe2pc_update_i,               //switch to next address
 
-    //Accumulator interface
-    input  wire [15:0]                      pc_abs_addr_i,                //absolute address input
-    input  wire [15:0]                      pc_rel_addr_i,                //relative address input
-    input  wire                             pc_rel_inc_i,                 //increment relative address
-    input  wire                             pc_pc_hold_i,                 //maintain PC
-    input  wire                             pc_sel_i,                     //1:absolute COF, 0:relative COF
+    //IR interface
+    input  wire [13:0]                      ir2pc_abs_addr_i,             //absolute address
+    input  wire [12:0]                      ir2pc_rel_addr_i,             //absolute address
+    input  wire                             ir2pc_call_or_jump_i,         //call or jump instruction
+    input  wire                             ir2pc_branch_i,               //branch instruction
+    input  wire                             ir2pc_return_i,               //return
+
+    //UPRS interface
+    input  wire [15:0]                      uprs_ps0_pull_data_i,         //PS0 pull data
+    input  wire [15:0]                      uprs_rs0_pull_data_i,                    //RS0 pull data
+
+    //PC outputs
     output wire [15:0]                      pc_next_o,                    //program AGU output
     output wire [15:0]                      pc_prev_o,                    //previous PC
 
@@ -61,10 +71,33 @@ module N1_pc
 
    //Internal signals
    //----------------
+   //Address selection
+   wire                                     jmp_sel                       //call or jump address selected
+   wire                                     bra_sel                       //branch address selected
+   wire                                     ret_sel                       //return address selected
+   wire                                     inc_sel                       //address increment selected
+   wire [15:0]                              abs_addr;                     //absolute address
+   wire [15:0]                              rel_addr;                     //relative address
+
    //Accumulator signals
    reg  [15:0]                              pc_mirror_reg;                //program counter
    reg  [15:0]                              pc_prev_reg;                  //previous program counter
    wire [31:0]                              acc_out;                      //accumulator output
+
+   //Address selection
+   assign jmp_sel     = ir2pc_call_or_jump_i;                             //call or jump address selected
+   assign bra_sel     = ir2pc_branch_i & |uprs_ps0_pull_data_i;           //branch address selected
+   assign ret_sel     = ~jmp_sel & ~bra_sel &  ir2pc_return_i;            //return address selected
+   assign inc_sel     = ~jmp_sel & ~bra_sel & ~ir2pc_return_i;            //address increment selected
+   
+   assign abs_addr    = ({16{jmp_sel}} &                                                   //jump or call
+		      	  (&ir2pc_abs_addr_i ? uprs_ps0_pull_data_i :                      //PS0
+                                               {IMM_PADDR_OFFS[15:14],ir2pc_abs_addr_i}) | //immediate address  
+		      	({16{ret_sel}} &                                                   //return
+		      	 uprs_rs0_pull_data_i));		                	   //RS0
+
+   assign rel_addr    = ({16{bra_sel}} &                                                   //branch
+                         {{3{ir2pc_rel_addr_i[12]}},ir2pc_rel_addr_i});                    //relative address
 
    //SB_MAC16 cell for the AGU accumulator
    //-------------------------------------
@@ -98,8 +131,8 @@ module N1_pc
       .CE                        (1'b1),                                  //clock enable
       .C                         (16'h0000),                              //unused
       .A                         (16'h0000),                              //unused
-      .B                         (pc_rel_addr_i),                         //relative COF address
-      .D                         (pc_abs_addr_i),                         //absolute COF address
+      .B                         (rel_addr),                              //relative COF address
+      .D                         (abs_addr),                              //absolute COF address
       .AHOLD                     (1'b1),                                  //keep hold register stable
       .BHOLD                     (1'b1),                                  //keep hold register stable
       .CHOLD                     (1'b1),                                  //keep hold register stable
@@ -113,8 +146,8 @@ module N1_pc
       .ADDSUBTOP                 (1'b0),                                  //subtract
       .ADDSUBBOT                 (1'b0),                                  //always use adder
       .OHOLDTOP                  (1'b1),                                  //keep hold register stable
-      .OHOLDBOT                  (pc_pc_hold_i),                          //update PC
-      .CI                        (pc_rel_inc_i),                          //address increment
+      .OHOLDBOT                  (~fe2pc_change_i),                       //update PC
+      .CI                        (inc_sel),                               //address increment
       .ACCUMCI                   (1'b0),                                  //no carry
       .SIGNEXTIN                 (1'b0),                                  //no sign extension
       .O                         (acc_out),                               //result
@@ -128,17 +161,18 @@ module N1_pc
         if (async_rst_i)                                                  //asynchronous reset
           begin
              pc_mirror_reg      <= 16'h0000;                              //start address
-             pc_prev_reg <= 16'h0000;                                     //start address
+             pc_prev_reg        <= 16'h0000;                              //start address
           end
         else if (sync_rst_i)                                              //synchronous reset
           begin
              pc_mirror_reg      <= 16'h0000;                              //start address
-             pc_prev_reg <= 16'h0000;                                     //start address
+             pc_prev_reg        <= 16'h0000;                              //start address
           end
         else if (~pc_pc_hold_i)                                           //update PC
           begin
              pc_mirror_reg      <= acc_outt[15:0];                        //current PC
-             pc_prev_reg <= INT_EXTENSION ? pc_mirror_reg : 16'h0000;     //previous PC
+             pc_prev_reg <= PC_EXTENSION|INT_EXTENSION ? pc_reg :         //previous PC
+			                                 16'h0000;
           end
      end // always @ (posedge async_rst_i or posedge clk_i)
 
@@ -147,6 +181,7 @@ module N1_pc
 
    //Probe signals
    assign prb_pc_cur_o  = pc_mirror_reg;                                  //current PC
-   assign prb_pc_prev_o  = pc_prev_reg;                                   //previous PC
+   assign prb_pc_prev_o = pc_prev_reg;                                    //previous PC
 
-endmodule // N1_agu_acc
+endmodule // N1_pc
+

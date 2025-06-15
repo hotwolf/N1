@@ -118,6 +118,9 @@ module N1
     localparam ROT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//ROT extension
                                   VARIANT=="MINIMAL"      ?        0 :
                                                                    1,  		
+    localparam PC_EXTENSION     = VARIANT=="iCE40UP5K_1C" ?        1 : 		//PC extension
+                                  VARIANT=="MINIMAL"      ?        0 :
+                                                                   1,  		
     localparam INT_EXTENSION    = VARIANT=="iCE40UP5K_1C" ?        1 : 		//interrupt extension
                                   VARIANT=="MINIMAL"      ?        0 :
                                                                    1,  		
@@ -127,10 +130,10 @@ module N1
     localparam START_ADDR       = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//reset and interrupt start address
                                   VARIANT=="MINIMAL"      ? 16'h0000 :
                                                             16'h0000,  		
-    localparam DIR_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0100 : 		//offset for direct program address
+    localparam IMM_PADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h0000 : 		//offset for immediate program address
                                   VARIANT=="MINIMAL"      ? 16'h0000 :
                                                             16'h0000,  		
-    localparam DIR_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : 		//offset for direct data address
+    localparam IMM_DADDR_OFFS   = VARIANT=="iCE40UP5K_1C" ? 16'h00ff : 		//offset for immediate data address
                                   VARIANT=="MINIMAL"      ? 16'h00ff :
                                                             16'h00ff,  		 
     localparam IPS_DEPTH        = VARIANT=="iCE40UP5K_1C" ?        4 : 		//depth of the intermediate parameter stack
@@ -233,9 +236,13 @@ module N1
    wire                                      uprs_ps_clear;                     //parameter stack clear request
    wire                                      uprs_rs_clear;                     //return stack clear request
    wire                                      uprs_shift;                        //stack shift request
-   wire                                      uprs_dat_2_ps0;                    //push data -> PS0
-   wire                                      uprs_dat_2_ps1;                    //push data -> PS1
-   wire                                      uprs_dat_2_rs0;                    //push data -> RS1
+   wire                                      uprs_imm_2_ps0;                    //immediate value -> PS0
+   wire                                      uprs_alu_2_ps0;                    //ALU             -> PS0
+   wire                                      uprs_wbi_2_ps0;                    //WBI             -> PS0
+   wire                                      uprs_fr_2_ps0;                     //FR              -> PS0
+   wire                                      uprs_excpt_2_ps0;                  //exception       -> PS0
+   wire                                      uprs_alu_2_ps1;                    //ALU             -> PS1
+   wire                                      uprs_pc_2_rs0;                     //PC              -> RS1
    wire                                      uprs_ps3_2_ips;                    //PS3       -> IPS
    wire                                      uprs_ips_2_ps3;                    //IPS       -> PS3
    wire                                      uprs_ps2_2_ps3;                    //PS2       -> PS3
@@ -250,9 +257,6 @@ module N1
    wire                                      uprs_ps0_2_rs0;                    //PS0       -> RS0
    wire                                      uprs_irs_2_rs0;                    //IRS       -> RS0
    wire                                      uprs_rs0_2_irs;                    //RS0       -> IRS
-   wire [15:0]                               uprs_ps0_push_data;                //PS0 push data
-   wire [15:0]                               uprs_ps1_push_data;                //PS1 push data
-   wire [15:0]                               uprs_rs0_push_data;                //RS0 push data
    wire                                      uprs_ps_clear_bsy;                 //parameter stack clear busy indicator
    wire                                      uprs_rs_clear_bsy;                 //return stack clear busy indicator
    wire                                      uprs_shift_bsy;                    //stack shift busy indicator
@@ -263,10 +267,14 @@ module N1
    wire                                      uprs_ps0_loaded;                   //PS0 contains data
    wire                                      uprs_ps1_loaded;                   //PS1 contains data
    wire                                      uprs_rs0_loaded;                   //RS0 contains data
-   wire [15:0]                               uprs_ps0_pull_data;                //PS0 pull data
-   wire [15:0]                               uprs_ps1_pull_data;                //PS1 pull data
-   wire [15:0]                               uprs_rs0_pull_data;                //RS0 pull data
-   				             					
+   wire [15:0]                               uprs_imm_2_ps0_push_data;          //PS0 immediate push data
+   wire [15:0]                               uprs_alu_2_ps0_push_data;          //PS0 ALU push data
+   wire [15:0]                               uprs_wbi_2_ps0_push_data;          //PS0 WBI push data
+   wire [15:0]                               uprs_fr_2_ps0_push_data;           //PS0 FR push data
+   wire [15:0]                               uprs_excpt_2_ps0_push_data;        //PS0 exception push data
+   wire [15:0]                               uprs_alu_2_ps1_push_data;          //PS1 ALU push data
+   wire [15:0]                               uprs_pc_2_rs0_push_data;           //RS0 PC push data
+  				             					
    wire [PSD_WIDTH-1:0]                      uprs_psd;                          //parameter stack depths
    wire [RSD_WIDTH-1:0]                      uprs_rsd;                          //return stack depth
 
@@ -379,33 +387,73 @@ module N1
       .uprs_rs_clear_bsy_i		(uprs_rs_clear_bsy),                        //return stack clear busy indicator
       .uprs_ps_clear_o			(uprs_ps_clear),                            //parameter stack clear request
       .uprs_rs_clear_o			(uprs_rs_clear),                            //return stack clear request
+      //PC interface
+      .pc_prev_i                        (),                                //previous PC
       //Exception interface
-      .excpt_ien_o			(),                                         //interrupts enabled
-      //Probe signals
-      .prb_fr_ien_o			(prb_fr_ien_o));                             //probe signals
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      .excpt_ien_i                      (),                              //interrupts enabled
+      .excpt_ien_set_o                  (),                          //interrupts enabled
+      .excpt_ien_clear_o                ());                       //interrupts enabled
    
 
 
-   //PBI - Program bus interface
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   //ALU - Arithmetic logic unit
    //---------------------------
+   N1_alu alu
+     (//IR interface
+      .ir2alu_opr_i			(),                                //ALU operator
+      .ir2alu_opd_i			(),                                //immediate operand
+      //UPRS interface                       
+      .uprs_alu_2_ps0_push_data_o	(uprs_alu_2_ps0_push_data),                 //new PS0 (TOS)
+      .uprs_alu_2_ps1_push_data_o	(uprs_alu_2_ps1_push_data),                 //new PS1 (TOS+1)
+      .uprs_ps0_pull_data_i		(uprs_ps0_pull_data),                       //current PS0 (TOS)
+      .uprs_ps1_pull_data_i		(uprs_ps1_pull_data));                      //current PS1 (TOS+1)
+
+   //PC - Program Counter
+   //--------------------
+   N1_pc
+     #(.PC_EXTENSION                    (PC_EXTENSION),                             //program counter extension
+       .INT_EXTENSION                   (INT_EXTENSION))                            //interrupt extension
+       .IMM_PADDR_OFFS                  (IMM_PADDR_OFFS))                           //offset for immediate program address
+   pc
+     (//Clock and reset
+      .clk_i				(clk_i),                                    //module clock
+      .async_rst_i			(async_rst_i),                              //asynchronous reset
+      .sync_rst_i			(sync_rst_i),                               //synchronous reset
+      //FE interface
+      .fe2pc_update_i                   (),               //switch to next address
+      //IR interface
+      .ir2pc_abs_addr_i                 (),             //absolute address
+      .ir2pc_rel_addr_i                 (),             //absolute address
+      .ir2pc_call_or_jump_i             (),         //call or jump instruction
+      .ir2pc_branch_i                   (),               //branch instruction
+      .ir2pc_return_i                   (),               //return
+      //UPRS interface
+      .uprs_ps0_pull_data_i             (),         //PS0 pull data
+      .uprs_rs0_pull_data_i             (),                    //RS0 pull data
+      //PC outputs
+      .pc_next_o                        (),                    //program AGU output
+      .pc_prev_o                        (),                    //previous PC
+      //Probe signals
+      .prb_pc_cur_o                     (),                 //probed current PC
+      .prb_pc_prev_o                    ());               //probed previous PC
+
+   //WBI - Wishbone bus interface
+   //----------------------------
    N1_wbi
      #(.ADDR_WIDTH                      (16))                                       //RAM address width
    pbi
@@ -448,30 +496,6 @@ module N1
 
 
 
-
-   //ALU - Arithmetic logic unit
-   //---------------------------
-   N1_alu
-     (//IR interface
-      .ir2alu_opr_i			(),                                //ALU operator
-      .ir2alu_opd_i			(),                                //immediate operand
-      .ir2alu_opd_sel_i			(),                                //0: PS1, 1: immediate
-      //UPRS interface                       
-      .alu2pspm_ps0_push_data_o		(),                                //new PS0 (TOS)
-      .alu2pspm_ps1_push_data_o		(),                                //new PS1 (TOS+1)
-      .uprs_ps0_pull_data_i		(uprs_ps0_pull_data),                       //current PS0 (TOS)
-      .uprs_ps1_pull_data_i		(uprs_ps1_pull_data));                      //current PS1 (TOS+1)
-
-   //PSPM - Parameter stack push multiplexer
-   //---------------------------------------
-
-
-
-
-   
-
-
-
    
    //UPRS - Upper parameter and return stack
    //---------------------------------------
@@ -488,26 +512,34 @@ module N1
       .uprs_ps_clear_i                  (uprs_ps_clear),                            //parameter stack clear request
       .uprs_rs_clear_i                  (uprs_rs_clear),                            //return stack clear request
       .uprs_shift_i                     (uprs_shift),                               //stack shift request
-      .uprs_dat_2_ps0_i                 (uprs_dat_2_ps0),                           //push data -> PS0
-      .uprs_dat_2_ps1_i                 (uprs_dat_2_ps1),                           //push data -> PS1
-      .uprs_dat_2_rs0_i                 (uprs_dat_2_rs0),                           //push data -> RS1
-      .uprs_ps3_2_ips_i                 (uprs_ps3_2_ips),                           //PS3       -> IPS
-      .uprs_ips_2_ps3_i                 (uprs_ips_2_ps3),                           //IPS       -> PS3
-      .uprs_ps2_2_ps3_i                 (uprs_ps2_2_ps3),                           //PS2       -> PS3
-      .uprs_ps3_2_ps2_i                 (uprs_ps3_2_ps2),                           //PS3       -> PS2
-      .uprs_ps0_2_ps2_i                 (uprs_ps0_2_ps2),                           //PS0       -> PS2 (ROT extension)
-      .uprs_ps1_2_ps2_i                 (uprs_ps1_2_ps2),                           //PS1       -> PS2
-      .uprs_ps2_2_ps1_i                 (uprs_ps2_2_ps1),                           //PS2       -> PS1
-      .uprs_ps0_2_ps1_i                 (uprs_ps0_2_ps1),                           //PS0       -> PS1
-      .uprs_ps1_2_ps0_i                 (uprs_ps1_2_ps0),                           //PS1       -> PS0
-      .uprs_ps2_2_ps0_i                 (uprs_ps2_2_ps0),                           //PS2       -> PS0 (ROT extension)
-      .uprs_rs0_2_ps0_i                 (uprs_rs0_2_ps0),                           //RS0       -> PS0
-      .uprs_ps0_2_rs0_i                 (uprs_ps0_2_rs0),                           //PS0       -> RS0
-      .uprs_irs_2_rs0_i                 (uprs_irs_2_rs0),                           //IRS       -> RS0
-      .uprs_rs0_2_irs_i                 (uprs_rs0_2_irs),                           //RS0       -> IRS
-      .uprs_ps0_push_data_i             (uprs_ps0_push_data),                       //PS0 push data
-      .uprs_ps1_push_data_i             (uprs_ps1_push_data),                       //PS1 push data
-      .uprs_rs0_push_data_i             (uprs_rs0_push_data),                       //RS0 push data
+      .uprs_imm_2_ps0_i			(uprs_imm_2_ps0),                           //immediate value -> PS0
+      .uprs_alu_2_ps0_i			(uprs_alu_2_ps0),                           //ALU             -> PS0
+      .uprs_wbi_2_ps0_i			(uprs_wbi_2_ps0),                           //WBI             -> PS0
+      .uprs_fr_2_ps0_i			(uprs_fr_2_ps0),                            //FR              -> PS0
+      .uprs_excpt_2_ps0_i		(uprs_excpt_2_ps0),                         //exception       -> PS0
+      .uprs_alu_2_ps1_i			(uprs_alu_2_ps1),                           //ALU             -> PS1
+      .uprs_pc_2_rs0_i			(uprs_pc_2_rs0),                            //PC              -> RS1
+      .uprs_ps3_2_ips_i                 (uprs_ps3_2_ips),                           //PS3             -> IPS
+      .uprs_ips_2_ps3_i                 (uprs_ips_2_ps3),                           //IPS             -> PS3
+      .uprs_ps2_2_ps3_i                 (uprs_ps2_2_ps3),                           //PS2             -> PS3
+      .uprs_ps3_2_ps2_i                 (uprs_ps3_2_ps2),                           //PS3             -> PS2
+      .uprs_ps0_2_ps2_i                 (uprs_ps0_2_ps2),                           //PS0             -> PS2 (ROT extension)
+      .uprs_ps1_2_ps2_i                 (uprs_ps1_2_ps2),                           //PS1             -> PS2
+      .uprs_ps2_2_ps1_i                 (uprs_ps2_2_ps1),                           //PS2             -> PS1
+      .uprs_ps0_2_ps1_i                 (uprs_ps0_2_ps1),                           //PS0             -> PS1
+      .uprs_ps1_2_ps0_i                 (uprs_ps1_2_ps0),                           //PS1             -> PS0
+      .uprs_ps2_2_ps0_i                 (uprs_ps2_2_ps0),                           //PS2             -> PS0 (ROT extension)
+      .uprs_rs0_2_ps0_i                 (uprs_rs0_2_ps0),                           //RS0             -> PS0
+      .uprs_ps0_2_rs0_i                 (uprs_ps0_2_rs0),                           //PS0             -> RS0
+      .uprs_irs_2_rs0_i                 (uprs_irs_2_rs0),                           //IRS             -> RS0
+      .uprs_rs0_2_irs_i                 (uprs_rs0_2_irs),                           //RS0             -> IRS
+      .uprs_imm_2_ps0_push_data_i	(uprs_imm_2_ps0_push_data),                 //PS0 immediate push data
+      .uprs_alu_2_ps0_push_data_i	(uprs_alu_2_ps0_push_data),                 //PS0 ALU push data
+      .uprs_wbi_2_ps0_push_data_i	(uprs_wbi_2_ps0_push_data),                 //PS0 WBI push data
+      .uprs_fr_2_ps0_push_data_i	(uprs_fr_2_ps0_push_data),                  //PS0 FR push data
+      .uprs_excpt_2_ps0_push_data_i	(uprs_excpt_2_ps0_push_data),               //PS0 exception push data
+      .uprs_alu_2_ps1_push_data_i	(uprs_alu_2_ps1_push_data),                 //PS1 ALU push data
+      .uprs_pc_2_rs0_push_data_i	(uprs_pc_2_rs0_push_data),                  //RS0 PC push data
       .uprs_ps_clear_bsy_o              (uprs_ps_clear_bsy),                        //parameter stack clear busy indicator
       .uprs_rs_clear_bsy_o              (uprs_rs_clear_bsy),                        //return stack clear busy indicator
       .uprs_shift_bsy_o                 (uprs_shift_bsy),                           //stack shift busy indicator

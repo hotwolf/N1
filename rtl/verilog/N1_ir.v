@@ -29,82 +29,192 @@
 `default_nettype none
 
 module N1_ir
+  #(parameter  START_ADDR       = 16'h0000)                            		     //start address
    (//Clock and reset
     input wire                    clk_i,                                             //module clock
     input wire                    async_rst_i,                                       //asynchronous reset
     input wire                    sync_rst_i,                                        //synchronous reset
 
-    //Program bus (wishbone)
-    output wire                   pbus_tga_cof_jmp_o,                                //COF jump
-    output wire                   pbus_tga_cof_cal_o,                                //COF call
-    output wire                   pbus_tga_cof_bra_o,                                //COF conditional branch
-    output wire                   pbus_tga_cof_eow_o,                                //COF return from call
-    output wire                   pbus_tga_dat_o,                                    //data access
-    output wire                   pbus_we_o,                                         //write enable
-    input  wire [15:0]            pbus_dat_i,                                        //read data bus
 
-    //Internal interfaces
-    //-------------------
+    //FE interface
+    input  wire                   fe2ir_capture_i,                                   //capture current IR
+    input  wire                   fe2ir_stash_i,                                     //capture stashed IR
+    input  wire                   fe2ir_expend_i,                                    //stashed IR -> current IR
+
+
+    //EE interface
+
+
+
     //ALU interface
     output wire [4:0]             ir2alu_opr_o,                                      //ALU operator
     output wire [4:0]             ir2alu_opd_o,                                      //immediate operand
-    output wire                   ir2alu_opd_sel_o,                                  //select immediate operand
 
-    //EXCPT interface
-    output wire                   ir2excpt_excpt_en_o,                               //enable exceptions
-    output wire                   ir2excpt_excpt_dis_o,                              //disable exceptions
-    output wire                   ir2excpt_irq_en_o,                                 //enable interrupts
-    output wire                   ir2excpt_irq_dis_o,                                //disable interrupts
 
-    //FC interface
-    output wire                   ir2fc_eow_o,                                       //end of word (EOW bit set)
-    output wire                   ir2fc_eow_postpone_o,                              //EOW conflict detected
-    output wire                   ir2fc_jump_or_call_o,                              //either JUMP or CALL
-    output wire                   ir2fc_bra_o,                                       //conditonal BRANCH instruction
-    output wire                   ir2fc_scyc_o,                                      //linear flow
-    output wire                   ir2fc_mem_o,                                       //memory I/O
-    output wire                   ir2fc_mem_rd_o,                                    //memory read
-    output wire                   ir2fc_madr_sel_o,                                  //select (indirect) data address
-    input  wire                   fc2ir_capture_i,                                   //capture current IR
-    input  wire                   fc2ir_stash_i,                                     //capture stashed IR
-    input  wire                   fc2ir_expend_i,                                    //stashed IR -> current IR
-    input  wire                   fc2ir_force_eow_i,                                 //load EOW bit
-    input  wire                   fc2ir_force_0call_i,                               //load 0 CALL instruction
-    input  wire                   fc2ir_force_call_i,                                //load CALL instruction
-    input  wire                   fc2ir_force_drop_i,                                //load DROP instruction
-    input  wire                   fc2ir_force_nop_i,                                 //load NOP instruction
 
-    //PAGU interface
-    output wire                   ir2pagu_eow_o,                                     //end of word (EOW bit)
-    output wire                   ir2pagu_eow_postpone_o,                            //postpone EOW
-    output wire                   ir2pagu_jmp_or_cal_o,                              //jump or call instruction
-    output wire                   ir2pagu_bra_o,                                     //conditional branch
-    output wire                   ir2pagu_scyc_o,                                    //single cycle instruction
-    output wire                   ir2pagu_mem_o,                                     //memory I/O
-    output wire                   ir2pagu_aadr_sel_o,                                //select (indirect) absolute address
-    output wire                   ir2pagu_madr_sel_o,                                //select (indirect) memory address
-    output wire [13:0]            ir2pagu_aadr_o,                                    //direct absolute address
-    output wire [12:0]            ir2pagu_radr_o,                                    //direct relative address
-    output wire [7:0]             ir2pagu_madr_o,                                    //direct memory address
 
-    //US interface
-    output wire                   ir2us_alu2ps0_o,                                   //ALU output  -> PS0
-    output wire                   ir2us_alu2ps1_o,                                   //ALU output  -> PS1
-    output wire                   ir2us_lit2ps0_o,                                   //literal     -> PS0
-    output wire                   ir2us_pc2rs0_o,                                    //PC          -> RS0
-    output wire                   ir2us_ps_rst_o,                                    //reset parameter stack
-    output wire                   ir2us_rs_rst_o,                                    //reset return stack
-    output wire                   ir2us_psp_get_o,                                   //read parameter stack pointer
-    output wire                   ir2us_psp_set_o,                                   //write parameter stack pointer
-    output wire                   ir2us_rsp_get_o,                                   //read return stack pointer
-    output wire                   ir2us_rsp_set_o,                                   //write return stack pointer
-    output wire [15:0]            ir2us_lit_val_o,                                   //literal value
-    output wire [9:0]             ir2us_us_tp_o,                                     //upper stack transition pattern
+
+
+    //PC interface
+    output wire [13:0]            ir2pc_abs_addr_o,                                  //absolute address
+    output wire [12:0]            ir2pc_rel_addr_o,                                  //absolute address
+    output wire                   ir2pc_call_or_jump_o,                              //call or jump instruction
+    output wire                   ir2pc_branch_o,                                    //branch instruction
+    output wire                   ir2pc_return_o,                                    //return
+
+
+    //PBI interface
+    input  wire [15:0]            pbus_dat_i,                                        //read data bus
 
     //Probe signals
     output wire [15:0]            prb_ir_o,                                          //current instruction register
     output wire [15:0]            prb_ir_stash_o);                                   //stashed instruction register
 
+    //Derived parameters					       		
+    //----------------
+    localparam OPC_JUMP2START = 16'hC000 | START_ADDR;                               //jump to START_ADDR
+
+
+
+    //Internal signals
+    //----------------
+    //Instruction register
+    reg  [15:0]                    ir_reg;                                            //current instruction register
+    reg  [15:0]                    ir_stash_reg;                                      //current instruction register
+
+
+   //Instruction registers
+   //---------------------
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+	if (async_rst_i)                                                             //asynchronous reset
+	  ir_reg  <= OPC_JUMP2START;
+	else if (sync_rst_i)                                                         //synchronous reset
+	  ir_reg  <= OPC_JUMP2START;
+	else if (fe2ir_capture_i | fe2ir_expend_i)                                   //update IR
+	  ir_reg  <= ({16{fe2ir_capture_i}} & pbus_dat_i)  |
+		     ({16{fe2ir_expend_i}}  & ir_stash_reg);
+     end // always @ (posedge async_rst_i or posedge clk_i)
+   
+   always @(posedge async_rst_i or posedge clk_i)
+     begin
+	if (async_rst_i)                                                             //asynchronous reset
+	  ir_stash_reg  <= 16'h0000;
+	else if (sync_rst_i)                                                         //synchronous reset
+	  ir_stash_reg  <= 16'h0000;
+	else if (fe2ir_stash_i)                                                      //update stashed IR
+	  ir_stash_reg  <= pbus_dat_i;
+     end // always @ (posedge async_rst_i or posedge clk_i)
+    
+
+
+
+   //FE interface
+
+   //EE interface
+
+   //ALU interface
+   assign ir2alu_opr_i         =    ir_reg[9:5];                                     //ALU operator
+   assign ir2alu_opd_i         =    ir_reg[4:0];                                     //immediate operand
+
+   //PC interface
+   assign ir2pc_abs_addr_o     =    ir_reg[13:0];                                    //absolute address
+   assign ir2pc_rel_addr_o     =    ir_reg[12:0];                                    //absolute address
+   assign ir2pc_call_or_jump_o =    ir_reg[14];                                      //call or jump instruction
+   assign ir2pc_branch_o       = ~|(ir_reg[14:13] ^ 2'b01);                          //branch instruction
+   assign ir2pc_return_o       =    ir_reg[15];                                      //return
+ 
+
+
+
+
+
+
+
+
+    
+endmodule // N1_ir
+    
+
+
+    //-------------------
+    //-------------------
+    //-------------------
+    //-------------------
+
+
+
+//  //Program bus (wishbone)
+//  output wire                   pbus_tga_cof_jmp_o,                                //COF jump
+//  output wire                   pbus_tga_cof_cal_o,                                //COF call
+//  output wire                   pbus_tga_cof_bra_o,                                //COF conditional branch
+//  output wire                   pbus_tga_cof_eow_o,                                //COF return from call
+//  output wire                   pbus_tga_dat_o,                                    //data access
+//  output wire                   pbus_we_o,                                         //write enable
+//  input  wire [15:0]            pbus_dat_i,                                        //read data bus
+//
+//  //Internal interfaces
+//  //-------------------
+//  //ALU interface
+//  output wire [4:0]             ir2alu_opr_o,                                      //ALU operator
+//  output wire [4:0]             ir2alu_opd_o,                                      //immediate operand
+//  output wire                   ir2alu_opd_sel_o,                                  //select immediate operand
+//
+//  //EXCPT interface
+//  output wire                   ir2excpt_excpt_en_o,                               //enable exceptions
+//  output wire                   ir2excpt_excpt_dis_o,                              //disable exceptions
+//  output wire                   ir2excpt_irq_en_o,                                 //enable interrupts
+//  output wire                   ir2excpt_irq_dis_o,                                //disable interrupts
+//
+//  //FC interface
+//  output wire                   ir2fc_eow_o,                                       //end of word (EOW bit set)
+//  output wire                   ir2fc_eow_postpone_o,                              //EOW conflict detected
+//  output wire                   ir2fc_jump_or_call_o,                              //either JUMP or CALL
+//  output wire                   ir2fc_bra_o,                                       //conditonal BRANCH instruction
+//  output wire                   ir2fc_scyc_o,                                      //linear flow
+//  output wire                   ir2fc_mem_o,                                       //memory I/O
+//  output wire                   ir2fc_mem_rd_o,                                    //memory read
+//  output wire                   ir2fc_madr_sel_o,                                  //select (indirect) data address
+//  input  wire                   fc2ir_capture_i,                                   //capture current IR
+//  input  wire                   fc2ir_stash_i,                                     //capture stashed IR
+//  input  wire                   fc2ir_expend_i,                                    //stashed IR -> current IR
+//  input  wire                   fc2ir_force_eow_i,                                 //load EOW bit
+//  input  wire                   fc2ir_force_0call_i,                               //load 0 CALL instruction
+//  input  wire                   fc2ir_force_call_i,                                //load CALL instruction
+//  input  wire                   fc2ir_force_drop_i,                                //load DROP instruction
+//  input  wire                   fc2ir_force_nop_i,                                 //load NOP instruction
+//
+//  //PAGU interface
+//  output wire                   ir2pagu_eow_o,                                     //end of word (EOW bit)
+//  output wire                   ir2pagu_eow_postpone_o,                            //postpone EOW
+//  output wire                   ir2pagu_jmp_or_cal_o,                              //jump or call instruction
+//  output wire                   ir2pagu_bra_o,                                     //conditional branch
+//  output wire                   ir2pagu_scyc_o,                                    //single cycle instruction
+//  output wire                   ir2pagu_mem_o,                                     //memory I/O
+//  output wire                   ir2pagu_aadr_sel_o,                                //select (indirect) absolute address
+//  output wire                   ir2pagu_madr_sel_o,                                //select (indirect) memory address
+//  output wire [13:0]            ir2pagu_aadr_o,                                    //direct absolute address
+//  output wire [12:0]            ir2pagu_radr_o,                                    //direct relative address
+//  output wire [7:0]             ir2pagu_madr_o,                                    //direct memory address
+//
+//  //US interface
+//  output wire                   ir2us_alu2ps0_o,                                   //ALU output  -> PS0
+//  output wire                   ir2us_alu2ps1_o,                                   //ALU output  -> PS1
+//  output wire                   ir2us_lit2ps0_o,                                   //literal     -> PS0
+//  output wire                   ir2us_pc2rs0_o,                                    //PC          -> RS0
+//  output wire                   ir2us_ps_rst_o,                                    //reset parameter stack
+//  output wire                   ir2us_rs_rst_o,                                    //reset return stack
+//  output wire                   ir2us_psp_get_o,                                   //read parameter stack pointer
+//  output wire                   ir2us_psp_set_o,                                   //write parameter stack pointer
+//  output wire                   ir2us_rsp_get_o,                                   //read return stack pointer
+//  output wire                   ir2us_rsp_set_o,                                   //write return stack pointer
+//  output wire [15:0]            ir2us_lit_val_o,                                   //literal value
+//  output wire [9:0]             ir2us_us_tp_o,                                     //upper stack transition pattern
+//
+//  //Probe signals
+//  output wire [15:0]            prb_ir_o,                                          //current instruction register
+//  output wire [15:0]            prb_ir_stash_o);                                   //stashed instruction register
+//
    //Internal signals
    //----------------
    //Instruction register

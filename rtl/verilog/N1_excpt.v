@@ -29,12 +29,40 @@
 
 module N1_excpt
    (//Clock and reset
-    input wire                       clk_i,                  //module clock
-    input wire                       async_rst_i,            //asynchronous reset
-    input wire                       sync_rst_i,             //synchronous reset
+    input  wire                      clk_i,                           //module clock
+    input  wire                      async_rst_i,                     //asynchronous reset
+    input  wire                      sync_rst_i,                      //synchronous reset
+							              
+    //Interrupt interface				              
+    input  wire [15:0]               irq_i,                           //interrupt request
+    output wire [15:0]               irq_bsy_o,                       //interrupt request rejected
+							              
+    //UPRS interface					              
+    input  wire                      uprs_shift_i,                    //stack shift request
+    input  wire                      uprs_ps_uf_o,                    //parameter stack underflow
+    input  wire                      uprs_ps_of_o,                    //parameter stack overflow
+    input  wire                      uprs_rs_uf_o,                    //return stack underflow
+    input  wire                      uprs_rs_of_o,                    //return stack overflow
+    output wire [15:0]               uprs_excpt_2_ps0_push_data_i,    //PS0 exception push data
 
-    //Interrupt interface
-    input  wire [15:0]               irq_req_i,              //requested ISR
+    //FE interface
+    input  wire                      fe2excpt_err_bsy_i,              //error request rejected
+    input  wire                      fe2excpt_irq_bsy_i,              //interrupt request rejected0
+    output wire                      excpt2fe_err_o,                  //error request
+    output wire                      excpt2fe_irq_o,                  //interrupt request
+ 
+    //FR interface
+    input  wire                      fr2excpt_ien_set_i,              //interrupts enabled
+    input  wire                      fr2excpt_ien_clear_i,            //interrupts enabled
+    output wire                      excpt2fr_ien_o,                  //interrupts enabled
+
+
+
+
+
+
+
+
 
     //Internal interfaces
     //-------------------

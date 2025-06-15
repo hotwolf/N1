@@ -54,8 +54,12 @@ module N1_wbi
     output wire [15:0]                       loprio_rdata_o,                           //read data
     output wire                              loprio_rdata_del_o,                       //read data delay
 
+    //Bus error
+    output wire                              wbi_bus_error,                            //bus error
+
     //Wishbone bus
     input  wire                              wb_ack_i,                                 //bus cycle acknowledge
+    input  wire                              wb_err_i,              		       //bus error
     input  wire                              wb_stall_i,                               //access delay
     input  wire [15:0]                       wb_dat_i,                                 //read data bus
     output wire                              wb_cyc_o,                                 //bus cycle indicator
@@ -90,6 +94,9 @@ module N1_wbi
    //Generate Wishbone compliant CYC_O outout
    assign wb_cyc_o            = wb_stb_o | cyc_reg;                                    //bus cycle indicator
 
+    //Bus error
+    assign wbi_bus_error      = cyc_reg & wb_err_i;                                    //bus error
+   
    always @(posedge async_rst_i or posedge clk_i)
      if (async_rst_i)                                                                  //asynchronous reset
        cyc_reg <= 1'b0;                                                                //reset state
